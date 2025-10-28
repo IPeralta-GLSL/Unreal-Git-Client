@@ -58,6 +58,9 @@ class GitManager:
             
         return "No hay diferencias para mostrar"
         
+    def stage_all(self):
+        return self.run_command("git add -A")
+    
     def stage_file(self, file_path):
         return self.run_command(f"git add \"{file_path}\"")
         

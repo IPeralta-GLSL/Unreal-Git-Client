@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
                              QFileDialog, QMessageBox, QLabel)
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from core.git_manager import GitManager
 import os
@@ -18,36 +18,12 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1400, 900)
         
         self.setup_statusbar()
-        self.setup_toolbar()
         self.setup_central_widget()
         
         self.apply_styles()
         
     def setup_toolbar(self):
-        toolbar = QToolBar()
-        toolbar.setMovable(False)
-        toolbar.setIconSize(QSize(24, 24))
-        self.addToolBar(toolbar)
-        
-        new_repo_action = QAction("📁 Abrir Repositorio", self)
-        new_repo_action.triggered.connect(self.open_repository)
-        toolbar.addAction(new_repo_action)
-        
-        toolbar.addSeparator()
-        
-        clone_action = QAction("⬇️ Clonar Repositorio", self)
-        clone_action.triggered.connect(self.clone_repository)
-        toolbar.addAction(clone_action)
-        
-        toolbar.addSeparator()
-        
-        new_tab_action = QAction("➕ Nueva Pestaña", self)
-        new_tab_action.triggered.connect(self.add_empty_tab)
-        toolbar.addAction(new_tab_action)
-        
-        close_tab_action = QAction("❌ Cerrar Pestaña", self)
-        close_tab_action.triggered.connect(self.close_current_tab)
-        toolbar.addAction(close_tab_action)
+        pass
         
     def setup_central_widget(self):
         central_widget = QWidget()
@@ -62,9 +38,48 @@ class MainWindow(QMainWindow):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
+        self.new_tab_button = QPushButton("+")
+        self.new_tab_button.setFixedSize(30, 30)
+        self.new_tab_button.setToolTip("Nueva pestaña (Ctrl+T)")
+        self.new_tab_button.clicked.connect(self.add_empty_tab)
+        self.new_tab_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d2d;
+                color: #cccccc;
+                border: none;
+                border-radius: 4px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #3d3d3d;
+                color: white;
+            }
+            QPushButton:pressed {
+                background-color: #0e639c;
+            }
+        """)
+        
+        self.tab_widget.setCornerWidget(self.new_tab_button, Qt.Corner.TopRightCorner)
+        
         layout.addWidget(self.tab_widget)
         
+        self.setup_shortcuts()
+        
         self.add_empty_tab()
+        
+    def setup_shortcuts(self):
+        new_tab_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
+        new_tab_shortcut.activated.connect(self.add_empty_tab)
+        
+        close_tab_shortcut = QShortcut(QKeySequence("Ctrl+W"), self)
+        close_tab_shortcut.activated.connect(self.close_current_tab)
+        
+        next_tab_shortcut = QShortcut(QKeySequence("Ctrl+Tab"), self)
+        next_tab_shortcut.activated.connect(self.next_tab)
+        
+        prev_tab_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
+        prev_tab_shortcut.activated.connect(self.prev_tab)
         
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
@@ -72,8 +87,8 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Listo")
         
     def add_empty_tab(self):
-        repo_tab = RepositoryTab(self.git_manager)
-        index = self.tab_widget.addTab(repo_tab, "📂 Sin Repositorio")
+        repo_tab = RepositoryTab(self.git_manager, parent_window=self)
+        index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
         self.tab_widget.setCurrentIndex(index)
         
     def open_repository(self):
@@ -123,6 +138,16 @@ class MainWindow(QMainWindow):
         current_index = self.tab_widget.currentIndex()
         self.close_tab(current_index)
         
+    def next_tab(self):
+        current = self.tab_widget.currentIndex()
+        next_index = (current + 1) % self.tab_widget.count()
+        self.tab_widget.setCurrentIndex(next_index)
+        
+    def prev_tab(self):
+        current = self.tab_widget.currentIndex()
+        prev_index = (current - 1) % self.tab_widget.count()
+        self.tab_widget.setCurrentIndex(prev_index)
+        
     def on_tab_changed(self, index):
         if index >= 0:
             tab = self.tab_widget.widget(index)
@@ -136,30 +161,13 @@ class MainWindow(QMainWindow):
             QMainWindow {
                 background-color: #1e1e1e;
             }
-            QToolBar {
-                background-color: #2d2d2d;
-                border: none;
-                padding: 8px;
-                spacing: 5px;
-            }
-            QToolBar QToolButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QToolBar QToolButton:hover {
-                background-color: #1177bb;
-            }
-            QToolBar QToolButton:pressed {
-                background-color: #0d5a8f;
-            }
             QTabWidget::pane {
                 border: 1px solid #3d3d3d;
                 background-color: #252526;
+                border-top: 2px solid #0e639c;
+            }
+            QTabBar {
+                background-color: #2d2d2d;
             }
             QTabBar::tab {
                 background-color: #2d2d2d;
@@ -169,14 +177,24 @@ class MainWindow(QMainWindow):
                 margin-right: 2px;
                 border-top-left-radius: 4px;
                 border-top-right-radius: 4px;
+                min-width: 120px;
             }
             QTabBar::tab:selected {
                 background-color: #252526;
                 color: white;
                 border-bottom: 2px solid #0e639c;
             }
-            QTabBar::tab:hover {
+            QTabBar::tab:hover:!selected {
                 background-color: #3d3d3d;
+            }
+            QTabBar::close-button {
+                image: url(none);
+                subcontrol-position: right;
+                margin-right: 4px;
+            }
+            QTabBar::close-button:hover {
+                background-color: #e81123;
+                border-radius: 2px;
             }
             QStatusBar {
                 background-color: #007acc;

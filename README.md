@@ -4,7 +4,8 @@ Cliente Git visual e intuitivo diseñado para usuarios de Unreal Engine, con sop
 
 ## Características
 
-- 🎯 **Interfaz intuitiva** - Diseñado para usuarios sin experiencia en Git
+- � **Pantalla de Inicio** - Interfaz de bienvenida intuitiva con acceso rápido
+- �🎯 **Interfaz intuitiva** - Diseñado para usuarios sin experiencia en Git
 - 📑 **Sistema de pestañas** - Trabaja con múltiples repositorios simultáneamente
 - 🎮 **Soporte Unreal Engine** - Configuración automática para proyectos de Unreal
 - 📦 **Git LFS integrado** - Manejo de archivos grandes (.uasset, .umap, etc.)
@@ -34,6 +35,11 @@ python main.py
 ```
 
 ## Uso
+
+### Pantalla de Inicio
+Al abrir la aplicación o crear una nueva pestaña, verás una pantalla de bienvenida con dos opciones principales:
+- **📁 Abrir Repositorio**: Para abrir un repositorio existente
+- **↓ Clonar Repositorio**: Para descargar un repositorio remoto
 
 ### Abrir un repositorio existente
 1. Click en "📁 Abrir Repositorio" en la barra de herramientas
