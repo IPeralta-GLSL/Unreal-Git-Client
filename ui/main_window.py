@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
+from ui.icon_manager import IconManager
 from core.git_manager import GitManager
 from core.settings_manager import SettingsManager
 import os
@@ -14,6 +15,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.git_manager = GitManager()
         self.settings_manager = SettingsManager()
+        self.icon_manager = IconManager()
         self.init_ui()
         self.setup_shortcuts()
         
@@ -95,7 +97,8 @@ class MainWindow(QMainWindow):
         
     def add_empty_tab(self):
         repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self)
-        index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
+        index = self.tab_widget.addTab(repo_tab, " Inicio")
+        self.tab_widget.setTabIcon(index, self.icon_manager.get_icon("house-line", size=16))
         self.tab_widget.setCurrentIndex(index)
         
     def open_repository(self):
@@ -111,7 +114,9 @@ class MainWindow(QMainWindow):
                 if isinstance(current_tab, RepositoryTab):
                     current_tab.load_repository(folder)
                     repo_name = os.path.basename(folder)
-                    self.tab_widget.setTabText(self.tab_widget.currentIndex(), f"📁 {repo_name}")
+                    current_index = self.tab_widget.currentIndex()
+                    self.tab_widget.setTabText(current_index, f" {repo_name}")
+                    self.tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder", size=16))
                     self.status_bar.showMessage(f"Repositorio cargado: {folder}")
             else:
                 QMessageBox.warning(

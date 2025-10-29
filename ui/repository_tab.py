@@ -180,7 +180,7 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        changes_header = self.create_section_header("📝 CAMBIOS", "Archivos modificados en tu repositorio")
+        changes_header = self.create_section_header("CAMBIOS", "Archivos modificados en tu repositorio", "file-text")
         layout.addWidget(changes_header)
         
         changes_container = QWidget()
@@ -241,7 +241,7 @@ class RepositoryTab(QWidget):
         changes_layout.addLayout(btn_layout)
         layout.addWidget(changes_container)
         
-        commit_header = self.create_section_header("💬 COMMIT", "Guardar cambios con un mensaje descriptivo")
+        commit_header = self.create_section_header("COMMIT", "Guardar cambios con un mensaje descriptivo", "git-commit")
         layout.addWidget(commit_header)
         
         commit_container = QWidget()
@@ -268,7 +268,8 @@ class RepositoryTab(QWidget):
         """)
         commit_layout.addWidget(self.commit_message)
         
-        self.commit_btn = QPushButton("✅ Hacer Commit y Guardar")
+        self.commit_btn = QPushButton(" Hacer Commit y Guardar")
+        self.commit_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18))
         self.commit_btn.setMinimumHeight(40)
         self.commit_btn.setStyleSheet("""
             QPushButton {
@@ -289,7 +290,7 @@ class RepositoryTab(QWidget):
         
         layout.addWidget(commit_container)
         
-        lfs_header = self.create_section_header("� GIT LFS", "Manejo de archivos grandes de Unreal Engine")
+        lfs_header = self.create_section_header("GIT LFS", "Manejo de archivos grandes de Unreal Engine", "files")
         layout.addWidget(lfs_header)
         
         lfs_container = QWidget()
@@ -317,19 +318,22 @@ class RepositoryTab(QWidget):
         lfs_btn_layout = QHBoxLayout()
         lfs_btn_layout.setSpacing(5)
         
-        self.lfs_install_btn = QPushButton("🔧 Instalar")
+        self.lfs_install_btn = QPushButton(" Instalar")
+        self.lfs_install_btn.setIcon(self.icon_manager.get_icon("download", size=16))
         self.lfs_install_btn.setToolTip("Instalar Git LFS en este repositorio")
         self.lfs_install_btn.clicked.connect(self.install_lfs)
         lfs_btn_layout.addWidget(self.lfs_install_btn)
         
-        self.lfs_track_btn = QPushButton("🎮 Config Unreal")
+        self.lfs_track_btn = QPushButton(" Config Unreal")
+        self.lfs_track_btn.setIcon(self.icon_manager.get_icon("file-code", size=16))
         self.lfs_track_btn.setToolTip("Configurar LFS para archivos de Unreal Engine")
         self.lfs_track_btn.clicked.connect(self.track_unreal_files)
         lfs_btn_layout.addWidget(self.lfs_track_btn)
         
         lfs_layout.addLayout(lfs_btn_layout)
         
-        self.lfs_pull_btn = QPushButton("⬇️ Descargar Archivos LFS")
+        self.lfs_pull_btn = QPushButton(" Descargar Archivos LFS")
+        self.lfs_pull_btn.setIcon(self.icon_manager.get_icon("download", size=16))
         self.lfs_pull_btn.setToolTip("Descargar archivos grandes rastreados por LFS")
         self.lfs_pull_btn.clicked.connect(self.do_lfs_pull)
         lfs_layout.addWidget(self.lfs_pull_btn)
@@ -342,7 +346,7 @@ class RepositoryTab(QWidget):
         
         return widget
         
-    def create_section_header(self, title, description):
+    def create_section_header(self, title, description, icon_name=None):
         header = QFrame()
         header.setStyleSheet("""
             QFrame {
@@ -353,19 +357,30 @@ class RepositoryTab(QWidget):
         header.setMinimumHeight(50)
         header.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
-        layout = QVBoxLayout(header)
+        layout = QHBoxLayout(header)
         layout.setContentsMargins(15, 8, 15, 8)
-        layout.setSpacing(2)
+        layout.setSpacing(10)
+        
+        if icon_name:
+            icon_label = QLabel()
+            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=20))
+            icon_label.setFixedSize(24, 24)
+            layout.addWidget(icon_label)
+        
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(2)
         
         title_label = QLabel(title)
         title_label.setWordWrap(True)
         title_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
-        layout.addWidget(title_label)
+        text_layout.addWidget(title_label)
         
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("color: #888888; font-size: 10px;")
-        layout.addWidget(desc_label)
+        text_layout.addWidget(desc_label)
+        
+        layout.addLayout(text_layout)
         
         return header
     
@@ -378,7 +393,7 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        info_header = self.create_section_header("ℹ️ INFORMACIÓN", "Detalles del repositorio actual")
+        info_header = self.create_section_header("INFORMACIÓN", "Detalles del repositorio actual", "folder")
         layout.addWidget(info_header)
         
         info_container = QWidget()
@@ -400,7 +415,7 @@ class RepositoryTab(QWidget):
         info_group_layout.addWidget(info_header)
         info_group_layout.addWidget(info_container)
         
-        diff_header = self.create_section_header("📄 DIFERENCIAS", "Cambios en el archivo seleccionado")
+        diff_header = self.create_section_header("DIFERENCIAS", "Cambios en el archivo seleccionado", "git-diff")
         
         diff_container = QWidget()
         diff_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
@@ -432,7 +447,7 @@ class RepositoryTab(QWidget):
         diff_group_layout.addWidget(diff_header)
         diff_group_layout.addWidget(diff_container)
         
-        history_header = self.create_section_header("📜 HISTORIAL", "Últimos commits del repositorio")
+        history_header = self.create_section_header("HISTORIAL", "Últimos commits del repositorio", "git-commit")
         
         history_container = QWidget()
         history_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
@@ -541,7 +556,7 @@ class RepositoryTab(QWidget):
         self.changes_list.clear()
         
         if not status:
-            item = QListWidgetItem("✅ No hay cambios - Todo está actualizado")
+            item = QListWidgetItem("✓ No hay cambios - Todo está actualizado")
             item.setForeground(QColor("#4ec9b0"))
             font = QFont("Segoe UI", 11)
             font.setBold(True)
@@ -551,15 +566,21 @@ class RepositoryTab(QWidget):
         
         for file_path, state in status.items():
             if state in ["M", "A", "D"]:
-                state_icon = {"M": "📝", "A": "✨", "D": "🗑️"}.get(state, "�")
                 state_text = {"M": "Modificado", "A": "Agregado", "D": "Eliminado"}.get(state, state)
                 state_color = {"M": "#dcdcaa", "A": "#4ec9b0", "D": "#f48771"}.get(state, "#cccccc")
                 
-                item = QListWidgetItem(f"{state_icon}  {file_path}")
+                item = QListWidgetItem(f"  {file_path}")
+                if state == "M":
+                    item.setIcon(self.icon_manager.get_icon("file-text", size=16))
+                elif state == "A":
+                    item.setIcon(self.icon_manager.get_icon("file-plus", size=16))
+                elif state == "D":
+                    item.setIcon(self.icon_manager.get_icon("file-x", size=16))
                 item.setToolTip(f"{state_text}: {file_path}")
                 item.setForeground(QColor(state_color))
             else:
-                item = QListWidgetItem(f"❔  {file_path}")
+                item = QListWidgetItem(f"  {file_path}")
+                item.setIcon(self.icon_manager.get_icon("file", size=16))
                 item.setToolTip(f"Sin seguimiento: {file_path}")
                 item.setForeground(QColor("#858585"))
             
@@ -674,7 +695,8 @@ class RepositoryTab(QWidget):
         history = self.git_manager.get_commit_history(20)
         
         if not history:
-            item = QListWidgetItem("📭 No hay commits todavía")
+            item = QListWidgetItem("  No hay commits todavía")
+            item.setIcon(self.icon_manager.get_icon("folder", size=16))
             item.setForeground(QColor("#858585"))
             font = QFont("Segoe UI", 11)
             font.setBold(True)
@@ -778,13 +800,15 @@ class RepositoryTab(QWidget):
             }
         """)
         
-        create_branch_action = QAction("🌿 Crear rama desde aquí", self)
+        create_branch_action = QAction("  Crear rama desde aquí", self)
+        create_branch_action.setIcon(self.icon_manager.get_icon("git-branch", size=16))
         create_branch_action.triggered.connect(lambda: self.create_branch_from_commit_quick(commit_hash))
         menu.addAction(create_branch_action)
         
         menu.addSeparator()
         
-        reset_soft_action = QAction("🔙 Reset Soft (mantener cambios)", self)
+        reset_soft_action = QAction("  Reset Soft (mantener cambios)", self)
+        reset_soft_action.setIcon(self.icon_manager.get_icon("git-commit", size=16))
         reset_soft_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'soft'))
         menu.addAction(reset_soft_action)
         

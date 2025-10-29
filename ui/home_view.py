@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QSizePolicy, QScrollArea)
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QFont
+from ui.icon_manager import IconManager
 import os
 
 class HomeView(QWidget):
@@ -12,6 +13,7 @@ class HomeView(QWidget):
     def __init__(self, settings_manager=None, parent=None):
         super().__init__(parent)
         self.settings_manager = settings_manager
+        self.icon_manager = IconManager()
         self.init_ui()
         
     def init_ui(self):
@@ -76,9 +78,10 @@ class HomeView(QWidget):
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         
         open_btn = self.create_action_button(
-            "📁 Abrir Repositorio",
+            " Abrir Repositorio",
             "Abre un repositorio Git existente",
-            "#0e639c"
+            "#0e639c",
+            "folder-open"
         )
         open_btn.clicked.connect(self.open_repo_requested.emit)
         buttons_layout.addWidget(open_btn)
@@ -135,25 +138,33 @@ class HomeView(QWidget):
         tips_layout = QVBoxLayout(tips_container)
         tips_layout.setSpacing(12)
         
-        tips_title = QLabel("💡 Consejos Rápidos")
+        tips_title_layout = QHBoxLayout()
+        tips_icon = QLabel()
+        tips_icon.setPixmap(self.icon_manager.get_pixmap("lightbulb", size=20))
+        tips_title_layout.addWidget(tips_icon)
+        
+        tips_title = QLabel(" Consejos Rápidos")
         tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #4ec9b0;")
-        tips_layout.addWidget(tips_title)
+        tips_title_layout.addWidget(tips_title)
+        tips_title_layout.addStretch()
+        tips_layout.addLayout(tips_title_layout)
         
         tips = [
-            ("⌨️", "Ctrl+T para nueva pestaña, Ctrl+W para cerrar"),
-            ("🎮", "Git LFS es esencial para proyectos de Unreal Engine"),
-            ("💬", "Escribe mensajes de commit descriptivos y claros"),
-            ("🔄", "Usa Pull antes de Push para evitar conflictos"),
-            ("🌿", "Crea ramas para nuevas características"),
+            ("plus-circle", "Ctrl+T para nueva pestaña, Ctrl+W para cerrar"),
+            ("file-code", "Git LFS es esencial para proyectos de Unreal Engine"),
+            ("git-commit", "Escribe mensajes de commit descriptivos y claros"),
+            ("git-diff", "Usa Pull antes de Push para evitar conflictos"),
+            ("git-branch", "Crea ramas para nuevas características"),
         ]
         
-        for icon, tip in tips:
+        for icon_name, tip in tips:
             tip_container = QWidget()
             tip_layout = QHBoxLayout(tip_container)
             tip_layout.setContentsMargins(0, 0, 0, 0)
             tip_layout.setSpacing(10)
             
-            icon_label = QLabel(icon)
+            icon_label = QLabel()
+            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=16))
             icon_label.setStyleSheet("font-size: 16px;")
             icon_label.setFixedWidth(30)
             tip_layout.addWidget(icon_label)
@@ -181,7 +192,7 @@ class HomeView(QWidget):
         footer_layout.setSpacing(5)
         footer_layout.setContentsMargins(0, 20, 0, 0)
         
-        shortcuts_label = QLabel("💡 Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar")
+        shortcuts_label = QLabel("Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar")
         shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         shortcuts_label.setWordWrap(True)
         shortcuts_label.setStyleSheet("color: #666666; font-size: 11px;")
@@ -225,9 +236,16 @@ class HomeView(QWidget):
         layout = QVBoxLayout(section)
         layout.setSpacing(10)
         
-        header = QLabel("📚 Repositorios Recientes")
+        header_layout = QHBoxLayout()
+        header_icon = QLabel()
+        header_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=20))
+        header_layout.addWidget(header_icon)
+        
+        header = QLabel(" Repositorios Recientes")
         header.setStyleSheet("color: #ffffff; font-size: 15px; font-weight: bold;")
-        layout.addWidget(header)
+        header_layout.addWidget(header)
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
         
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -278,7 +296,8 @@ class HomeView(QWidget):
         is_unreal = os.path.exists(os.path.join(repo_path, 'Content')) or \
                     any(f.endswith('.uproject') for f in os.listdir(repo_path) if os.path.isfile(os.path.join(repo_path, f)))
         
-        icon = "🎮" if is_unreal else "📁"
+        icon_name = "file-code" if is_unreal else "folder"
+        btn.setIcon(self.icon_manager.get_icon(icon_name, size=24))
         
         btn.setStyleSheet("""
             QPushButton {
@@ -298,7 +317,7 @@ class HomeView(QWidget):
             }
         """)
         
-        btn.setText(f"{icon}  {repo_name}\n    📍 {repo_path}")
+        btn.setText(f"{repo_name}\n    {repo_path}")
         btn.clicked.connect(lambda: self.open_recent_repo.emit(repo_path))
         
         return btn
@@ -306,12 +325,17 @@ class HomeView(QWidget):
     def refresh_recent_repos(self):
         self.init_ui()
         
-    def create_action_button(self, text, description, color):
+    def create_action_button(self, text, description, color, icon_name=None):
         button = QPushButton()
         button.setMinimumHeight(80)
         button.setMaximumHeight(100)
         button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        if icon_name:
+            button.setIcon(self.icon_manager.get_icon(icon_name, size=32))
+            button.setIconSize(QSize(32, 32))
+        
         button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {color};
