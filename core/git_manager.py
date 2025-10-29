@@ -1,6 +1,7 @@
 import subprocess
 import os
 from pathlib import Path
+import re
 
 class GitManager:
     def __init__(self):
@@ -128,6 +129,34 @@ class GitManager:
         
         return info
         
+    def translate_relative_date(self, date_str):
+        translations = {
+            'second': 'segundo',
+            'seconds': 'segundos',
+            'minute': 'minuto',
+            'minutes': 'minutos',
+            'hour': 'hora',
+            'hours': 'horas',
+            'day': 'día',
+            'days': 'días',
+            'week': 'semana',
+            'weeks': 'semanas',
+            'month': 'mes',
+            'months': 'meses',
+            'year': 'año',
+            'years': 'años',
+            'ago': 'hace',
+        }
+        
+        result = date_str.lower()
+        for eng, esp in translations.items():
+            result = re.sub(r'\b' + eng + r'\b', esp, result)
+        
+        result = result.replace(' hace', '')
+        result = f'hace {result.strip()}'
+        
+        return result
+    
     def get_commit_history(self, limit=20):
         success, result = self.run_command(
             f'git log --pretty=format:"%H|||%an|||%ae|||%ad|||%s" --date=relative -n {limit}'
@@ -141,11 +170,12 @@ class GitManager:
             if '|||' in line:
                 parts = line.split('|||')
                 if len(parts) >= 5:
+                    date_spanish = self.translate_relative_date(parts[3])
                     commits.append({
                         'hash': parts[0],
                         'author': parts[1],
                         'email': parts[2],
-                        'date': parts[3],
+                        'date': date_spanish,
                         'message': parts[4]
                     })
         
