@@ -77,7 +77,7 @@ class RepositoryTab(QWidget):
         
     def create_top_bar(self):
         self.top_bar = QFrame()
-        self.top_bar.setMaximumHeight(80)
+        self.top_bar.setMaximumHeight(70)
         self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.top_bar.setStyleSheet("""
             QFrame {
@@ -87,7 +87,7 @@ class RepositoryTab(QWidget):
         """)
         
         layout = QHBoxLayout(self.top_bar)
-        layout.setContentsMargins(15, 10, 15, 10)
+        layout.setContentsMargins(15, 8, 15, 8)
         layout.setSpacing(15)
         
         branch_container = QWidget()
@@ -98,23 +98,23 @@ class RepositoryTab(QWidget):
         
         branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
         branch_title.setStyleSheet("color: #888888; font-size: 9px; font-weight: bold;")
-        branch_title.setMaximumHeight(15)
+        branch_title.setMaximumHeight(14)
         branch_layout.addWidget(branch_title)
         
         self.branch_button = QPushButton()
         self.branch_button.setText("main")
-        self.branch_button.setMinimumSize(180, 36)
-        self.branch_button.setMaximumHeight(36)
+        self.branch_button.setMinimumSize(180, 28)
+        self.branch_button.setMaximumHeight(28)
         self.branch_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.branch_button.setStyleSheet("""
             QPushButton {
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 13px;
                 color: #4ec9b0;
                 background-color: #1e1e1e;
                 border: 2px solid #4ec9b0;
-                border-radius: 6px;
-                padding: 8px 15px;
+                border-radius: 5px;
+                padding: 2px 12px;
                 text-align: left;
             }
             QPushButton:hover {
