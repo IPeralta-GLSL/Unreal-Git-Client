@@ -137,14 +137,10 @@ class MainWindow(QMainWindow):
                 current_tab.clone_repository(url, path)
                 
     def close_tab(self, index):
-        if self.tab_widget.count() > 1:
-            self.tab_widget.removeTab(index)
-        else:
-            QMessageBox.information(
-                self,
-                "No se puede cerrar",
-                "Debe haber al menos una pestaña abierta."
-            )
+        self.tab_widget.removeTab(index)
+        
+        if self.tab_widget.count() == 0:
+            self.add_empty_tab()
             
     def close_current_tab(self):
         current_index = self.tab_widget.currentIndex()

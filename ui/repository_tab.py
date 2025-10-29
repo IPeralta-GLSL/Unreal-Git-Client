@@ -585,6 +585,14 @@ class RepositoryTab(QWidget):
             self.settings_manager.add_recent_repo(path, repo_name)
             self.home_view.refresh_recent_repos()
         
+        if self.parent_window:
+            repo_name = os.path.basename(path)
+            tab_widget = self.parent_window.tab_widget
+            current_index = tab_widget.indexOf(self)
+            if current_index >= 0:
+                tab_widget.setTabText(current_index, f" {repo_name}")
+                tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder", size=16))
+        
         self.show_repo_view()
         self.refresh_status()
         self.update_repo_info()
