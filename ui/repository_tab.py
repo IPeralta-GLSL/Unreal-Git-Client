@@ -9,6 +9,7 @@ from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 import os
+import sys
 import hashlib
 
 class CloneThread(QThread):
@@ -169,6 +170,34 @@ class RepositoryTab(QWidget):
         self.refresh_btn.setToolTip("Actualizar estado del repositorio")
         self.refresh_btn.clicked.connect(self.refresh_status)
         layout.addWidget(self.refresh_btn)
+        
+        separator = QWidget()
+        separator.setFixedWidth(1)
+        separator.setFixedHeight(24)
+        separator.setStyleSheet("background-color: #3d3d3d;")
+        layout.addWidget(separator)
+        
+        self.open_folder_btn = QPushButton()
+        self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=20))
+        self.open_folder_btn.setFixedSize(36, 36)
+        self.open_folder_btn.setToolTip("Abrir carpeta del proyecto")
+        self.open_folder_btn.clicked.connect(self.open_project_folder)
+        layout.addWidget(self.open_folder_btn)
+        
+        self.open_terminal_btn = QPushButton()
+        self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=20))
+        self.open_terminal_btn.setFixedSize(36, 36)
+        self.open_terminal_btn.setToolTip("Abrir terminal en la carpeta del proyecto")
+        self.open_terminal_btn.clicked.connect(self.open_terminal)
+        layout.addWidget(self.open_terminal_btn)
+        
+        if self.git_manager.is_unreal_project():
+            self.open_unreal_btn = QPushButton()
+            self.open_unreal_btn.setIcon(self.icon_manager.get_icon("plugs-connected", size=20))
+            self.open_unreal_btn.setFixedSize(36, 36)
+            self.open_unreal_btn.setToolTip("Abrir proyecto con Unreal Engine")
+            self.open_unreal_btn.clicked.connect(self.open_with_unreal)
+            layout.addWidget(self.open_unreal_btn)
         
     def create_left_panel(self):
         widget = QWidget()
@@ -1316,3 +1345,63 @@ class RepositoryTab(QWidget):
             }
         """
         self.history_list.setStyleSheet(history_style)
+    
+    def open_project_folder(self):
+        import subprocess
+        import platform
+        
+        repo_path = os.path.abspath(self.git_manager.repo_path)
+        
+        system = platform.system()
+        if system == "Windows":
+            subprocess.Popen(['explorer', repo_path])
+        elif system == "Darwin":
+            subprocess.Popen(["open", repo_path])
+        else:
+            subprocess.Popen(["xdg-open", repo_path])
+    
+    def open_terminal(self):
+        import subprocess
+        import platform
+        
+        repo_path = os.path.abspath(self.git_manager.repo_path)
+        
+        system = platform.system()
+        if system == "Windows":
+            subprocess.Popen(["cmd.exe", "/K", f"cd /d {repo_path}"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        elif system == "Darwin":
+            subprocess.Popen(["open", "-a", "Terminal", repo_path])
+        else:
+            subprocess.Popen(["gnome-terminal", "--working-directory", repo_path])
+    
+    def open_with_unreal(self):
+        import subprocess
+        import os
+        
+        repo_path = self.git_manager.repo_path
+        
+        uproject_files = [f for f in os.listdir(repo_path) if f.endswith('.uproject')]
+        
+        if not uproject_files:
+            QMessageBox.warning(
+                self,
+                "Archivo no encontrado",
+                "No se encontró ningún archivo .uproject en la carpeta del proyecto."
+            )
+            return
+        
+        uproject_path = os.path.join(repo_path, uproject_files[0])
+        
+        try:
+            if os.name == 'nt':
+                os.startfile(uproject_path)
+            elif sys.platform == 'darwin':
+                subprocess.Popen(["open", uproject_path])
+            else:
+                subprocess.Popen(["xdg-open", uproject_path])
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"No se pudo abrir el proyecto con Unreal Engine:\n{str(e)}"
+            )
