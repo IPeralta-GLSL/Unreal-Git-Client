@@ -65,10 +65,13 @@ class RepositoryTab(QWidget):
         left_panel = self.create_left_panel()
         splitter.addWidget(left_panel)
         
+        middle_panel = self.create_middle_panel()
+        splitter.addWidget(middle_panel)
+        
         right_panel = self.create_right_panel()
         splitter.addWidget(right_panel)
         
-        splitter.setSizes([350, 1050])
+        splitter.setSizes([350, 400, 650])
         splitter.setHandleWidth(2)
         
         repo_layout.addWidget(splitter)
@@ -432,6 +435,56 @@ class RepositoryTab(QWidget):
         
         return header
     
+    def create_middle_panel(self):
+        widget = QWidget()
+        widget.setStyleSheet("background-color: #1e1e1e;")
+        widget.setMinimumWidth(300)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        history_header = self.create_section_header("HISTORIAL", "Últimos commits del repositorio", "git-commit")
+        layout.addWidget(history_header)
+        
+        history_container = QWidget()
+        history_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
+        history_layout = QVBoxLayout(history_container)
+        history_layout.setContentsMargins(10, 10, 10, 10)
+        
+        self.history_list = QListWidget()
+        self.history_list.setStyleSheet("""
+            QListWidget {
+                background-color: #1e1e1e;
+                border: 1px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 5px;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
+            }
+            QListWidget::item {
+                padding: 12px 10px;
+                border-left: 3px solid transparent;
+                border-radius: 4px;
+                margin: 3px 0;
+            }
+            QListWidget::item:hover {
+                background-color: #2d2d2d;
+                border-left-color: #4ec9b0;
+            }
+            QListWidget::item:selected {
+                background-color: #094771;
+                border-left-color: #007acc;
+            }
+        """)
+        self.history_list.itemClicked.connect(self.on_commit_selected)
+        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.history_list.customContextMenuRequested.connect(self.show_commit_context_menu)
+        history_layout.addWidget(self.history_list)
+        
+        layout.addWidget(history_container)
+        
+        return widget
+    
     def create_right_panel(self):
         widget = QWidget()
         widget.setStyleSheet("background-color: #1e1e1e;")
@@ -495,49 +548,6 @@ class RepositoryTab(QWidget):
         diff_group_layout.addWidget(diff_header)
         diff_group_layout.addWidget(diff_container)
         
-        history_header = self.create_section_header("HISTORIAL", "Últimos commits del repositorio", "git-commit")
-        
-        history_container = QWidget()
-        history_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
-        history_layout = QVBoxLayout(history_container)
-        history_layout.setContentsMargins(10, 10, 10, 10)
-        
-        self.history_list = QListWidget()
-        self.history_list.setStyleSheet("""
-            QListWidget {
-                background-color: #1e1e1e;
-                border: 1px solid #3d3d3d;
-                border-radius: 5px;
-                padding: 5px;
-                font-family: 'Segoe UI', 'Arial', sans-serif;
-            }
-            QListWidget::item {
-                padding: 12px 10px;
-                border-left: 3px solid transparent;
-                border-radius: 4px;
-                margin: 3px 0;
-            }
-            QListWidget::item:hover {
-                background-color: #2d2d2d;
-                border-left-color: #4ec9b0;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-                border-left-color: #007acc;
-            }
-        """)
-        self.history_list.itemClicked.connect(self.on_commit_selected)
-        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.history_list.customContextMenuRequested.connect(self.show_commit_context_menu)
-        history_layout.addWidget(self.history_list)
-        
-        history_group = QWidget()
-        history_group_layout = QVBoxLayout(history_group)
-        history_group_layout.setContentsMargins(0, 0, 0, 0)
-        history_group_layout.setSpacing(0)
-        history_group_layout.addWidget(history_header)
-        history_group_layout.addWidget(history_container)
-        
         right_splitter = QSplitter(Qt.Orientation.Vertical)
         right_splitter.setHandleWidth(3)
         right_splitter.setStyleSheet("""
@@ -550,11 +560,9 @@ class RepositoryTab(QWidget):
         """)
         right_splitter.addWidget(info_group)
         right_splitter.addWidget(diff_group)
-        right_splitter.addWidget(history_group)
         right_splitter.setStretchFactor(0, 1)
-        right_splitter.setStretchFactor(1, 3)
-        right_splitter.setStretchFactor(2, 3)
-        right_splitter.setSizes([150, 400, 400])
+        right_splitter.setStretchFactor(1, 4)
+        right_splitter.setSizes([150, 600])
         
         layout.addWidget(right_splitter)
         
