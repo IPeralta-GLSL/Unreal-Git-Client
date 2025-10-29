@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QRect
-from PyQt6.QtGui import QPainter, QPen, QColor, QBrush, QFont, QPainterPath
+from PyQt6.QtGui import QPainter, QPen, QColor, QBrush, QFont, QPainterPath, QPixmap
 import math
 
 class CommitGraphWidget(QWidget):
@@ -21,17 +21,27 @@ class CommitGraphWidget(QWidget):
         ]
         self.branch_colors = {}
         self.node_radius = 8
-        self.row_height = 60
+        self.row_height = 70
         self.left_margin = 20
         self.graph_width = 200
+        self.avatar_size = 32
         self.setMinimumHeight(400)
         self.selected_commit = None
+        self.avatars = {}
         
     def set_commits(self, commits):
         self.commits = commits
         self.branch_colors = {}
         self.calculate_positions()
         self.update()
+    
+    def set_avatar(self, email, pixmap):
+        if pixmap and not pixmap.isNull():
+            scaled = pixmap.scaled(self.avatar_size, self.avatar_size, 
+                                  Qt.AspectRatioMode.KeepAspectRatio,
+                                  Qt.TransformationMode.SmoothTransformation)
+            self.avatars[email] = scaled
+            self.update()
         
     def calculate_positions(self):
         columns = {}
@@ -102,8 +112,43 @@ class CommitGraphWidget(QWidget):
             painter.drawEllipse(x - self.node_radius, y - self.node_radius, 
                               self.node_radius * 2, self.node_radius * 2)
         
-        text_x = self.graph_width
-        text_y = y - 15
+        email = commit.get('email', '')
+        avatar_x = self.graph_width - self.avatar_size - 10
+        avatar_y = y - self.avatar_size // 2
+        
+        if email in self.avatars:
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
+            path = QPainterPath()
+            path.addEllipse(avatar_x, avatar_y, self.avatar_size, self.avatar_size)
+            painter.setClipPath(path)
+            
+            painter.drawPixmap(avatar_x, avatar_y, self.avatars[email])
+            painter.restore()
+        else:
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
+            author = commit.get('author', 'Unknown')
+            colors = ['#4ec9b0', '#007acc', '#c586c0', '#dcdcaa', '#ce9178', '#4fc1ff', '#b5cea8']
+            color_index = sum(ord(c) for c in author) % len(colors)
+            bg_color = QColor(colors[color_index])
+            
+            painter.setBrush(QBrush(bg_color))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawEllipse(avatar_x, avatar_y, self.avatar_size, self.avatar_size)
+            
+            initials = self.get_initials(author)
+            painter.setPen(QColor('#ffffff'))
+            font = QFont('Arial', 11, QFont.Weight.Bold)
+            painter.setFont(font)
+            painter.drawText(avatar_x, avatar_y, self.avatar_size, self.avatar_size, 
+                           Qt.AlignmentFlag.AlignCenter, initials)
+            painter.restore()
+        
+        text_x = self.graph_width + 10
+        text_y = y - 20
         
         painter.setPen(QPen(QColor("#ffffff")))
         font = QFont("Segoe UI", 10, QFont.Weight.Bold)
@@ -124,6 +169,14 @@ class CommitGraphWidget(QWidget):
         
         info_text = f"{author}  •  {date}  •  {hash_short}"
         painter.drawText(text_x, text_y + 20, info_text)
+    
+    def get_initials(self, name):
+        parts = name.strip().split()
+        if len(parts) >= 2:
+            return (parts[0][0] + parts[-1][0]).upper()
+        elif len(parts) == 1 and len(parts[0]) > 0:
+            return parts[0][0].upper()
+        return "?"
         
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

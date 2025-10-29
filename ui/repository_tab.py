@@ -772,10 +772,15 @@ class RepositoryTab(QWidget):
                 'hash': commit['hash'],
                 'message': commit['message'],
                 'author': commit['author'],
+                'email': commit.get('email', ''),
                 'date': commit['date'],
                 'branch': branch
             }
             formatted_commits.append(formatted_commit)
+            
+            email = commit.get('email', '')
+            if email and email not in self.avatar_cache:
+                self.download_gravatar(email, commit['author'])
         
         self.commit_graph.set_commits(formatted_commits)
             
@@ -1123,6 +1128,8 @@ class RepositoryTab(QWidget):
                 
                 icon = QIcon(rounded_pixmap)
                 self.avatar_cache[email] = icon
+                
+                self.commit_graph.set_avatar(email, rounded_pixmap)
         
         reply.deleteLater()
     
