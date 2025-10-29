@@ -3,10 +3,12 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
                              QSizePolicy, QMenu, QInputDialog, QApplication)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint
-from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl
+from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
 import os
+import hashlib
 
 class CloneThread(QThread):
     progress = pyqtSignal(str)
@@ -23,11 +25,15 @@ class CloneThread(QThread):
         self.finished.emit(success, message)
 
 class RepositoryTab(QWidget):
-    def __init__(self, git_manager, parent_window=None):
+    def __init__(self, git_manager, settings_manager=None, parent_window=None):
         super().__init__()
         self.git_manager = git_manager
+        self.settings_manager = settings_manager
         self.repo_path = None
         self.parent_window = parent_window
+        self.avatar_cache = {}
+        self.network_manager = QNetworkAccessManager()
+        self.network_manager.finished.connect(self.on_avatar_downloaded)
         self.init_ui()
         
     def init_ui(self):
@@ -37,9 +43,10 @@ class RepositoryTab(QWidget):
         
         self.stacked_widget = QStackedWidget()
         
-        self.home_view = HomeView()
+        self.home_view = HomeView(self.settings_manager)
         self.home_view.open_repo_requested.connect(self.on_home_open_repo)
         self.home_view.clone_repo_requested.connect(self.on_home_clone_repo)
+        self.home_view.open_recent_repo.connect(self.load_repository)
         self.stacked_widget.addWidget(self.home_view)
         
         self.repo_view = QWidget()
@@ -460,6 +467,12 @@ class RepositoryTab(QWidget):
     def load_repository(self, path):
         self.repo_path = path
         self.git_manager.set_repository(path)
+        
+        if self.settings_manager:
+            repo_name = os.path.basename(path)
+            self.settings_manager.add_recent_repo(path, repo_name)
+            self.home_view.refresh_recent_repos()
+        
         self.show_repo_view()
         self.refresh_status()
         self.update_repo_info()
@@ -623,20 +636,31 @@ class RepositoryTab(QWidget):
             commit_hash = commit['hash'][:7]
             message = commit['message']
             author = commit['author']
+            author_email = commit.get('email', '')
             date = commit['date']
             
-            display_text = f"● {commit_hash}\n"
-            display_text += f"  {message}\n"
-            display_text += f"  👤 {author}  •  🕒 {date}"
-            
-            item = QListWidgetItem(display_text)
+            item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, commit['hash'])
-            item.setToolTip(f"Commit: {commit['hash']}\nAutor: {author}\nFecha: {date}\n\n{message}")
+            item.setData(Qt.ItemDataRole.UserRole + 1, author_email)
+            item.setToolTip(f"Commit: {commit['hash']}\nAutor: {author}\nEmail: {author_email}\nFecha: {date}\n\n{message}")
+            
+            item.setSizeHint(QSize(0, 70))
+            
+            avatar_icon = self.get_avatar_icon(author_email, author)
+            if avatar_icon:
+                item.setIcon(avatar_icon)
+            
+            display_text = f"{commit_hash} • {message}\n"
+            display_text += f"{author}  •  {date}"
+            item.setText(display_text)
             
             font = QFont("Segoe UI", 10)
             item.setFont(font)
             
             self.history_list.addItem(item)
+            
+            if author_email and author_email not in self.avatar_cache:
+                self.download_gravatar(author_email, author)
             
     def on_commit_selected(self, item):
         commit_hash = item.data(Qt.ItemDataRole.UserRole)
@@ -951,6 +975,87 @@ class RepositoryTab(QWidget):
         if dialog.exec():
             self.refresh_status()
             self.update_repo_info()
+    
+    def get_avatar_icon(self, email, author_name):
+        if email in self.avatar_cache:
+            return self.avatar_cache[email]
+        
+        return self.create_initial_avatar(author_name)
+    
+    def create_initial_avatar(self, author_name):
+        pixmap = QPixmap(48, 48)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        colors = ['#4ec9b0', '#007acc', '#c586c0', '#dcdcaa', '#ce9178', '#4fc1ff', '#b5cea8']
+        color_index = sum(ord(c) for c in author_name) % len(colors)
+        color = QColor(colors[color_index])
+        
+        painter.setBrush(QBrush(color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(0, 0, 48, 48)
+        
+        initials = self.get_initials(author_name)
+        painter.setPen(QColor('#ffffff'))
+        font = QFont('Arial', 16, QFont.Weight.Bold)
+        painter.setFont(font)
+        painter.drawText(0, 0, 48, 48, Qt.AlignmentFlag.AlignCenter, initials)
+        
+        painter.end()
+        
+        return QIcon(pixmap)
+    
+    def get_initials(self, name):
+        parts = name.strip().split()
+        if len(parts) >= 2:
+            return (parts[0][0] + parts[-1][0]).upper()
+        elif len(parts) == 1 and len(parts[0]) > 0:
+            return parts[0][0].upper()
+        return "?"
+    
+    def download_gravatar(self, email, author_name):
+        if not email or '@' not in email:
+            return
+        
+        email_hash = hashlib.md5(email.lower().encode()).hexdigest()
+        url = f"https://www.gravatar.com/avatar/{email_hash}?s=48&d=404"
+        
+        request = QNetworkRequest(QUrl(url))
+        request.setAttribute(QNetworkRequest.Attribute.User, (email, author_name))
+        self.network_manager.get(request)
+    
+    def on_avatar_downloaded(self, reply):
+        if reply.error() == reply.NetworkError.NoError:
+            email, author_name = reply.request().attribute(QNetworkRequest.Attribute.User)
+            image_data = reply.readAll()
+            
+            pixmap = QPixmap()
+            if pixmap.loadFromData(image_data):
+                pixmap = pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, 
+                                      Qt.TransformationMode.SmoothTransformation)
+                
+                rounded_pixmap = QPixmap(48, 48)
+                rounded_pixmap.fill(Qt.GlobalColor.transparent)
+                
+                painter = QPainter(rounded_pixmap)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                painter.setBrush(QBrush(pixmap))
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawEllipse(0, 0, 48, 48)
+                painter.end()
+                
+                icon = QIcon(rounded_pixmap)
+                self.avatar_cache[email] = icon
+                
+                for i in range(self.history_list.count()):
+                    item = self.history_list.item(i)
+                    item_email = item.data(Qt.ItemDataRole.UserRole + 1)
+                    if item_email == email:
+                        item.setIcon(icon)
+        
+        reply.deleteLater()
     
     def detect_unreal_project(self):
         if not self.repo_path:

@@ -1,14 +1,17 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                             QLabel, QFrame, QSpacerItem, QSizePolicy)
+                             QLabel, QFrame, QSizePolicy, QScrollArea)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
+import os
 
 class HomeView(QWidget):
     open_repo_requested = pyqtSignal()
     clone_repo_requested = pyqtSignal()
+    open_recent_repo = pyqtSignal(str)
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, settings_manager=None, parent=None):
+        super().__init__(parent)
+        self.settings_manager = settings_manager
         self.init_ui()
         
     def init_ui(self):
@@ -17,8 +20,7 @@ class HomeView(QWidget):
         layout.setSpacing(30)
         layout.setContentsMargins(20, 20, 20, 20)
         
-        spacer_top = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        layout.addItem(spacer_top)
+        layout.addStretch()
         
         logo_label = QLabel("🎮")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -95,8 +97,13 @@ class HomeView(QWidget):
         
         layout.addWidget(tips_container, alignment=Qt.AlignmentFlag.AlignCenter)
         
-        spacer_bottom = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        layout.addItem(spacer_bottom)
+        layout.addStretch()
+        
+        recent_section = self.create_recent_repos_section()
+        if recent_section:
+            layout.addWidget(recent_section)
+        
+        layout.addStretch()
         
         version_label = QLabel("v1.0.0 • Soporte para Git LFS y Unreal Engine")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -109,6 +116,109 @@ class HomeView(QWidget):
                 background-color: #1e1e1e;
             }
         """)
+    
+    def create_recent_repos_section(self):
+        if not self.settings_manager:
+            return None
+        
+        recent_repos = self.settings_manager.get_recent_repos()
+        if not recent_repos:
+            return None
+        
+        section = QFrame()
+        section.setStyleSheet("""
+            QFrame {
+                background-color: #252526;
+                border-radius: 10px;
+                padding: 15px;
+            }
+        """)
+        section.setMaximumWidth(700)
+        section.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        
+        layout = QVBoxLayout(section)
+        layout.setSpacing(10)
+        
+        header = QLabel("📚 Repositorios Recientes")
+        header.setStyleSheet("color: #ffffff; font-size: 16px; font-weight: bold;")
+        layout.addWidget(header)
+        
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setMaximumHeight(250)
+        scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollBar:vertical {
+                background-color: #1e1e1e;
+                width: 10px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #3d3d3d;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #4d4d4d;
+            }
+        """)
+        
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(8)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        
+        for repo in recent_repos[:8]:
+            repo_btn = self.create_recent_repo_item(repo)
+            scroll_layout.addWidget(repo_btn)
+        
+        scroll_layout.addStretch()
+        scroll.setWidget(scroll_widget)
+        layout.addWidget(scroll)
+        
+        return section
+    
+    def create_recent_repo_item(self, repo):
+        btn = QPushButton()
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        btn.setMinimumHeight(60)
+        
+        repo_name = repo.get('name', os.path.basename(repo['path']))
+        repo_path = repo['path']
+        
+        is_unreal = os.path.exists(os.path.join(repo_path, 'Content')) or \
+                    any(f.endswith('.uproject') for f in os.listdir(repo_path) if os.path.isfile(os.path.join(repo_path, f)))
+        
+        icon = "🎮" if is_unreal else "📁"
+        
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1e1e1e;
+                border: 2px solid #3d3d3d;
+                border-radius: 8px;
+                padding: 12px 15px;
+                text-align: left;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #2d2d2d;
+                border-color: #007acc;
+            }
+            QPushButton:pressed {
+                background-color: #094771;
+            }
+        """)
+        
+        btn.setText(f"{icon}  {repo_name}\n    📍 {repo_path}")
+        btn.clicked.connect(lambda: self.open_recent_repo.emit(repo_path))
+        
+        return btn
+    
+    def refresh_recent_repos(self):
+        self.init_ui()
         
     def create_action_button(self, text, description, color):
         button = QPushButton()

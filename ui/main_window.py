@@ -4,14 +4,18 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
+from ui.clone_dialog import CloneDialog
 from core.git_manager import GitManager
+from core.settings_manager import SettingsManager
 import os
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.git_manager = GitManager()
+        self.settings_manager = SettingsManager()
         self.init_ui()
+        self.setup_shortcuts()
         
     def init_ui(self):
         self.setWindowTitle("Unreal Git Client")
@@ -87,7 +91,7 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Listo")
         
     def add_empty_tab(self):
-        repo_tab = RepositoryTab(self.git_manager, parent_window=self)
+        repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self)
         index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
         self.tab_widget.setCurrentIndex(index)
         

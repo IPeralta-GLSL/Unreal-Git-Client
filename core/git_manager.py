@@ -129,25 +129,26 @@ class GitManager:
         return info
         
     def get_commit_history(self, limit=20):
-        success, output = self.run_command(
-            f"git log -{limit} --pretty=format:'%H|%s|%an|%ar'"
+        success, result = self.run_command(
+            f'git log --pretty=format:"%H|||%an|||%ae|||%ad|||%s" --date=relative -n {limit}'
         )
         
         if not success:
             return []
-            
+        
         commits = []
-        for line in output.split('\n'):
-            if line:
-                parts = line.split('|')
-                if len(parts) == 4:
+        for line in result.splitlines():
+            if '|||' in line:
+                parts = line.split('|||')
+                if len(parts) >= 5:
                     commits.append({
                         'hash': parts[0],
-                        'message': parts[1],
-                        'author': parts[2],
-                        'date': parts[3]
+                        'author': parts[1],
+                        'email': parts[2],
+                        'date': parts[3],
+                        'message': parts[4]
                     })
-                    
+        
         return commits
         
     def get_commit_diff(self, commit_hash):
