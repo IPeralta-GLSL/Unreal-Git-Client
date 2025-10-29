@@ -135,7 +135,91 @@ class RepositoryTab(QWidget):
         
         layout.addWidget(branch_container, 1)
         
-        layout.addStretch()
+        layout.addSpacing(10)
+        
+        separator1 = QWidget()
+        separator1.setFixedWidth(1)
+        separator1.setFixedHeight(24)
+        separator1.setStyleSheet("background-color: #3d3d3d;")
+        layout.addWidget(separator1)
+        
+        layout.addSpacing(10)
+        
+        self.open_folder_btn = QPushButton()
+        self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=20))
+        self.open_folder_btn.setFixedSize(36, 36)
+        self.open_folder_btn.setToolTip("Abrir carpeta del proyecto")
+        self.open_folder_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 1px solid #3d3d3d;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #2d2d2d;
+                border-color: #5fd9c0;
+            }
+            QPushButton:pressed {
+                background-color: #0e639c;
+            }
+        """)
+        self.open_folder_btn.clicked.connect(self.open_project_folder)
+        layout.addWidget(self.open_folder_btn)
+        
+        self.open_terminal_btn = QPushButton()
+        self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=20))
+        self.open_terminal_btn.setFixedSize(36, 36)
+        self.open_terminal_btn.setToolTip("Abrir terminal en la carpeta del proyecto")
+        self.open_terminal_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 1px solid #3d3d3d;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #2d2d2d;
+                border-color: #5fd9c0;
+            }
+            QPushButton:pressed {
+                background-color: #0e639c;
+            }
+        """)
+        self.open_terminal_btn.clicked.connect(self.open_terminal)
+        layout.addWidget(self.open_terminal_btn)
+        
+        self.open_unreal_btn = QPushButton()
+        self.open_unreal_btn.setIcon(self.icon_manager.get_icon("plugs-connected", size=20))
+        self.open_unreal_btn.setFixedSize(36, 36)
+        self.open_unreal_btn.setToolTip("Abrir proyecto con Unreal Engine")
+        self.open_unreal_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 1px solid #3d3d3d;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #2d2d2d;
+                border-color: #5fd9c0;
+            }
+            QPushButton:pressed {
+                background-color: #0e639c;
+            }
+        """)
+        self.open_unreal_btn.clicked.connect(self.open_with_unreal)
+        layout.addWidget(self.open_unreal_btn)
+        
+        if not self.git_manager.is_unreal_project():
+            self.open_unreal_btn.setVisible(False)
+        
+        layout.addSpacing(10)
+        
+        separator2 = QWidget()
+        separator2.setFixedWidth(1)
+        separator2.setFixedHeight(24)
+        separator2.setStyleSheet("background-color: #3d3d3d;")
+        layout.addWidget(separator2)
+        
+        layout.addSpacing(10)
         
         self.pull_btn = QPushButton(" Pull")
         self.pull_btn.setIcon(self.icon_manager.get_icon("download", size=18))
@@ -171,33 +255,7 @@ class RepositoryTab(QWidget):
         self.refresh_btn.clicked.connect(self.refresh_status)
         layout.addWidget(self.refresh_btn)
         
-        separator = QWidget()
-        separator.setFixedWidth(1)
-        separator.setFixedHeight(24)
-        separator.setStyleSheet("background-color: #3d3d3d;")
-        layout.addWidget(separator)
-        
-        self.open_folder_btn = QPushButton()
-        self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=20))
-        self.open_folder_btn.setFixedSize(36, 36)
-        self.open_folder_btn.setToolTip("Abrir carpeta del proyecto")
-        self.open_folder_btn.clicked.connect(self.open_project_folder)
-        layout.addWidget(self.open_folder_btn)
-        
-        self.open_terminal_btn = QPushButton()
-        self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=20))
-        self.open_terminal_btn.setFixedSize(36, 36)
-        self.open_terminal_btn.setToolTip("Abrir terminal en la carpeta del proyecto")
-        self.open_terminal_btn.clicked.connect(self.open_terminal)
-        layout.addWidget(self.open_terminal_btn)
-        
-        if self.git_manager.is_unreal_project():
-            self.open_unreal_btn = QPushButton()
-            self.open_unreal_btn.setIcon(self.icon_manager.get_icon("plugs-connected", size=20))
-            self.open_unreal_btn.setFixedSize(36, 36)
-            self.open_unreal_btn.setToolTip("Abrir proyecto con Unreal Engine")
-            self.open_unreal_btn.clicked.connect(self.open_with_unreal)
-            layout.addWidget(self.open_unreal_btn)
+        layout.addStretch()
         
     def create_left_panel(self):
         widget = QWidget()
@@ -1376,9 +1434,8 @@ class RepositoryTab(QWidget):
     
     def open_with_unreal(self):
         import subprocess
-        import os
         
-        repo_path = self.git_manager.repo_path
+        repo_path = os.path.abspath(self.git_manager.repo_path)
         
         uproject_files = [f for f in os.listdir(repo_path) if f.endswith('.uproject')]
         
