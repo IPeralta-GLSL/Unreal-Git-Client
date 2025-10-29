@@ -8,6 +8,7 @@ from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainte
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
 from ui.icon_manager import IconManager
+from ui.commit_graph_widget import CommitGraphWidget
 import os
 import sys
 import hashlib
@@ -438,13 +439,13 @@ class RepositoryTab(QWidget):
     def create_middle_panel(self):
         widget = QWidget()
         widget.setStyleSheet("background-color: #1e1e1e;")
-        widget.setMinimumWidth(300)
+        widget.setMinimumWidth(400)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        history_header = self.create_section_header("HISTORIAL", "Últimos commits del repositorio", "git-commit")
+        history_header = self.create_section_header("HISTORIAL", "Gráfico de commits del repositorio", "git-commit")
         layout.addWidget(history_header)
         
         history_container = QWidget()
@@ -452,35 +453,37 @@ class RepositoryTab(QWidget):
         history_layout = QVBoxLayout(history_container)
         history_layout.setContentsMargins(10, 10, 10, 10)
         
-        self.history_list = QListWidget()
-        self.history_list.setStyleSheet("""
-            QListWidget {
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setStyleSheet("""
+            QScrollArea {
                 background-color: #1e1e1e;
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
-                padding: 5px;
-                font-family: 'Segoe UI', 'Arial', sans-serif;
             }
-            QListWidget::item {
-                padding: 12px 10px;
-                border-left: 3px solid transparent;
-                border-radius: 4px;
-                margin: 3px 0;
+            QScrollBar:vertical {
+                background-color: #1e1e1e;
+                width: 12px;
+                border-radius: 6px;
             }
-            QListWidget::item:hover {
-                background-color: #2d2d2d;
-                border-left-color: #4ec9b0;
+            QScrollBar::handle:vertical {
+                background-color: #3d3d3d;
+                border-radius: 6px;
+                min-height: 20px;
             }
-            QListWidget::item:selected {
-                background-color: #094771;
-                border-left-color: #007acc;
+            QScrollBar::handle:vertical:hover {
+                background-color: #007acc;
             }
         """)
-        self.history_list.itemClicked.connect(self.on_commit_selected)
-        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.history_list.customContextMenuRequested.connect(self.show_commit_context_menu)
-        history_layout.addWidget(self.history_list)
         
+        self.commit_graph = CommitGraphWidget()
+        self.commit_graph.setStyleSheet("background-color: #1e1e1e;")
+        self.commit_graph.commit_clicked.connect(self.on_graph_commit_clicked)
+        scroll.setWidget(self.commit_graph)
+        
+        history_layout.addWidget(scroll)
         layout.addWidget(history_container)
         
         return widget
@@ -756,49 +759,32 @@ class RepositoryTab(QWidget):
         if not self.repo_path:
             return
             
-        self.history_list.clear()
-        history = self.git_manager.get_commit_history(20)
+        history = self.git_manager.get_commit_history(50)
         
         if not history:
-            item = QListWidgetItem("  No hay commits todavía")
-            item.setIcon(self.icon_manager.get_icon("folder", size=16))
-            item.setForeground(QColor("#858585"))
-            font = QFont("Segoe UI", 11)
-            font.setBold(True)
-            item.setFont(font)
-            self.history_list.addItem(item)
             return
         
+        branch = self.git_manager.get_current_branch()
+        
+        formatted_commits = []
         for commit in history:
-            commit_hash = commit['hash'][:7]
-            message = commit['message']
-            author = commit['author']
-            author_email = commit.get('email', '')
-            date = commit['date']
+            formatted_commit = {
+                'hash': commit['hash'],
+                'message': commit['message'],
+                'author': commit['author'],
+                'date': commit['date'],
+                'branch': branch
+            }
+            formatted_commits.append(formatted_commit)
+        
+        self.commit_graph.set_commits(formatted_commits)
             
-            item = QListWidgetItem()
-            item.setData(Qt.ItemDataRole.UserRole, commit['hash'])
-            item.setData(Qt.ItemDataRole.UserRole + 1, author_email)
-            item.setToolTip(f"Commit: {commit['hash']}\nAutor: {author}\nEmail: {author_email}\nFecha: {date}\n\n{message}")
-            
-            item.setSizeHint(QSize(0, 70))
-            
-            avatar_icon = self.get_avatar_icon(author_email, author)
-            if avatar_icon:
-                item.setIcon(avatar_icon)
-            
-            display_text = f"{commit_hash} • {message}\n"
-            display_text += f"{author}  •  {date}"
-            item.setText(display_text)
-            
-            font = QFont("Segoe UI", 10)
-            item.setFont(font)
-            
-            self.history_list.addItem(item)
-            
-            if author_email and author_email not in self.avatar_cache:
-                self.download_gravatar(author_email, author)
-            
+    def on_graph_commit_clicked(self, commit_hash):
+        if commit_hash:
+            diff = self.git_manager.get_commit_diff(commit_hash)
+            formatted_diff = self.format_diff(diff)
+            self.diff_view.setHtml(formatted_diff)
+    
     def on_commit_selected(self, item):
         commit_hash = item.data(Qt.ItemDataRole.UserRole)
         if commit_hash:
@@ -837,69 +823,7 @@ class RepositoryTab(QWidget):
         return html
     
     def show_commit_context_menu(self, position):
-        item = self.history_list.itemAt(position)
-        if not item:
-            return
-        
-        commit_hash = item.data(Qt.ItemDataRole.UserRole)
-        if not commit_hash:
-            return
-        
-        commit_text = item.text().split('\n')[0].replace('🔹 ', '').split(' - ', 1)
-        commit_msg = commit_text[1] if len(commit_text) > 1 else "Sin mensaje"
-        
-        menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #2d2d2d;
-                color: #cccccc;
-                border: 1px solid #3d3d3d;
-                padding: 5px;
-            }
-            QMenu::item {
-                padding: 8px 25px;
-                border-radius: 3px;
-            }
-            QMenu::item:selected {
-                background-color: #094771;
-            }
-        """)
-        
-        create_branch_action = QAction("  Crear rama desde aquí", self)
-        create_branch_action.setIcon(self.icon_manager.get_icon("git-branch", size=16))
-        create_branch_action.triggered.connect(lambda: self.create_branch_from_commit_quick(commit_hash))
-        menu.addAction(create_branch_action)
-        
-        menu.addSeparator()
-        
-        reset_soft_action = QAction("  Reset Soft (mantener cambios)", self)
-        reset_soft_action.setIcon(self.icon_manager.get_icon("git-commit", size=16))
-        reset_soft_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'soft'))
-        menu.addAction(reset_soft_action)
-        
-        reset_mixed_action = QAction("  Reset Mixed", self)
-        reset_mixed_action.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=16))
-        reset_mixed_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'mixed'))
-        menu.addAction(reset_mixed_action)
-        
-        reset_hard_action = QAction("  Reset Hard (descartar todo)", self)
-        reset_hard_action.setIcon(self.icon_manager.get_icon("x-square", size=16))
-        reset_hard_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'hard'))
-        menu.addAction(reset_hard_action)
-        
-        menu.addSeparator()
-        
-        checkout_action = QAction("  Ver este commit", self)
-        checkout_action.setIcon(self.icon_manager.get_icon("sign-in", size=16))
-        checkout_action.triggered.connect(lambda: self.checkout_commit_quick(commit_hash))
-        menu.addAction(checkout_action)
-        
-        copy_hash_action = QAction("  Copiar hash", self)
-        copy_hash_action.setIcon(self.icon_manager.get_icon("link", size=16))
-        copy_hash_action.triggered.connect(lambda: self.copy_commit_hash(commit_hash))
-        menu.addAction(copy_hash_action)
-        
-        menu.exec(self.history_list.mapToGlobal(position))
+        pass
     
     def create_branch_from_commit_quick(self, commit_hash):
         branch_name, ok = QInputDialog.getText(
@@ -1199,12 +1123,6 @@ class RepositoryTab(QWidget):
                 
                 icon = QIcon(rounded_pixmap)
                 self.avatar_cache[email] = icon
-                
-                for i in range(self.history_list.count()):
-                    item = self.history_list.item(i)
-                    item_email = item.data(Qt.ItemDataRole.UserRole + 1)
-                    if item_email == email:
-                        item.setIcon(icon)
         
         reply.deleteLater()
     
@@ -1379,7 +1297,6 @@ class RepositoryTab(QWidget):
                 background-color: #2d2d2d;
             }
         """
-        self.history_list.setStyleSheet(history_style)
     
     def open_project_folder(self):
         import subprocess
