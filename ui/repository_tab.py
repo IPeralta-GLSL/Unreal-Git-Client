@@ -161,8 +161,9 @@ class RepositoryTab(QWidget):
     def create_left_panel(self):
         widget = QWidget()
         widget.setStyleSheet("background-color: #252526;")
-        widget.setMinimumWidth(280)
-        widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        widget.setMinimumWidth(300)
+        widget.setMaximumWidth(600)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
