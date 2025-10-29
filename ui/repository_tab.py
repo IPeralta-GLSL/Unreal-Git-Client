@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QListWidget, QTextEdit, QPushButton, QLabel,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
-                             QSizePolicy, QMenu)
+                             QSizePolicy, QMenu, QInputDialog, QApplication)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint
-from PyQt6.QtGui import QFont, QIcon, QCursor, QAction
+from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor
 from ui.home_view import HomeView
 import os
 
@@ -170,7 +170,31 @@ class RepositoryTab(QWidget):
         
         self.changes_list = QListWidget()
         self.changes_list.setMinimumHeight(200)
+        self.changes_list.setStyleSheet("""
+            QListWidget {
+                background-color: #1e1e1e;
+                border: 1px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 5px;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 13px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-radius: 4px;
+                margin: 2px;
+                border-left: 3px solid transparent;
+            }
+            QListWidget::item:hover {
+                background-color: #2d2d2d;
+            }
+            QListWidget::item:selected {
+                background-color: #094771;
+                border-left-color: #007acc;
+            }
+        """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
+        self.changes_list.itemDoubleClicked.connect(self.on_change_double_clicked)
         changes_layout.addWidget(self.changes_list)
         
         btn_layout = QHBoxLayout()
@@ -203,9 +227,22 @@ class RepositoryTab(QWidget):
         commit_layout.setContentsMargins(10, 10, 10, 10)
         
         self.commit_message = QTextEdit()
-        self.commit_message.setPlaceholderText("Escribe un mensaje descriptivo de tus cambios...\n\nEjemplo: 'Añadido nuevo nivel con terreno y vegetación'")
-        self.commit_message.setMinimumHeight(80)
-        self.commit_message.setMaximumHeight(120)
+        self.commit_message.setPlaceholderText("Describe tus cambios...")
+        self.commit_message.setMaximumHeight(100)
+        self.commit_message.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.commit_message.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                border: 2px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 8px;
+                font-size: 13px;
+                color: #cccccc;
+            }
+            QTextEdit:focus {
+                border-color: #007acc;
+            }
+        """)
         commit_layout.addWidget(self.commit_message)
         
         self.commit_btn = QPushButton("✅ Hacer Commit y Guardar")
@@ -347,6 +384,18 @@ class RepositoryTab(QWidget):
         self.diff_view.setReadOnly(True)
         self.diff_view.setFont(QFont("Courier New", 10))
         self.diff_view.setPlaceholderText("Selecciona un archivo para ver sus cambios...")
+        self.diff_view.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                border: 1px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 10px;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.6;
+                color: #cccccc;
+            }
+        """)
         diff_layout.addWidget(self.diff_view)
         
         layout.addWidget(diff_container, stretch=2)
@@ -360,6 +409,29 @@ class RepositoryTab(QWidget):
         history_layout.setContentsMargins(10, 10, 10, 10)
         
         self.history_list = QListWidget()
+        self.history_list.setStyleSheet("""
+            QListWidget {
+                background-color: #1e1e1e;
+                border: 1px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 5px;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
+            }
+            QListWidget::item {
+                padding: 12px 10px;
+                border-left: 3px solid transparent;
+                border-radius: 4px;
+                margin: 3px 0;
+            }
+            QListWidget::item:hover {
+                background-color: #2d2d2d;
+                border-left-color: #4ec9b0;
+            }
+            QListWidget::item:selected {
+                background-color: #094771;
+                border-left-color: #007acc;
+            }
+        """)
         self.history_list.itemClicked.connect(self.on_commit_selected)
         self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.history_list.customContextMenuRequested.connect(self.show_commit_context_menu)
@@ -407,29 +479,40 @@ class RepositoryTab(QWidget):
         
         if not status:
             item = QListWidgetItem("✅ No hay cambios - Todo está actualizado")
-            item.setForeground(Qt.GlobalColor.green)
+            item.setForeground(QColor("#4ec9b0"))
+            font = QFont("Segoe UI", 11)
+            font.setBold(True)
+            item.setFont(font)
             self.changes_list.addItem(item)
             return
         
         for file_path, state in status.items():
             if state in ["M", "A", "D"]:
-                state_icon = {"M": "✏️", "A": "➕", "D": "🗑️"}.get(state, "📝")
+                state_icon = {"M": "📝", "A": "✨", "D": "🗑️"}.get(state, "�")
                 state_text = {"M": "Modificado", "A": "Agregado", "D": "Eliminado"}.get(state, state)
-                item_text = f"{state_icon} {state_text}: {file_path}"
-                item = QListWidgetItem(item_text)
-                item.setForeground(Qt.GlobalColor.green)
+                state_color = {"M": "#dcdcaa", "A": "#4ec9b0", "D": "#f48771"}.get(state, "#cccccc")
+                
+                item = QListWidgetItem(f"{state_icon}  {file_path}")
+                item.setToolTip(f"{state_text}: {file_path}")
+                item.setForeground(QColor(state_color))
             else:
-                item_text = f"❓ Sin preparar: {file_path}"
-                item = QListWidgetItem(item_text)
-                item.setForeground(Qt.GlobalColor.yellow)
+                item = QListWidgetItem(f"❔  {file_path}")
+                item.setToolTip(f"Sin seguimiento: {file_path}")
+                item.setForeground(QColor("#858585"))
             
+            font = QFont("Consolas", 11)
+            item.setFont(font)
             item.setData(Qt.ItemDataRole.UserRole, file_path)
             self.changes_list.addItem(item)
             
-    def on_file_selected(self, item):
-        file_path = item.data(Qt.ItemDataRole.UserRole)
-        diff = self.git_manager.get_file_diff(file_path)
-        self.diff_view.setPlainText(diff)
+    def on_change_double_clicked(self, item):
+        original_line = item.data(Qt.ItemDataRole.UserRole)
+        if original_line:
+            file_path = original_line.split(' ', 1)[1] if ' ' in original_line else original_line
+            file_path = file_path.strip()
+            diff = self.git_manager.get_file_diff(file_path)
+            formatted_diff = self.format_diff(diff)
+            self.diff_view.setHtml(formatted_diff)
         
     def stage_all(self):
         success, message = self.git_manager.stage_all()
@@ -529,21 +612,68 @@ class RepositoryTab(QWidget):
         
         if not history:
             item = QListWidgetItem("📭 No hay commits todavía")
-            item.setForeground(Qt.GlobalColor.gray)
+            item.setForeground(QColor("#858585"))
+            font = QFont("Segoe UI", 11)
+            font.setBold(True)
+            item.setFont(font)
             self.history_list.addItem(item)
             return
         
         for commit in history:
-            item_text = f"🔹 {commit['hash'][:7]} - {commit['message']}\n   👤 {commit['author']} • 📅 {commit['date']}"
-            item = QListWidgetItem(item_text)
+            commit_hash = commit['hash'][:7]
+            message = commit['message']
+            author = commit['author']
+            date = commit['date']
+            
+            display_text = f"● {commit_hash}\n"
+            display_text += f"  {message}\n"
+            display_text += f"  👤 {author}  •  🕒 {date}"
+            
+            item = QListWidgetItem(display_text)
             item.setData(Qt.ItemDataRole.UserRole, commit['hash'])
+            item.setToolTip(f"Commit: {commit['hash']}\nAutor: {author}\nFecha: {date}\n\n{message}")
+            
+            font = QFont("Segoe UI", 10)
+            item.setFont(font)
+            
             self.history_list.addItem(item)
             
     def on_commit_selected(self, item):
         commit_hash = item.data(Qt.ItemDataRole.UserRole)
         if commit_hash:
             diff = self.git_manager.get_commit_diff(commit_hash)
-            self.diff_view.setPlainText(diff)
+            formatted_diff = self.format_diff(diff)
+            self.diff_view.setHtml(formatted_diff)
+    
+    def on_file_selected(self, item):
+        original_line = item.data(Qt.ItemDataRole.UserRole)
+        if original_line:
+            file_path = original_line.split(' ', 1)[1] if ' ' in original_line else original_line
+            file_path = file_path.strip()
+            diff = self.git_manager.get_file_diff(file_path)
+            formatted_diff = self.format_diff(diff)
+            self.diff_view.setHtml(formatted_diff)
+    
+    def format_diff(self, diff_text):
+        lines = diff_text.split('\n')
+        html = '<pre style="margin: 0; line-height: 1.6;">'
+        
+        for line in lines:
+            if line.startswith('diff --git'):
+                html += f'<span style="color: #569cd6; font-weight: bold;">{line}</span>\n'
+            elif line.startswith('index ') or line.startswith('---') or line.startswith('+++'):
+                html += f'<span style="color: #858585;">{line}</span>\n'
+            elif line.startswith('@@'):
+                html += f'<span style="color: #c586c0; font-weight: bold;">{line}</span>\n'
+            elif line.startswith('+') and not line.startswith('+++'):
+                html += f'<span style="background-color: #1a3d1a; color: #4ec9b0;">{line}</span>\n'
+            elif line.startswith('-') and not line.startswith('---'):
+                html += f'<span style="background-color: #3d1a1a; color: #f48771;">{line}</span>\n'
+            else:
+                html += f'<span style="color: #cccccc;">{line}</span>\n'
+        
+        html += '</pre>'
+        return html
     
     def show_commit_context_menu(self, position):
         item = self.history_list.itemAt(position)
@@ -605,7 +735,6 @@ class RepositoryTab(QWidget):
         menu.exec(self.history_list.mapToGlobal(position))
     
     def create_branch_from_commit_quick(self, commit_hash):
-        from PyQt6.QtWidgets import QInputDialog
         branch_name, ok = QInputDialog.getText(
             self,
             "Crear Rama",
@@ -679,7 +808,6 @@ class RepositoryTab(QWidget):
                 QMessageBox.warning(self, "Error", f"Error:\n{message}")
     
     def copy_commit_hash(self, commit_hash):
-        from PyQt6.QtWidgets import QApplication
         clipboard = QApplication.clipboard()
         clipboard.setText(commit_hash)
         self.statusBar().showMessage(f"Hash copiado: {commit_hash[:7]}", 2000) if hasattr(self, 'statusBar') else None
@@ -775,7 +903,6 @@ class RepositoryTab(QWidget):
                 QMessageBox.warning(self, "Error", f"No se pudo cambiar de rama:\n{message}")
     
     def create_new_branch_quick(self):
-        from PyQt6.QtWidgets import QInputDialog
         branch_name, ok = QInputDialog.getText(
             self,
             "Nueva Rama",
