@@ -1,4 +1,17 @@
-# Unreal Git Client
+# Un## Características
+
+- 🏠 **Pantalla de Inicio** - Interfaz de bienvenida intuitiva con acceso rápido
+- 🎯 **Interfaz intuitiva** - Diseñado para usuarios sin experiencia en Git
+- 📑 **Sistema de pestañas** - Trabaja con múltiples repositorios simultáneamente
+- 🌳 **Administración de ramas** - Crea, elimina, cambia y fusiona ramas fácilmente
+- ⚡ **Acciones de commit avanzadas** - Reset, revert, checkout y más
+- 🎮 **Detección de Unreal Engine** - Identifica automáticamente proyectos de Unreal
+- 🎮 **Soporte Unreal Engine** - Configuración automática para proyectos de Unreal
+- 📦 **Git LFS integrado** - Manejo de archivos grandes (.uasset, .umap, etc.)
+- 🌳 **Gestión de ramas** - Visualización clara de la rama actual
+- 📝 **Cambios visuales** - Ver diferencias en tiempo real
+- 📜 **Historial de commits** - Navega por el historial del proyecto
+- 🔄 **Sincronización fácil** - Pull, Push y Fetch con un clicient
 
 Cliente Git visual e intuitivo diseñado para usuarios de Unreal Engine, con soporte completo para Git LFS y sistema de pestañas.
 

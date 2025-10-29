@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QListWidget, QTextEdit, QPushButton, QLabel,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
-                             QSizePolicy)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
-from PyQt6.QtGui import QFont, QIcon
+                             QSizePolicy, QMenu)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint
+from PyQt6.QtGui import QFont, QIcon, QCursor, QAction
 from ui.home_view import HomeView
 import os
 
@@ -88,17 +88,36 @@ class RepositoryTab(QWidget):
         branch_layout.setContentsMargins(0, 0, 0, 0)
         branch_layout.setSpacing(2)
         
-        branch_title = QLabel("RAMA ACTUAL")
+        branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
         branch_title.setStyleSheet("color: #888888; font-size: 10px; font-weight: bold;")
         branch_layout.addWidget(branch_title)
         
-        self.branch_label = QLabel("main")
-        self.branch_label.setWordWrap(True)
-        self.branch_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #4ec9b0;")
-        branch_layout.addWidget(self.branch_label)
+        self.branch_button = QPushButton()
+        self.branch_button.setText("main")
+        self.branch_button.setStyleSheet("""
+            QPushButton {
+                font-weight: bold;
+                font-size: 16px;
+                color: #4ec9b0;
+                background-color: transparent;
+                border: 2px solid #4ec9b0;
+                border-radius: 6px;
+                padding: 5px 15px;
+                text-align: left;
+            }
+            QPushButton:hover {
+                background-color: #2d2d2d;
+                border-color: #5fd9c0;
+            }
+            QPushButton:pressed {
+                background-color: #1e1e1e;
+            }
+        """)
+        self.branch_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.branch_button.clicked.connect(self.show_branch_menu)
+        branch_layout.addWidget(self.branch_button)
         
         layout.addWidget(branch_container)
-        layout.addStretch()
         
         sync_layout = QHBoxLayout()
         sync_layout.setSpacing(8)
@@ -342,6 +361,8 @@ class RepositoryTab(QWidget):
         
         self.history_list = QListWidget()
         self.history_list.itemClicked.connect(self.on_commit_selected)
+        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.history_list.customContextMenuRequested.connect(self.show_commit_context_menu)
         history_layout.addWidget(self.history_list)
         
         layout.addWidget(history_container, stretch=1)
@@ -372,13 +393,14 @@ class RepositoryTab(QWidget):
         self.update_repo_info()
         self.load_history()
         self.check_lfs_status()
+        self.detect_unreal_project()
         
     def refresh_status(self):
         if not self.repo_path:
             return
             
         branch = self.git_manager.get_current_branch()
-        self.branch_label.setText(branch)
+        self.branch_button.setText(f"🌿 {branch}")
         
         status = self.git_manager.get_status()
         self.changes_list.clear()
@@ -481,8 +503,17 @@ class RepositoryTab(QWidget):
             return
             
         info = self.git_manager.get_repository_info()
+        
+        project_type = ""
+        if self.git_manager.is_unreal_project():
+            project_name = self.git_manager.get_unreal_project_name()
+            if project_name:
+                project_type = f"<b>🎮 Proyecto Unreal:</b> {project_name}<br>"
+            else:
+                project_type = "<b>🎮 Tipo:</b> Proyecto Unreal Engine<br>"
+        
         info_text = f"""
-<b>Ruta:</b> {self.repo_path}<br>
+{project_type}<b>Ruta:</b> {self.repo_path}<br>
 <b>Rama actual:</b> {info.get('branch', 'N/A')}<br>
 <b>Remoto:</b> {info.get('remote', 'N/A')}<br>
 <b>Último commit:</b> {info.get('last_commit', 'N/A')}<br>
@@ -510,8 +541,311 @@ class RepositoryTab(QWidget):
             
     def on_commit_selected(self, item):
         commit_hash = item.data(Qt.ItemDataRole.UserRole)
-        diff = self.git_manager.get_commit_diff(commit_hash)
-        self.diff_view.setPlainText(diff)
+        if commit_hash:
+            diff = self.git_manager.get_commit_diff(commit_hash)
+            self.diff_view.setPlainText(diff)
+    
+    def show_commit_context_menu(self, position):
+        item = self.history_list.itemAt(position)
+        if not item:
+            return
+        
+        commit_hash = item.data(Qt.ItemDataRole.UserRole)
+        if not commit_hash:
+            return
+        
+        commit_text = item.text().split('\n')[0].replace('🔹 ', '').split(' - ', 1)
+        commit_msg = commit_text[1] if len(commit_text) > 1 else "Sin mensaje"
+        
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #2d2d2d;
+                color: #cccccc;
+                border: 1px solid #3d3d3d;
+                padding: 5px;
+            }
+            QMenu::item {
+                padding: 8px 25px;
+                border-radius: 3px;
+            }
+            QMenu::item:selected {
+                background-color: #094771;
+            }
+        """)
+        
+        create_branch_action = QAction("🌿 Crear rama desde aquí", self)
+        create_branch_action.triggered.connect(lambda: self.create_branch_from_commit_quick(commit_hash))
+        menu.addAction(create_branch_action)
+        
+        menu.addSeparator()
+        
+        reset_soft_action = QAction("🔙 Reset Soft (mantener cambios)", self)
+        reset_soft_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'soft'))
+        menu.addAction(reset_soft_action)
+        
+        reset_mixed_action = QAction("↩️ Reset Mixed", self)
+        reset_mixed_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'mixed'))
+        menu.addAction(reset_mixed_action)
+        
+        reset_hard_action = QAction("⚠️ Reset Hard (descartar todo)", self)
+        reset_hard_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'hard'))
+        menu.addAction(reset_hard_action)
+        
+        menu.addSeparator()
+        
+        checkout_action = QAction("👁️ Ver este commit", self)
+        checkout_action.triggered.connect(lambda: self.checkout_commit_quick(commit_hash))
+        menu.addAction(checkout_action)
+        
+        copy_hash_action = QAction("📋 Copiar hash", self)
+        copy_hash_action.triggered.connect(lambda: self.copy_commit_hash(commit_hash))
+        menu.addAction(copy_hash_action)
+        
+        menu.exec(self.history_list.mapToGlobal(position))
+    
+    def create_branch_from_commit_quick(self, commit_hash):
+        from PyQt6.QtWidgets import QInputDialog
+        branch_name, ok = QInputDialog.getText(
+            self,
+            "Crear Rama",
+            f"Nombre de la nueva rama desde commit {commit_hash[:7]}:",
+            QLineEdit.EchoMode.Normal,
+            ""
+        )
+        
+        if ok and branch_name:
+            success, message = self.git_manager.create_branch(branch_name, commit_hash)
+            if success:
+                QMessageBox.information(
+                    self,
+                    "Éxito",
+                    f"Rama '{branch_name}' creada desde el commit {commit_hash[:7]}"
+                )
+                self.refresh_status()
+            else:
+                QMessageBox.warning(self, "Error", f"No se pudo crear la rama:\n{message}")
+    
+    def reset_commit_quick(self, commit_hash, mode):
+        mode_names = {
+            'soft': 'Soft (mantener cambios)',
+            'mixed': 'Mixed (descartar staging)',
+            'hard': 'Hard (descartar todo)'
+        }
+        
+        warning = ""
+        if mode == 'hard':
+            warning = "\n\n⚠️ ADVERTENCIA: Perderás todos los cambios no guardados!"
+        
+        reply = QMessageBox.question(
+            self,
+            "Confirmar Reset",
+            f"¿Hacer reset {mode_names[mode]} al commit {commit_hash[:7]}?{warning}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.git_manager.reset_to_commit(commit_hash, mode)
+            if success:
+                QMessageBox.information(self, "Éxito", f"Reset {mode} completado")
+                self.refresh_status()
+                self.load_history()
+                self.update_repo_info()
+            else:
+                QMessageBox.warning(self, "Error", f"Error en reset:\n{message}")
+    
+    def checkout_commit_quick(self, commit_hash):
+        reply = QMessageBox.question(
+            self,
+            "Confirmar Checkout",
+            f"¿Ver el commit {commit_hash[:7]}?\n\n" +
+            "Estarás en modo 'detached HEAD'.\n" +
+            "Para guardar cambios, crea una nueva rama.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.git_manager.checkout_commit(commit_hash)
+            if success:
+                QMessageBox.information(
+                    self,
+                    "Éxito",
+                    f"Ahora estás viendo el commit {commit_hash[:7]}\n\n" +
+                    "Usa el menú de ramas para volver a una rama normal."
+                )
+                self.refresh_status()
+                self.update_repo_info()
+            else:
+                QMessageBox.warning(self, "Error", f"Error:\n{message}")
+    
+    def copy_commit_hash(self, commit_hash):
+        from PyQt6.QtWidgets import QApplication
+        clipboard = QApplication.clipboard()
+        clipboard.setText(commit_hash)
+        self.statusBar().showMessage(f"Hash copiado: {commit_hash[:7]}", 2000) if hasattr(self, 'statusBar') else None
+    
+    def show_branch_menu(self):
+        branches = self.git_manager.get_all_branches()
+        current_branch = self.git_manager.get_current_branch()
+        
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #2d2d2d;
+                color: #cccccc;
+                border: 1px solid #3d3d3d;
+                padding: 5px;
+            }
+            QMenu::item {
+                padding: 10px 30px;
+                border-radius: 3px;
+                font-size: 13px;
+            }
+            QMenu::item:selected {
+                background-color: #094771;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #3d3d3d;
+                margin: 5px 0;
+            }
+        """)
+        
+        header = QAction("🌳 Cambiar Rama", self)
+        header.setEnabled(False)
+        menu.addAction(header)
+        menu.addSeparator()
+        
+        local_branches = [b for b in branches if not b['is_remote']]
+        remote_branches = [b for b in branches if b['is_remote']]
+        
+        for branch in local_branches:
+            name = branch['name']
+            icon = "✓ " if branch['is_current'] else "🌿 "
+            action = QAction(f"{icon}{name}", self)
+            
+            if branch['is_current']:
+                action.setEnabled(False)
+            else:
+                action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
+            
+            menu.addAction(action)
+        
+        if remote_branches:
+            menu.addSeparator()
+            remote_header = QAction("☁️ Ramas Remotas", self)
+            remote_header.setEnabled(False)
+            menu.addAction(remote_header)
+            
+            for branch in remote_branches[:5]:
+                name = branch['name']
+                action = QAction(f"☁️ {name}", self)
+                action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
+                menu.addAction(action)
+        
+        menu.addSeparator()
+        
+        new_branch_action = QAction("➕ Nueva Rama...", self)
+        new_branch_action.triggered.connect(self.create_new_branch_quick)
+        menu.addAction(new_branch_action)
+        
+        manage_action = QAction("⚙️ Administrar Ramas...", self)
+        manage_action.triggered.connect(self.open_branch_manager)
+        menu.addAction(manage_action)
+        
+        menu.exec(QCursor.pos())
+    
+    def switch_branch_quick(self, branch_name):
+        clean_name = branch_name.replace('remotes/origin/', '')
+        
+        reply = QMessageBox.question(
+            self,
+            "Cambiar Rama",
+            f"¿Cambiar a la rama '{clean_name}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.git_manager.switch_branch(branch_name)
+            if success:
+                self.refresh_status()
+                self.load_history()
+                self.update_repo_info()
+            else:
+                QMessageBox.warning(self, "Error", f"No se pudo cambiar de rama:\n{message}")
+    
+    def create_new_branch_quick(self):
+        from PyQt6.QtWidgets import QInputDialog
+        branch_name, ok = QInputDialog.getText(
+            self,
+            "Nueva Rama",
+            "Nombre de la nueva rama:",
+            QLineEdit.EchoMode.Normal,
+            ""
+        )
+        
+        if ok and branch_name:
+            success, message = self.git_manager.create_branch(branch_name)
+            if success:
+                reply = QMessageBox.question(
+                    self,
+                    "Rama Creada",
+                    f"Rama '{branch_name}' creada correctamente.\n\n¿Cambiar a esta rama ahora?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.git_manager.switch_branch(branch_name)
+                
+                self.refresh_status()
+                self.load_history()
+                self.update_repo_info()
+            else:
+                QMessageBox.warning(self, "Error", f"No se pudo crear la rama:\n{message}")
+    
+    def on_commit_double_clicked(self, item):
+        commit_hash = item.data(Qt.ItemDataRole.UserRole)
+        if not commit_hash:
+            return
+        
+        from ui.branch_manager import CommitActionsDialog
+        commit_text = item.text().split('\n')[0].replace('🔹 ', '').split(' - ', 1)
+        commit_msg = commit_text[1] if len(commit_text) > 1 else "Sin mensaje"
+        
+        dialog = CommitActionsDialog(self.git_manager, commit_hash, commit_msg, self)
+        if dialog.exec():
+            self.refresh_status()
+            self.load_history()
+            self.update_repo_info()
+    
+    def open_branch_manager(self):
+        from ui.branch_manager import BranchManagerDialog
+        dialog = BranchManagerDialog(self.git_manager, self)
+        if dialog.exec():
+            self.refresh_status()
+            self.update_repo_info()
+    
+    def detect_unreal_project(self):
+        if not self.repo_path:
+            return
+        
+        if self.git_manager.is_unreal_project():
+            project_name = self.git_manager.get_unreal_project_name()
+            if project_name:
+                QMessageBox.information(
+                    self,
+                    "Proyecto de Unreal Engine Detectado",
+                    f"🎮 Se ha detectado un proyecto de Unreal Engine:\n\n"
+                    f"Proyecto: {project_name}\n\n"
+                    f"💡 Recomendación: Asegúrate de tener Git LFS configurado para archivos .uasset, .umap, etc."
+                )
+            else:
+                QMessageBox.information(
+                    self,
+                    "Proyecto de Unreal Engine Detectado",
+                    f"🎮 Se ha detectado un proyecto de Unreal Engine.\n\n"
+                    f"💡 Recomendación: Configura Git LFS en la sección correspondiente."
+                )
         
     def check_lfs_status(self):
         if not self.repo_path:

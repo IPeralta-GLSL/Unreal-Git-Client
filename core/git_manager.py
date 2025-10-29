@@ -32,6 +32,41 @@ class GitManager:
     def get_current_branch(self):
         success, output = self.run_command("git branch --show-current")
         return output if success else "unknown"
+    
+    def get_all_branches(self):
+        success, output = self.run_command("git branch -a")
+        if not success:
+            return []
+        
+        branches = []
+        for line in output.split('\n'):
+            if line.strip():
+                is_current = line.startswith('*')
+                branch_name = line.replace('*', '').strip()
+                if not branch_name.startswith('remotes/origin/HEAD'):
+                    branches.append({
+                        'name': branch_name,
+                        'is_current': is_current,
+                        'is_remote': branch_name.startswith('remotes/')
+                    })
+        return branches
+    
+    def create_branch(self, branch_name, from_commit=None):
+        if from_commit:
+            return self.run_command(f"git branch \"{branch_name}\" {from_commit}")
+        else:
+            return self.run_command(f"git branch \"{branch_name}\"")
+    
+    def switch_branch(self, branch_name):
+        clean_name = branch_name.replace('remotes/origin/', '')
+        return self.run_command(f"git checkout \"{clean_name}\"")
+    
+    def delete_branch(self, branch_name, force=False):
+        flag = "-D" if force else "-d"
+        return self.run_command(f"git branch {flag} \"{branch_name}\"")
+    
+    def merge_branch(self, branch_name):
+        return self.run_command(f"git merge \"{branch_name}\"")
         
     def get_status(self):
         success, output = self.run_command("git status --porcelain")
@@ -118,6 +153,21 @@ class GitManager:
     def get_commit_diff(self, commit_hash):
         success, output = self.run_command(f"git show {commit_hash}")
         return output if success else "No se pudo obtener el diff"
+    
+    def reset_to_commit(self, commit_hash, mode='soft'):
+        modes = {
+            'soft': '--soft',
+            'mixed': '--mixed',
+            'hard': '--hard'
+        }
+        flag = modes.get(mode, '--soft')
+        return self.run_command(f"git reset {flag} {commit_hash}")
+    
+    def revert_commit(self, commit_hash):
+        return self.run_command(f"git revert {commit_hash} --no-edit")
+    
+    def checkout_commit(self, commit_hash):
+        return self.run_command(f"git checkout {commit_hash}")
         
     def clone_repository(self, url, path):
         try:
@@ -176,3 +226,28 @@ class GitManager:
             return False, "No hay repositorio cargado"
             
         return self.run_command("git lfs pull")
+    
+    def is_unreal_project(self):
+        if not self.repo_path:
+            return False
+        
+        import glob
+        uproject_files = glob.glob(os.path.join(self.repo_path, "*.uproject"))
+        
+        has_content = os.path.exists(os.path.join(self.repo_path, "Content"))
+        has_source = os.path.exists(os.path.join(self.repo_path, "Source"))
+        has_config = os.path.exists(os.path.join(self.repo_path, "Config"))
+        
+        return len(uproject_files) > 0 or (has_content and (has_source or has_config))
+    
+    def get_unreal_project_name(self):
+        if not self.repo_path:
+            return None
+        
+        import glob
+        uproject_files = glob.glob(os.path.join(self.repo_path, "*.uproject"))
+        
+        if uproject_files:
+            return os.path.basename(uproject_files[0]).replace('.uproject', '')
+        
+        return None
