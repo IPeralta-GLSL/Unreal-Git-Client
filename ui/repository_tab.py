@@ -101,23 +101,26 @@ class RepositoryTab(QWidget):
         
         self.branch_button = QPushButton()
         self.branch_button.setText("main")
+        self.branch_button.setMinimumSize(150, 40)
+        self.branch_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.branch_button.setStyleSheet("""
             QPushButton {
                 font-weight: bold;
-                font-size: 16px;
+                font-size: 14px;
                 color: #4ec9b0;
-                background-color: transparent;
+                background-color: #1e1e1e;
                 border: 2px solid #4ec9b0;
                 border-radius: 6px;
-                padding: 5px 15px;
+                padding: 8px 15px;
                 text-align: left;
             }
             QPushButton:hover {
                 background-color: #2d2d2d;
                 border-color: #5fd9c0;
+                color: #5fd9c0;
             }
             QPushButton:pressed {
-                background-color: #1e1e1e;
+                background-color: #0e639c;
             }
         """)
         self.branch_button.setCursor(Qt.CursorShape.PointingHandCursor)

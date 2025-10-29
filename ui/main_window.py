@@ -44,24 +44,26 @@ class MainWindow(QMainWindow):
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
         self.new_tab_button = QPushButton("+")
-        self.new_tab_button.setFixedSize(30, 30)
+        self.new_tab_button.setFixedSize(35, 35)
         self.new_tab_button.setToolTip("Nueva pestaña (Ctrl+T)")
         self.new_tab_button.clicked.connect(self.add_empty_tab)
         self.new_tab_button.setStyleSheet("""
             QPushButton {
-                background-color: #2d2d2d;
-                color: #cccccc;
-                border: none;
+                background-color: #0e639c;
+                color: white;
+                border: 1px solid #3d3d3d;
                 border-radius: 4px;
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: bold;
+                padding: 0px;
+                margin: 2px;
             }
             QPushButton:hover {
-                background-color: #3d3d3d;
+                background-color: #1177bb;
                 color: white;
             }
             QPushButton:pressed {
-                background-color: #0e639c;
+                background-color: #094771;
             }
         """)
         
