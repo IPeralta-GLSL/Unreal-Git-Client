@@ -303,8 +303,8 @@ class RepositoryTab(QWidget):
         status_layout = QHBoxLayout(status_widget)
         status_layout.setContentsMargins(10, 8, 10, 8)
         
-        status_icon = QLabel("ℹ️")
-        status_icon.setStyleSheet("font-size: 16px;")
+        status_icon = QLabel()
+        status_icon.setPixmap(self.icon_manager.get_pixmap("info", 16))
         status_layout.addWidget(status_icon)
         
         self.lfs_status_label = QLabel("Estado: No inicializado")
@@ -556,7 +556,8 @@ class RepositoryTab(QWidget):
         self.changes_list.clear()
         
         if not status:
-            item = QListWidgetItem("✓ No hay cambios - Todo está actualizado")
+            item = QListWidgetItem("  No hay cambios - Todo está actualizado")
+            item.setIcon(self.icon_manager.get_icon("check", size=16))
             item.setForeground(QColor("#4ec9b0"))
             font = QFont("Segoe UI", 11)
             font.setBold(True)
@@ -675,9 +676,9 @@ class RepositoryTab(QWidget):
         if self.git_manager.is_unreal_project():
             project_name = self.git_manager.get_unreal_project_name()
             if project_name:
-                project_type = f"<b>🎮 Proyecto Unreal:</b> {project_name}<br>"
+                project_type = f"<b>Proyecto Unreal:</b> {project_name}<br>"
             else:
-                project_type = "<b>🎮 Tipo:</b> Proyecto Unreal Engine<br>"
+                project_type = "<b>Tipo:</b> Proyecto Unreal Engine<br>"
         
         info_text = f"""
 {project_type}<b>Ruta:</b> {self.repo_path}<br>
@@ -812,21 +813,25 @@ class RepositoryTab(QWidget):
         reset_soft_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'soft'))
         menu.addAction(reset_soft_action)
         
-        reset_mixed_action = QAction("↩️ Reset Mixed", self)
+        reset_mixed_action = QAction("  Reset Mixed", self)
+        reset_mixed_action.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=16))
         reset_mixed_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'mixed'))
         menu.addAction(reset_mixed_action)
         
-        reset_hard_action = QAction("⚠️ Reset Hard (descartar todo)", self)
+        reset_hard_action = QAction("  Reset Hard (descartar todo)", self)
+        reset_hard_action.setIcon(self.icon_manager.get_icon("x-square", size=16))
         reset_hard_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'hard'))
         menu.addAction(reset_hard_action)
         
         menu.addSeparator()
         
-        checkout_action = QAction("👁️ Ver este commit", self)
+        checkout_action = QAction("  Ver este commit", self)
+        checkout_action.setIcon(self.icon_manager.get_icon("sign-in", size=16))
         checkout_action.triggered.connect(lambda: self.checkout_commit_quick(commit_hash))
         menu.addAction(checkout_action)
         
-        copy_hash_action = QAction("📋 Copiar hash", self)
+        copy_hash_action = QAction("  Copiar hash", self)
+        copy_hash_action.setIcon(self.icon_manager.get_icon("link", size=16))
         copy_hash_action.triggered.connect(lambda: self.copy_commit_hash(commit_hash))
         menu.addAction(copy_hash_action)
         
@@ -862,7 +867,7 @@ class RepositoryTab(QWidget):
         
         warning = ""
         if mode == 'hard':
-            warning = "\n\n⚠️ ADVERTENCIA: Perderás todos los cambios no guardados!"
+            warning = "\n\n⚠ ADVERTENCIA: Perderás todos los cambios no guardados!"
         
         reply = QMessageBox.question(
             self,
@@ -937,7 +942,8 @@ class RepositoryTab(QWidget):
             }
         """)
         
-        header = QAction("🌳 Cambiar Rama", self)
+        header = QAction("  Cambiar Rama", self)
+        header.setIcon(self.icon_manager.get_icon("git-branch", size=16))
         header.setEnabled(False)
         menu.addAction(header)
         menu.addSeparator()
@@ -947,8 +953,11 @@ class RepositoryTab(QWidget):
         
         for branch in local_branches:
             name = branch['name']
-            icon = "✓ " if branch['is_current'] else "🌿 "
-            action = QAction(f"{icon}{name}", self)
+            action = QAction(f"  {name}", self)
+            if branch['is_current']:
+                action.setIcon(self.icon_manager.get_icon("check", size=16))
+            else:
+                action.setIcon(self.icon_manager.get_icon("git-branch", size=16))
             
             if branch['is_current']:
                 action.setEnabled(False)
@@ -959,23 +968,27 @@ class RepositoryTab(QWidget):
         
         if remote_branches:
             menu.addSeparator()
-            remote_header = QAction("☁️ Ramas Remotas", self)
+            remote_header = QAction("  Ramas Remotas", self)
+            remote_header.setIcon(self.icon_manager.get_icon("share-network", size=16))
             remote_header.setEnabled(False)
             menu.addAction(remote_header)
             
             for branch in remote_branches[:5]:
                 name = branch['name']
-                action = QAction(f"☁️ {name}", self)
+                action = QAction(f"  {name}", self)
+                action.setIcon(self.icon_manager.get_icon("share-network", size=16))
                 action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
                 menu.addAction(action)
         
         menu.addSeparator()
         
-        new_branch_action = QAction("➕ Nueva Rama...", self)
+        new_branch_action = QAction("  Nueva Rama...", self)
+        new_branch_action.setIcon(self.icon_manager.get_icon("plus-circle", size=16))
         new_branch_action.triggered.connect(self.create_new_branch_quick)
         menu.addAction(new_branch_action)
         
-        manage_action = QAction("⚙️ Administrar Ramas...", self)
+        manage_action = QAction("  Administrar Ramas...", self)
+        manage_action.setIcon(self.icon_manager.get_icon("gear-six", size=16))
         manage_action.triggered.connect(self.open_branch_manager)
         menu.addAction(manage_action)
         
@@ -1141,16 +1154,16 @@ class RepositoryTab(QWidget):
                 QMessageBox.information(
                     self,
                     "Proyecto de Unreal Engine Detectado",
-                    f"🎮 Se ha detectado un proyecto de Unreal Engine:\n\n"
+                    f"Se ha detectado un proyecto de Unreal Engine:\n\n"
                     f"Proyecto: {project_name}\n\n"
-                    f"💡 Recomendación: Asegúrate de tener Git LFS configurado para archivos .uasset, .umap, etc."
+                    f"ℹ️ Recomendación: Asegúrate de tener Git LFS configurado para archivos .uasset, .umap, etc."
                 )
             else:
                 QMessageBox.information(
                     self,
                     "Proyecto de Unreal Engine Detectado",
-                    f"🎮 Se ha detectado un proyecto de Unreal Engine.\n\n"
-                    f"💡 Recomendación: Configura Git LFS en la sección correspondiente."
+                    f"Se ha detectado un proyecto de Unreal Engine.\n\n"
+                    f"ℹ️ Recomendación: Configura Git LFS en la sección correspondiente."
                 )
         
     def check_lfs_status(self):
@@ -1158,9 +1171,9 @@ class RepositoryTab(QWidget):
             return
             
         if self.git_manager.is_lfs_installed():
-            self.lfs_status_label.setText("Estado: ✅ LFS instalado")
+            self.lfs_status_label.setText("Estado: LFS instalado")
         else:
-            self.lfs_status_label.setText("Estado: ❌ LFS no instalado")
+            self.lfs_status_label.setText("Estado: LFS no instalado")
             
     def install_lfs(self):
         success, message = self.git_manager.install_lfs()
@@ -1205,7 +1218,7 @@ class RepositoryTab(QWidget):
                 tab_widget = self.parent_window.tab_widget
                 index = tab_widget.indexOf(self)
                 repo_name = os.path.basename(repo_path)
-                tab_widget.setTabText(index, f"📁 {repo_name}")
+                tab_widget.setTabText(index, repo_name)
                 
             QMessageBox.information(self, "Éxito", f"Repositorio clonado en:\n{repo_path}")
         else:

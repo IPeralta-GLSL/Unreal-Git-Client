@@ -4,11 +4,13 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QGroupBox, QTextEdit)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from ui.icon_manager import IconManager
 
 class BranchManagerDialog(QDialog):
     def __init__(self, git_manager, parent=None):
         super().__init__(parent)
         self.git_manager = git_manager
+        self.icon_manager = IconManager()
         self.init_ui()
         self.load_branches()
         
@@ -21,9 +23,16 @@ class BranchManagerDialog(QDialog):
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
         
-        title = QLabel("🌳 Administrador de Ramas")
+        title_layout = QHBoxLayout()
+        title_icon = QLabel()
+        title_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=24))
+        title_layout.addWidget(title_icon)
+        
+        title = QLabel(" Administrador de Ramas")
         title.setStyleSheet("font-size: 20px; font-weight: bold; color: white;")
-        layout.addWidget(title)
+        title_layout.addWidget(title)
+        title_layout.addStretch()
+        layout.addLayout(title_layout)
         
         current_branch_label = QLabel("Rama actual:")
         current_branch_label.setStyleSheet("color: #888888; font-size: 12px;")
@@ -40,7 +49,7 @@ class BranchManagerDialog(QDialog):
         """)
         layout.addWidget(self.current_branch)
         
-        list_label = QLabel("📋 Todas las Ramas:")
+        list_label = QLabel("Todas las Ramas:")
         list_label.setStyleSheet("color: #cccccc; font-weight: bold; margin-top: 10px;")
         layout.addWidget(list_label)
         
@@ -51,19 +60,23 @@ class BranchManagerDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
         
-        self.new_branch_btn = QPushButton("➕ Nueva Rama")
+        self.new_branch_btn = QPushButton("  Nueva Rama")
+        self.new_branch_btn.setIcon(self.icon_manager.get_icon("plus-circle", size=18))
         self.new_branch_btn.clicked.connect(self.create_new_branch)
         buttons_layout.addWidget(self.new_branch_btn)
         
-        self.switch_btn = QPushButton("🔄 Cambiar")
+        self.switch_btn = QPushButton("  Cambiar")
+        self.switch_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
         self.switch_btn.clicked.connect(self.switch_to_selected_branch)
         buttons_layout.addWidget(self.switch_btn)
         
-        self.delete_btn = QPushButton("🗑️ Eliminar")
+        self.delete_btn = QPushButton("  Eliminar")
+        self.delete_btn.setIcon(self.icon_manager.get_icon("trash", size=18))
         self.delete_btn.clicked.connect(self.delete_selected_branch)
         buttons_layout.addWidget(self.delete_btn)
         
-        self.merge_btn = QPushButton("🔀 Merge")
+        self.merge_btn = QPushButton("  Merge")
+        self.merge_btn.setIcon(self.icon_manager.get_icon("git-merge", size=18))
         self.merge_btn.clicked.connect(self.merge_selected_branch)
         buttons_layout.addWidget(self.merge_btn)
         
@@ -77,7 +90,7 @@ class BranchManagerDialog(QDialog):
         
     def load_branches(self):
         current = self.git_manager.get_current_branch()
-        self.current_branch.setText(f"🌿 {current}")
+        self.current_branch.setText(f"  {current}")
         
         self.branches_list.clear()
         branches = self.git_manager.get_all_branches()
@@ -87,13 +100,16 @@ class BranchManagerDialog(QDialog):
             item = QListWidgetItem()
             
             if branch['is_current']:
-                item.setText(f"✓ {name} (actual)")
+                item.setText(f"  {name} (actual)")
+                item.setIcon(self.icon_manager.get_icon("check", size=16))
                 item.setForeground(Qt.GlobalColor.green)
             elif branch['is_remote']:
-                item.setText(f"☁️ {name}")
+                item.setText(f"  {name}")
+                item.setIcon(self.icon_manager.get_icon("share-network", size=16))
                 item.setForeground(Qt.GlobalColor.cyan)
             else:
-                item.setText(f"🌿 {name}")
+                item.setText(f"  {name}")
+                item.setIcon(self.icon_manager.get_icon("git-branch", size=16))
                 item.setForeground(Qt.GlobalColor.white)
             
             item.setData(Qt.ItemDataRole.UserRole, name)
@@ -240,9 +256,17 @@ class CreateBranchDialog(QDialog):
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
         
-        title = QLabel("➕ Crear Nueva Rama")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
-        layout.addWidget(title)
+        title_layout = QHBoxLayout()
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("plus-circle", 24))
+        title_layout.addWidget(icon_label)
+        
+        title_text = QLabel("Crear Nueva Rama")
+        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+        title_layout.addWidget(title_text)
+        title_layout.addStretch()
+        
+        layout.addLayout(title_layout)
         
         name_label = QLabel("Nombre de la rama:")
         name_label.setStyleSheet("color: #cccccc; font-weight: bold;")
@@ -278,7 +302,8 @@ class CreateBranchDialog(QDialog):
         cancel_btn.clicked.connect(self.reject)
         buttons_layout.addWidget(cancel_btn)
         
-        create_btn = QPushButton("✅ Crear Rama")
+        create_btn = QPushButton("  Crear Rama")
+        create_btn.setIcon(self.icon_manager.get_icon("check", size=18))
         create_btn.clicked.connect(self.create_branch)
         create_btn.setDefault(True)
         buttons_layout.addWidget(create_btn)
@@ -387,9 +412,17 @@ class CommitActionsDialog(QDialog):
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
         
-        title = QLabel("⚡ Acciones del Commit")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
-        layout.addWidget(title)
+        title_layout = QHBoxLayout()
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("git-commit", 24))
+        title_layout.addWidget(icon_label)
+        
+        title_text = QLabel("Acciones del Commit")
+        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+        title_layout.addWidget(title_text)
+        title_layout.addStretch()
+        
+        layout.addLayout(title_layout)
         
         info_label = QLabel(f"Commit: {self.commit_hash[:7]}")
         info_label.setStyleSheet("color: #4ec9b0; font-size: 14px; font-weight: bold;")
@@ -404,17 +437,20 @@ class CommitActionsDialog(QDialog):
         actions_label.setStyleSheet("color: #cccccc; font-weight: bold; margin-top: 10px;")
         layout.addWidget(actions_label)
         
-        self.reset_soft_btn = QPushButton("🔙 Reset Soft (mantener cambios)")
+        self.reset_soft_btn = QPushButton("  Reset Soft (mantener cambios)")
+        self.reset_soft_btn.setIcon(self.icon_manager.get_icon("arrow-clockwise", size=18))
         self.reset_soft_btn.setToolTip("Volver a este commit manteniendo los cambios en el área de trabajo")
         self.reset_soft_btn.clicked.connect(lambda: self.reset_commit('soft'))
         layout.addWidget(self.reset_soft_btn)
         
-        self.reset_mixed_btn = QPushButton("↩️ Reset Mixed (descartar staging)")
+        self.reset_mixed_btn = QPushButton("  Reset Mixed (descartar staging)")
+        self.reset_mixed_btn.setIcon(self.icon_manager.get_icon("arrow-clockwise", size=18))
         self.reset_mixed_btn.setToolTip("Volver a este commit, descartar staging pero mantener archivos")
         self.reset_mixed_btn.clicked.connect(lambda: self.reset_commit('mixed'))
         layout.addWidget(self.reset_mixed_btn)
         
-        self.reset_hard_btn = QPushButton("⚠️ Reset Hard (descartar todo)")
+        self.reset_hard_btn = QPushButton("  Reset Hard (descartar todo)")
+        self.reset_hard_btn.setIcon(self.icon_manager.get_icon("warning", size=18))
         self.reset_hard_btn.setToolTip("Volver a este commit descartando TODOS los cambios")
         self.reset_hard_btn.setStyleSheet("""
             QPushButton {
@@ -427,12 +463,14 @@ class CommitActionsDialog(QDialog):
         self.reset_hard_btn.clicked.connect(lambda: self.reset_commit('hard'))
         layout.addWidget(self.reset_hard_btn)
         
-        self.checkout_btn = QPushButton("👁️ Ver este commit (detached HEAD)")
+        self.checkout_btn = QPushButton("  Ver este commit (detached HEAD)")
+        self.checkout_btn.setIcon(self.icon_manager.get_icon("sign-in", size=18))
         self.checkout_btn.setToolTip("Ver el repositorio como estaba en este commit")
         self.checkout_btn.clicked.connect(self.checkout_commit)
         layout.addWidget(self.checkout_btn)
         
-        self.create_branch_btn = QPushButton("🌿 Crear rama desde aquí")
+        self.create_branch_btn = QPushButton("  Crear rama desde aquí")
+        self.create_branch_btn.setIcon(self.icon_manager.get_icon("git-branch", size=18))
         self.create_branch_btn.setToolTip("Crear una nueva rama a partir de este commit")
         self.create_branch_btn.clicked.connect(self.create_branch_from_commit)
         layout.addWidget(self.create_branch_btn)

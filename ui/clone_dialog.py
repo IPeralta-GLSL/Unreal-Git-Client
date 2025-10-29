@@ -1,11 +1,13 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QFileDialog)
 from PyQt6.QtCore import Qt
+from ui.icon_manager import IconManager
 import os
 
 class CloneDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.icon_manager = IconManager()
         self.init_ui()
         
     def init_ui(self):
@@ -18,9 +20,17 @@ class CloneDialog(QDialog):
         layout.setSpacing(15)
         layout.setContentsMargins(25, 25, 25, 25)
         
-        title = QLabel("🌐 Clonar Repositorio Git")
+        title_layout = QHBoxLayout()
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("git-fork", 24))
+        title_layout.addWidget(icon_label)
+        
+        title = QLabel("Clonar Repositorio Git")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: white; margin-bottom: 10px;")
-        layout.addWidget(title)
+        title_layout.addWidget(title)
+        title_layout.addStretch()
+        
+        layout.addLayout(title_layout)
         
         description = QLabel("Descarga una copia de un repositorio remoto a tu computadora")
         description.setStyleSheet("color: #888888; font-size: 12px; margin-bottom: 10px;")
@@ -49,7 +59,8 @@ class CloneDialog(QDialog):
         self.path_input.setMinimumHeight(40)
         path_layout.addWidget(self.path_input)
         
-        browse_btn = QPushButton("📁 Explorar")
+        browse_btn = QPushButton("  Explorar")
+        browse_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         browse_btn.setMinimumHeight(40)
         browse_btn.setMinimumWidth(120)
         browse_btn.clicked.connect(self.browse_folder)
@@ -57,7 +68,7 @@ class CloneDialog(QDialog):
         
         layout.addLayout(path_layout)
         
-        helper_text = QLabel("💡 El repositorio se clonará en una nueva carpeta dentro de la ubicación seleccionada")
+        helper_text = QLabel("ℹ️ El repositorio se clonará en una nueva carpeta dentro de la ubicación seleccionada")
         helper_text.setStyleSheet("color: #4ec9b0; font-size: 11px; font-style: italic;")
         helper_text.setWordWrap(True)
         layout.addWidget(helper_text)
@@ -73,7 +84,8 @@ class CloneDialog(QDialog):
         cancel_btn.clicked.connect(self.reject)
         button_layout.addWidget(cancel_btn)
         
-        clone_btn = QPushButton("⬇️ Clonar Repositorio")
+        clone_btn = QPushButton("  Clonar Repositorio")
+        clone_btn.setIcon(self.icon_manager.get_icon("download", size=18))
         clone_btn.setMinimumHeight(40)
         clone_btn.setMinimumWidth(180)
         clone_btn.clicked.connect(self.accept)
