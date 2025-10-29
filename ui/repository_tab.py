@@ -77,8 +77,8 @@ class RepositoryTab(QWidget):
         
     def create_top_bar(self):
         self.top_bar = QFrame()
-        self.top_bar.setMinimumHeight(60)
-        self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.top_bar.setMaximumHeight(80)
+        self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.top_bar.setStyleSheet("""
             QFrame {
                 background-color: #2d2d2d;
@@ -87,21 +87,24 @@ class RepositoryTab(QWidget):
         """)
         
         layout = QHBoxLayout(self.top_bar)
-        layout.setContentsMargins(20, 10, 20, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(15, 10, 15, 10)
+        layout.setSpacing(15)
         
         branch_container = QWidget()
+        branch_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         branch_layout = QVBoxLayout(branch_container)
         branch_layout.setContentsMargins(0, 0, 0, 0)
-        branch_layout.setSpacing(2)
+        branch_layout.setSpacing(3)
         
         branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
-        branch_title.setStyleSheet("color: #888888; font-size: 10px; font-weight: bold;")
+        branch_title.setStyleSheet("color: #888888; font-size: 9px; font-weight: bold;")
+        branch_title.setMaximumHeight(15)
         branch_layout.addWidget(branch_title)
         
         self.branch_button = QPushButton()
         self.branch_button.setText("main")
-        self.branch_button.setMinimumSize(150, 40)
+        self.branch_button.setMinimumSize(180, 36)
+        self.branch_button.setMaximumHeight(36)
         self.branch_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.branch_button.setStyleSheet("""
             QPushButton {
@@ -127,39 +130,39 @@ class RepositoryTab(QWidget):
         self.branch_button.clicked.connect(self.show_branch_menu)
         branch_layout.addWidget(self.branch_button)
         
-        layout.addWidget(branch_container)
+        layout.addWidget(branch_container, 1)
         
-        sync_layout = QHBoxLayout()
-        sync_layout.setSpacing(8)
+        layout.addStretch()
         
         self.pull_btn = QPushButton("⬇ Pull")
-        self.pull_btn.setMinimumSize(80, 38)
-        self.pull_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.pull_btn.setMinimumSize(85, 36)
+        self.pull_btn.setMaximumSize(110, 36)
+        self.pull_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.pull_btn.setToolTip("Descargar cambios del servidor")
         self.pull_btn.clicked.connect(self.do_pull)
-        sync_layout.addWidget(self.pull_btn)
+        layout.addWidget(self.pull_btn)
         
         self.push_btn = QPushButton("⬆ Push")
-        self.push_btn.setMinimumSize(80, 38)
-        self.push_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.push_btn.setMinimumSize(85, 36)
+        self.push_btn.setMaximumSize(110, 36)
+        self.push_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.push_btn.setToolTip("Subir tus cambios al servidor")
         self.push_btn.clicked.connect(self.do_push)
-        sync_layout.addWidget(self.push_btn)
+        layout.addWidget(self.push_btn)
         
         self.fetch_btn = QPushButton("🔍 Fetch")
-        self.fetch_btn.setMinimumSize(80, 38)
-        self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.fetch_btn.setMinimumSize(85, 36)
+        self.fetch_btn.setMaximumSize(110, 36)
+        self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.fetch_btn.setToolTip("Actualizar información sin descargar")
         self.fetch_btn.clicked.connect(self.do_fetch)
-        sync_layout.addWidget(self.fetch_btn)
+        layout.addWidget(self.fetch_btn)
         
         self.refresh_btn = QPushButton("🔄")
-        self.refresh_btn.setFixedSize(38, 38)
+        self.refresh_btn.setFixedSize(36, 36)
         self.refresh_btn.setToolTip("Actualizar estado del repositorio")
         self.refresh_btn.clicked.connect(self.refresh_status)
-        sync_layout.addWidget(self.refresh_btn)
-        
-        layout.addLayout(sync_layout)
+        layout.addWidget(self.refresh_btn)
         
     def create_left_panel(self):
         widget = QWidget()
