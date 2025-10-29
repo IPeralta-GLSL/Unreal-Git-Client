@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         self.setup_shortcuts()
         
     def init_ui(self):
-        self.setWindowTitle("Unreal Git Client")
+        self.setWindowTitle("Git Client")
         self.setGeometry(100, 100, 1400, 900)
         self.setMinimumSize(1000, 600)
         

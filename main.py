@@ -5,8 +5,8 @@ from ui.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("Unreal Git Client")
-    app.setOrganizationName("UnrealGitClient")
+    app.setApplicationName("Git Client")
+    app.setOrganizationName("GitClient")
     
     window = MainWindow()
     window.show()

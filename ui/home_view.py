@@ -55,12 +55,7 @@ class HomeView(QWidget):
         header_layout.setSpacing(15)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        logo_label = QLabel("🎮")
-        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setStyleSheet("font-size: 72px;")
-        header_layout.addWidget(logo_label)
-        
-        title = QLabel("Unreal Git Client")
+        title = QLabel("Git Client")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setWordWrap(True)
         title.setStyleSheet("""
@@ -70,16 +65,6 @@ class HomeView(QWidget):
             margin: 5px;
         """)
         header_layout.addWidget(title)
-        
-        subtitle = QLabel("Cliente Git intuitivo para proyectos de Unreal Engine")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setWordWrap(True)
-        subtitle.setStyleSheet("""
-            font-size: 14px;
-            color: #888888;
-            margin-bottom: 10px;
-        """)
-        header_layout.addWidget(subtitle)
         
         layout.addWidget(header_container)
         
