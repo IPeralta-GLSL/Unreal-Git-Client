@@ -145,66 +145,30 @@ class RepositoryTab(QWidget):
         
         layout.addSpacing(10)
         
-        self.open_folder_btn = QPushButton()
-        self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=20))
-        self.open_folder_btn.setFixedSize(36, 36)
+        self.open_folder_btn = QPushButton(" Carpeta")
+        self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
+        self.open_folder_btn.setMinimumSize(100, 36)
+        self.open_folder_btn.setMaximumSize(130, 36)
+        self.open_folder_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.open_folder_btn.setToolTip("Abrir carpeta del proyecto")
-        self.open_folder_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #2d2d2d;
-                border-color: #5fd9c0;
-            }
-            QPushButton:pressed {
-                background-color: #0e639c;
-            }
-        """)
         self.open_folder_btn.clicked.connect(self.open_project_folder)
         layout.addWidget(self.open_folder_btn)
         
-        self.open_terminal_btn = QPushButton()
-        self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=20))
-        self.open_terminal_btn.setFixedSize(36, 36)
+        self.open_terminal_btn = QPushButton(" Terminal")
+        self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=18))
+        self.open_terminal_btn.setMinimumSize(100, 36)
+        self.open_terminal_btn.setMaximumSize(130, 36)
+        self.open_terminal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.open_terminal_btn.setToolTip("Abrir terminal en la carpeta del proyecto")
-        self.open_terminal_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #2d2d2d;
-                border-color: #5fd9c0;
-            }
-            QPushButton:pressed {
-                background-color: #0e639c;
-            }
-        """)
         self.open_terminal_btn.clicked.connect(self.open_terminal)
         layout.addWidget(self.open_terminal_btn)
         
-        self.open_unreal_btn = QPushButton()
-        self.open_unreal_btn.setIcon(self.icon_manager.get_icon("plugs-connected", size=20))
-        self.open_unreal_btn.setFixedSize(36, 36)
+        self.open_unreal_btn = QPushButton(" Unreal")
+        self.open_unreal_btn.setIcon(self.icon_manager.get_icon("unreal-engine-svgrepo-com", size=18))
+        self.open_unreal_btn.setMinimumSize(100, 36)
+        self.open_unreal_btn.setMaximumSize(130, 36)
+        self.open_unreal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.open_unreal_btn.setToolTip("Abrir proyecto con Unreal Engine")
-        self.open_unreal_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #2d2d2d;
-                border-color: #5fd9c0;
-            }
-            QPushButton:pressed {
-                background-color: #0e639c;
-            }
-        """)
         self.open_unreal_btn.clicked.connect(self.open_with_unreal)
         layout.addWidget(self.open_unreal_btn)
         
