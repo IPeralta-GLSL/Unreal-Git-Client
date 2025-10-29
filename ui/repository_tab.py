@@ -208,9 +208,6 @@ class RepositoryTab(QWidget):
         self.open_unreal_btn.clicked.connect(self.open_with_unreal)
         layout.addWidget(self.open_unreal_btn)
         
-        if not self.git_manager.is_unreal_project():
-            self.open_unreal_btn.setVisible(False)
-        
         layout.addSpacing(10)
         
         separator2 = QWidget()
@@ -1434,6 +1431,17 @@ class RepositoryTab(QWidget):
     
     def open_with_unreal(self):
         import subprocess
+        
+        if not self.git_manager.is_unreal_project():
+            QMessageBox.information(
+                self,
+                "No es un proyecto de Unreal",
+                "Este repositorio no parece ser un proyecto de Unreal Engine.\n\n"
+                "Para que se reconozca como proyecto de Unreal, debe contener:\n"
+                "• Un archivo .uproject, o\n"
+                "• Carpetas Content y (Source o Config)"
+            )
+            return
         
         repo_path = os.path.abspath(self.git_manager.repo_path)
         
