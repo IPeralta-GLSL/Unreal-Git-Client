@@ -378,10 +378,14 @@ class RepositoryTab(QWidget):
         self.repo_info.setStyleSheet("color: #cccccc; line-height: 1.6;")
         info_layout.addWidget(self.repo_info)
         
-        layout.addWidget(info_container)
+        info_group = QWidget()
+        info_group_layout = QVBoxLayout(info_group)
+        info_group_layout.setContentsMargins(0, 0, 0, 0)
+        info_group_layout.setSpacing(0)
+        info_group_layout.addWidget(info_header)
+        info_group_layout.addWidget(info_container)
         
         diff_header = self.create_section_header("📄 DIFERENCIAS", "Cambios en el archivo seleccionado")
-        layout.addWidget(diff_header)
         
         diff_container = QWidget()
         diff_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
@@ -406,10 +410,14 @@ class RepositoryTab(QWidget):
         """)
         diff_layout.addWidget(self.diff_view)
         
-        layout.addWidget(diff_container, stretch=2)
+        diff_group = QWidget()
+        diff_group_layout = QVBoxLayout(diff_group)
+        diff_group_layout.setContentsMargins(0, 0, 0, 0)
+        diff_group_layout.setSpacing(0)
+        diff_group_layout.addWidget(diff_header)
+        diff_group_layout.addWidget(diff_container)
         
         history_header = self.create_section_header("📜 HISTORIAL", "Últimos commits del repositorio")
-        layout.addWidget(history_header)
         
         history_container = QWidget()
         history_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
@@ -445,7 +453,32 @@ class RepositoryTab(QWidget):
         self.history_list.customContextMenuRequested.connect(self.show_commit_context_menu)
         history_layout.addWidget(self.history_list)
         
-        layout.addWidget(history_container, stretch=1)
+        history_group = QWidget()
+        history_group_layout = QVBoxLayout(history_group)
+        history_group_layout.setContentsMargins(0, 0, 0, 0)
+        history_group_layout.setSpacing(0)
+        history_group_layout.addWidget(history_header)
+        history_group_layout.addWidget(history_container)
+        
+        right_splitter = QSplitter(Qt.Orientation.Vertical)
+        right_splitter.setHandleWidth(3)
+        right_splitter.setStyleSheet("""
+            QSplitter::handle {
+                background-color: #3d3d3d;
+            }
+            QSplitter::handle:hover {
+                background-color: #007acc;
+            }
+        """)
+        right_splitter.addWidget(info_group)
+        right_splitter.addWidget(diff_group)
+        right_splitter.addWidget(history_group)
+        right_splitter.setStretchFactor(0, 1)
+        right_splitter.setStretchFactor(1, 3)
+        right_splitter.setStretchFactor(2, 3)
+        right_splitter.setSizes([150, 400, 400])
+        
+        layout.addWidget(right_splitter)
         
         self.apply_right_panel_styles()
         
