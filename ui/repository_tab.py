@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUr
 from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
+from ui.icon_manager import IconManager
 import os
 import hashlib
 
@@ -34,6 +35,7 @@ class RepositoryTab(QWidget):
         self.avatar_cache = {}
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self.on_avatar_downloaded)
+        self.icon_manager = IconManager()
         self.init_ui()
         
     def init_ui(self):
@@ -134,7 +136,8 @@ class RepositoryTab(QWidget):
         
         layout.addStretch()
         
-        self.pull_btn = QPushButton("⬇ Pull")
+        self.pull_btn = QPushButton(" Pull")
+        self.pull_btn.setIcon(self.icon_manager.get_icon("download", size=18))
         self.pull_btn.setMinimumSize(85, 36)
         self.pull_btn.setMaximumSize(110, 36)
         self.pull_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -142,7 +145,8 @@ class RepositoryTab(QWidget):
         self.pull_btn.clicked.connect(self.do_pull)
         layout.addWidget(self.pull_btn)
         
-        self.push_btn = QPushButton("⬆ Push")
+        self.push_btn = QPushButton(" Push")
+        self.push_btn.setIcon(self.icon_manager.get_icon("git-pull-request", size=18))
         self.push_btn.setMinimumSize(85, 36)
         self.push_btn.setMaximumSize(110, 36)
         self.push_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -150,7 +154,8 @@ class RepositoryTab(QWidget):
         self.push_btn.clicked.connect(self.do_push)
         layout.addWidget(self.push_btn)
         
-        self.fetch_btn = QPushButton("🔍 Fetch")
+        self.fetch_btn = QPushButton(" Fetch")
+        self.fetch_btn.setIcon(self.icon_manager.get_icon("git-diff", size=18))
         self.fetch_btn.setMinimumSize(85, 36)
         self.fetch_btn.setMaximumSize(110, 36)
         self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -158,7 +163,8 @@ class RepositoryTab(QWidget):
         self.fetch_btn.clicked.connect(self.do_fetch)
         layout.addWidget(self.fetch_btn)
         
-        self.refresh_btn = QPushButton("🔄")
+        self.refresh_btn = QPushButton()
+        self.refresh_btn.setIcon(self.icon_manager.get_icon("git-commit", size=20))
         self.refresh_btn.setFixedSize(36, 36)
         self.refresh_btn.setToolTip("Actualizar estado del repositorio")
         self.refresh_btn.clicked.connect(self.refresh_status)
@@ -214,17 +220,20 @@ class RepositoryTab(QWidget):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(5)
         
-        self.stage_all_btn = QPushButton("➕ Agregar Todo")
+        self.stage_all_btn = QPushButton(" Agregar Todo")
+        self.stage_all_btn.setIcon(self.icon_manager.get_icon("folder-plus", size=16))
         self.stage_all_btn.setToolTip("Agregar todos los cambios")
         self.stage_all_btn.clicked.connect(self.stage_all)
         btn_layout.addWidget(self.stage_all_btn)
         
-        self.stage_btn = QPushButton("➕ Agregar")
+        self.stage_btn = QPushButton(" Agregar")
+        self.stage_btn.setIcon(self.icon_manager.get_icon("file-plus", size=16))
         self.stage_btn.setToolTip("Agregar archivo seleccionado")
         self.stage_btn.clicked.connect(self.stage_selected)
         btn_layout.addWidget(self.stage_btn)
         
-        self.unstage_btn = QPushButton("➖ Quitar")
+        self.unstage_btn = QPushButton(" Quitar")
+        self.unstage_btn.setIcon(self.icon_manager.get_icon("file-minus", size=16))
         self.unstage_btn.setToolTip("Quitar archivo del staging")
         self.unstage_btn.clicked.connect(self.unstage_selected)
         btn_layout.addWidget(self.unstage_btn)
@@ -525,7 +534,8 @@ class RepositoryTab(QWidget):
             return
             
         branch = self.git_manager.get_current_branch()
-        self.branch_button.setText(f"🌿 {branch}")
+        self.branch_button.setText(f" {branch}")
+        self.branch_button.setIcon(self.icon_manager.get_icon("git-branch", size=16))
         
         status = self.git_manager.get_status()
         self.changes_list.clear()
