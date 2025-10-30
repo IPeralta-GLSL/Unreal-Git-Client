@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
                              QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu)
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
@@ -121,11 +121,14 @@ class MainWindow(QMainWindow):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
+        layout.addWidget(self.tab_widget)
+        
+        # Crear el botón de nueva pestaña
         from ui.icon_manager import IconManager
         theme = get_current_theme()
         icon_manager = IconManager()
         
-        self.new_tab_button = QPushButton()
+        self.new_tab_button = QPushButton(self.tab_widget)
         self.new_tab_button.setIcon(icon_manager.get_icon("file-plus", size=18))
         self.new_tab_button.setFixedSize(32, 32)
         self.new_tab_button.setToolTip("Nueva pestaña (Ctrl+T)")
@@ -148,10 +151,7 @@ class MainWindow(QMainWindow):
             }}
         """)
         
-        self.tab_widget.setCornerWidget(self.new_tab_button, Qt.Corner.TopRightCorner)
-        
-        layout.addWidget(self.tab_widget)
-        
+        # Agregar pestaña inicial
         self.add_empty_tab()
         
     def setup_shortcuts(self):
@@ -172,10 +172,24 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Listo")
         
+    def update_new_tab_button_position(self):
+        """Reposiciona el botón de nueva pestaña al final de las pestañas"""
+        tab_bar = self.tab_widget.tabBar()
+        if tab_bar and self.tab_widget.count() > 0:
+            # Obtener la posición de la última pestaña
+            last_tab_rect = tab_bar.tabRect(self.tab_widget.count() - 1)
+            # Posicionar el botón justo después de la última pestaña
+            button_x = last_tab_rect.right() + 2
+            button_y = last_tab_rect.top() + (last_tab_rect.height() - self.new_tab_button.height()) // 2
+            self.new_tab_button.move(button_x, button_y)
+            self.new_tab_button.raise_()
+    
     def add_empty_tab(self):
         repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
         index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
         self.tab_widget.setCurrentIndex(index)
+        # Reposicionar el botón después de agregar la pestaña
+        QTimer.singleShot(0, self.update_new_tab_button_position)
         
     def open_repository(self):
         folder = QFileDialog.getExistingDirectory(
@@ -216,6 +230,9 @@ class MainWindow(QMainWindow):
         
         if self.tab_widget.count() == 0:
             self.add_empty_tab()
+        else:
+            # Reposicionar el botón después de cerrar la pestaña
+            QTimer.singleShot(0, self.update_new_tab_button_position)
             
     def close_current_tab(self):
         current_index = self.tab_widget.currentIndex()
