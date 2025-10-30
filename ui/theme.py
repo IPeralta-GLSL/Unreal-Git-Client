@@ -15,22 +15,22 @@ class Theme:
     def load_theme(self):
         if self.name == "Dark":
             self.colors = {
-                'primary': '#4ec9b0',
-                'primary_hover': '#5fd9c0',
-                'primary_pressed': '#3db89f',
+                'primary': '#4ade80',
+                'primary_hover': '#5ef090',
+                'primary_pressed': '#3bc970',
                 'primary_text': '#ffffff',
                 
                 'secondary': '#0e639c',
                 'secondary_hover': '#1177bb',
                 'secondary_pressed': '#0a4f7d',
                 
-                'success': '#238636',
-                'success_hover': '#2ea043',
-                'success_pressed': '#1a7f37',
+                'success': '#22c55e',
+                'success_hover': '#2dd36c',
+                'success_pressed': '#16a34a',
                 
-                'danger': '#c42b1c',
-                'danger_hover': '#d32f2f',
-                'danger_pressed': '#a52315',
+                'danger': '#ef4444',
+                'danger_hover': '#f87171',
+                'danger_pressed': '#dc2626',
                 
                 'warning': '#f59e0b',
                 'warning_hover': '#fbbf24',
@@ -43,21 +43,21 @@ class Theme:
                 
                 'surface': '#2d2d2d',
                 'surface_hover': '#3d3d3d',
-                'surface_selected': '#1a4d2e',
+                'surface_selected': '#166534',
                 
                 'border': '#3d3d3d',
-                'border_focus': '#4ec9b0',
-                'border_error': '#c42b1c',
+                'border_focus': '#4ade80',
+                'border_error': '#ef4444',
                 
                 'text': '#cccccc',
                 'text_secondary': '#999999',
                 'text_disabled': '#666666',
                 'text_inverse': '#ffffff',
-                'text_link': '#4ec9b0',
+                'text_link': '#4ade80',
                 
                 'input_bg': '#252526',
                 'input_border': '#3d3d3d',
-                'input_focus': '#4ec9b0',
+                'input_focus': '#4ade80',
                 
                 'scrollbar': '#424242',
                 'scrollbar_hover': '#4e4e4e',
@@ -65,7 +65,7 @@ class Theme:
                 'shadow': 'rgba(0, 0, 0, 0.3)',
                 
                 'unreal': '#0E1128',
-                'github': '#238636',
+                'github': '#22c55e',
                 'gitlab': '#FC6D26',
             }
         
@@ -75,9 +75,9 @@ class Theme:
                 'primary_hover': '#106ebe',
                 'primary_pressed': '#005a9e',
                 
-                'secondary': '#4ec9b0',
-                'secondary_hover': '#5fd9c0',
-                'secondary_pressed': '#3db89f',
+                'secondary': '#4ade80',
+                'secondary_hover': '#5ef090',
+                'secondary_pressed': '#3bc970',
                 
                 'success': '#107c10',
                 'success_hover': '#0e6b0e',
