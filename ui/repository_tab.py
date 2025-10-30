@@ -747,12 +747,15 @@ class RepositoryTab(QWidget):
         info = self.git_manager.get_repository_info()
         
         project_type = ""
-        if self.git_manager.is_unreal_project():
-            project_name = self.git_manager.get_unreal_project_name()
-            if project_name:
-                project_type = f"<b>Proyecto Unreal:</b> {project_name}<br>"
-            else:
-                project_type = "<b>Tipo:</b> Proyecto Unreal Engine<br>"
+        if self.plugin_manager:
+            unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
+            if unreal_plugin and unreal_plugin.is_unreal_project(self.repo_path):
+                uproject = unreal_plugin.get_uproject_file(self.repo_path)
+                if uproject:
+                    project_name = os.path.basename(uproject).replace('.uproject', '')
+                    project_type = f"<b>Proyecto Unreal:</b> {project_name}<br>"
+                else:
+                    project_type = "<b>Tipo:</b> Proyecto Unreal Engine<br>"
         
         info_text = f"""
 {project_type}<b>Ruta:</b> {self.repo_path}<br>
@@ -1174,6 +1177,14 @@ class RepositoryTab(QWidget):
             """)
             btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions())
             self.plugin_indicators_layout.addWidget(btn)
+        
+        unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
+        is_unreal_enabled = unreal_plugin is not None
+        
+        if hasattr(self, 'open_unreal_btn'):
+            self.open_unreal_btn.setVisible(is_unreal_enabled)
+        if hasattr(self, 'lfs_track_btn'):
+            self.lfs_track_btn.setVisible(is_unreal_enabled)
     
     def show_plugin_actions(self):
         if not self.plugin_manager or not self.repo_path:
@@ -1252,9 +1263,22 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, "Error", message)
             
     def track_unreal_files(self):
-        success, message = self.git_manager.track_unreal_files()
+        if not self.plugin_manager:
+            return
+        
+        unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
+        if not unreal_plugin:
+            QMessageBox.warning(
+                self,
+                "Plugin desactivado",
+                "El plugin de Unreal Engine está desactivado.\n\n"
+                "Actívalo desde Ajustes > Plugins para usar esta función."
+            )
+            return
+        
+        success, message = unreal_plugin.track_unreal_files(self.repo_path)
         if success:
-            QMessageBox.information(self, "Éxito", "Archivos de Unreal Engine configurados para LFS")
+            QMessageBox.information(self, "Éxito", message)
         else:
             QMessageBox.warning(self, "Error", message)
             
@@ -1413,43 +1437,28 @@ class RepositoryTab(QWidget):
             subprocess.Popen(["gnome-terminal", "--working-directory", repo_path])
     
     def open_with_unreal(self):
-        import subprocess
+        if not self.plugin_manager:
+            return
         
-        if not self.git_manager.is_unreal_project():
+        unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
+        if not unreal_plugin:
+            QMessageBox.warning(
+                self,
+                "Plugin desactivado",
+                "El plugin de Unreal Engine está desactivado.\n\n"
+                "Actívalo desde Ajustes > Plugins para usar esta función."
+            )
+            return
+        
+        if not unreal_plugin.is_unreal_project(self.repo_path):
             QMessageBox.information(
                 self,
                 "No es un proyecto de Unreal",
-                "Este repositorio no parece ser un proyecto de Unreal Engine.\n\n"
-                "Para que se reconozca como proyecto de Unreal, debe contener:\n"
-                "• Un archivo .uproject, o\n"
-                "• Carpetas Content y (Source o Config)"
+                "Este repositorio no parece ser un proyecto de Unreal Engine."
             )
             return
         
-        repo_path = os.path.abspath(self.git_manager.repo_path)
+        success, message = unreal_plugin.open_in_unreal(self.repo_path)
         
-        uproject_files = [f for f in os.listdir(repo_path) if f.endswith('.uproject')]
-        
-        if not uproject_files:
-            QMessageBox.warning(
-                self,
-                "Archivo no encontrado",
-                "No se encontró ningún archivo .uproject en la carpeta del proyecto."
-            )
-            return
-        
-        uproject_path = os.path.join(repo_path, uproject_files[0])
-        
-        try:
-            if os.name == 'nt':
-                os.startfile(uproject_path)
-            elif sys.platform == 'darwin':
-                subprocess.Popen(["open", uproject_path])
-            else:
-                subprocess.Popen(["xdg-open", uproject_path])
-        except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"No se pudo abrir el proyecto con Unreal Engine:\n{str(e)}"
-            )
+        if not success:
+            QMessageBox.warning(self, "Error", message)

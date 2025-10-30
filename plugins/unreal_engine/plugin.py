@@ -58,6 +58,13 @@ class Plugin:
                 'requires_unreal': True
             },
             {
+                'id': 'configure_lfs',
+                'name': 'Configurar LFS para Unreal',
+                'icon': '📦',
+                'callback': self.track_unreal_files,
+                'requires_unreal': True
+            },
+            {
                 'id': 'open_project_folder',
                 'name': 'Abrir carpeta del proyecto',
                 'icon': '📁',
@@ -136,3 +143,34 @@ class Plugin:
             return True, info
         except Exception as e:
             return False, f"Error al leer información: {str(e)}"
+    
+    def track_unreal_files(self, repo_path):
+        if not self.is_unreal_project(repo_path):
+            return False, "No es un proyecto de Unreal Engine"
+        
+        try:
+            import subprocess
+            
+            unreal_extensions = [
+                "*.uasset", "*.umap", "*.blend", "*.blend1",
+                "*.fbx", "*.3ds", "*.obj", "*.dae",
+                "*.jpg", "*.jpeg", "*.png", "*.tga", "*.bmp",
+                "*.tif", "*.gif", "*.iff", "*.pict", "*.dds",
+                "*.xcf", "*.exr", "*.wav", "*.mp3", "*.ogg",
+                "*.flac", "*.aiff", "*.aif", "*.mod", "*.it",
+                "*.s3m", "*.xm", "*.psd", "*.mov", "*.avi",
+                "*.mp4", "*.wmv"
+            ]
+            
+            gitattributes_path = os.path.join(repo_path, ".gitattributes")
+            
+            with open(gitattributes_path, 'a') as f:
+                f.write("\n# Unreal Engine LFS Configuration\n")
+                for ext in unreal_extensions:
+                    f.write(f"{ext} filter=lfs diff=lfs merge=lfs -text\n")
+            
+            subprocess.run(['git', 'add', '.gitattributes'], cwd=repo_path, check=True)
+            
+            return True, f"Configurados {len(unreal_extensions)} tipos de archivos para LFS"
+        except Exception as e:
+            return False, f"Error al configurar LFS: {str(e)}"
