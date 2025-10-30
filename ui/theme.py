@@ -65,7 +65,64 @@ class Theme:
                 'github': '#238636',
                 'gitlab': '#FC6D26',
             }
-            
+        
+        elif self.name == "Light":
+            self.colors = {
+                'primary': '#0078d4',
+                'primary_hover': '#106ebe',
+                'primary_pressed': '#005a9e',
+                
+                'secondary': '#4ec9b0',
+                'secondary_hover': '#5fd9c0',
+                'secondary_pressed': '#3db89f',
+                
+                'success': '#107c10',
+                'success_hover': '#0e6b0e',
+                'success_pressed': '#0c5a0c',
+                
+                'danger': '#d13438',
+                'danger_hover': '#a72b2e',
+                'danger_pressed': '#8d2325',
+                
+                'warning': '#ca5010',
+                'warning_hover': '#a74109',
+                'warning_pressed': '#8a3508',
+                
+                'background': '#f3f3f3',
+                'background_secondary': '#ffffff',
+                'background_tertiary': '#f8f8f8',
+                'background_elevated': '#ffffff',
+                
+                'surface': '#ffffff',
+                'surface_hover': '#f3f3f3',
+                'surface_selected': '#cce8ff',
+                
+                'border': '#e0e0e0',
+                'border_focus': '#0078d4',
+                'border_error': '#d13438',
+                
+                'text': '#1f1f1f',
+                'text_secondary': '#616161',
+                'text_disabled': '#a6a6a6',
+                'text_inverse': '#ffffff',
+                'text_link': '#0078d4',
+                
+                'input_bg': '#ffffff',
+                'input_border': '#d0d0d0',
+                'input_focus': '#0078d4',
+                
+                'scrollbar': '#c0c0c0',
+                'scrollbar_hover': '#a0a0a0',
+                
+                'shadow': 'rgba(0, 0, 0, 0.1)',
+                
+                'unreal': '#0E1128',
+                'github': '#238636',
+                'gitlab': '#FC6D26',
+            }
+        
+        # Fuentes, espaciado y bordes son iguales para todos los temas
+        if not self.fonts:
             self.fonts = {
                 'family': 'Segoe UI, Ubuntu, sans-serif',
                 'size_xs': 10,
@@ -80,7 +137,8 @@ class Theme:
                 'weight_medium': 500,
                 'weight_bold': 700,
             }
-            
+        
+        if not self.spacing:
             self.spacing = {
                 'xs': 4,
                 'sm': 8,
@@ -90,7 +148,8 @@ class Theme:
                 '2xl': 24,
                 '3xl': 32,
             }
-            
+        
+        if not self.borders:
             self.borders = {
                 'radius_sm': 4,
                 'radius_md': 5,

@@ -57,6 +57,7 @@ class AccountsDialog(QDialog):
         tabs.addTab(self.create_accounts_section(), "� Cuentas")
         if self.plugin_manager:
             tabs.addTab(self.create_plugins_section(), "� Plugins")
+        tabs.addTab(self.create_appearance_section(), "🎨 Apariencia")
         
         layout.addWidget(tabs)
         
@@ -1402,3 +1403,196 @@ class AccountsDialog(QDialog):
             )
         
         self.load_plugins()
+    
+    def create_appearance_section(self):
+        """Crea la sección de apariencia"""
+        from ui.theme_manager import theme_manager
+        
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
+        
+        # Título
+        title = QLabel("🎨 Personalización de Apariencia")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #4ec9b0; margin-bottom: 10px;")
+        layout.addWidget(title)
+        
+        # Sección de tema
+        theme_group = QGroupBox("Tema de color")
+        theme_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #3d3d3d;
+                border-radius: 8px;
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 12px;
+                padding: 0 5px;
+            }
+        """)
+        theme_layout = QVBoxLayout()
+        theme_layout.setSpacing(15)
+        
+        info_label = QLabel("Selecciona el tema que prefieras para la interfaz:")
+        info_label.setStyleSheet("color: #999; font-size: 12px; margin: 5px 0;")
+        theme_layout.addWidget(info_label)
+        
+        # Obtener tema actual
+        current_theme = theme_manager.get_theme_name()
+        
+        # Temas disponibles
+        themes_container = QWidget()
+        themes_layout = QVBoxLayout(themes_container)
+        themes_layout.setSpacing(10)
+        
+        self.theme_buttons = []
+        
+        for theme_name in theme_manager.get_available_themes():
+            theme_widget = QWidget()
+            theme_widget.setMinimumHeight(80)
+            theme_h_layout = QHBoxLayout(theme_widget)
+            theme_h_layout.setContentsMargins(15, 10, 15, 10)
+            theme_h_layout.setSpacing(15)
+            
+            # Icono del tema
+            icon_label = QLabel()
+            icon_label.setFixedSize(48, 48)
+            
+            if theme_name == "Dark":
+                icon_label.setText("🌙")
+                icon_label.setStyleSheet("font-size: 32px;")
+                theme_title = "Oscuro"
+                theme_desc = "Tema oscuro ideal para trabajar de noche o en ambientes con poca luz"
+            else:  # Light
+                icon_label.setText("☀️")
+                icon_label.setStyleSheet("font-size: 32px;")
+                theme_title = "Claro"
+                theme_desc = "Tema claro y brillante para trabajar durante el día"
+            
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            theme_h_layout.addWidget(icon_label)
+            
+            # Información del tema
+            info_v_layout = QVBoxLayout()
+            info_v_layout.setSpacing(4)
+            
+            name_label = QLabel(f"<b>{theme_title}</b>")
+            name_label.setStyleSheet("font-size: 14px;")
+            info_v_layout.addWidget(name_label)
+            
+            desc_label = QLabel(theme_desc)
+            desc_label.setStyleSheet("font-size: 12px; color: #999;")
+            desc_label.setWordWrap(True)
+            info_v_layout.addWidget(desc_label)
+            
+            theme_h_layout.addLayout(info_v_layout, 1)
+            
+            # Botón para seleccionar
+            select_btn = QPushButton("Seleccionado" if theme_name == current_theme else "Seleccionar")
+            select_btn.setFixedWidth(120)
+            select_btn.setEnabled(theme_name != current_theme)
+            select_btn.clicked.connect(lambda checked, t=theme_name: self.change_theme(t))
+            
+            if theme_name == current_theme:
+                select_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #238636;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    }
+                """)
+            else:
+                select_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #0078d4;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #106ebe;
+                    }
+                """)
+            
+            self.theme_buttons.append((theme_name, select_btn))
+            theme_h_layout.addWidget(select_btn)
+            
+            # Estilo del contenedor del tema
+            theme_widget.setStyleSheet("""
+                QWidget {
+                    background-color: #2d2d2d;
+                    border-radius: 8px;
+                    border: 1px solid #3d3d3d;
+                }
+            """)
+            
+            themes_layout.addWidget(theme_widget)
+        
+        theme_layout.addWidget(themes_container)
+        theme_group.setLayout(theme_layout)
+        layout.addWidget(theme_group)
+        
+        # Información adicional
+        restart_info = QLabel("ℹ️ Los cambios de tema se aplicarán al reiniciar la aplicación")
+        restart_info.setStyleSheet("""
+            background-color: #0e639c;
+            color: white;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 12px;
+        """)
+        restart_info.setWordWrap(True)
+        layout.addWidget(restart_info)
+        
+        layout.addStretch()
+        
+        return widget
+    
+    def change_theme(self, theme_name):
+        """Cambia el tema de la aplicación"""
+        from ui.theme_manager import theme_manager
+        
+        theme_manager.set_theme(theme_name)
+        
+        # Actualizar botones
+        for t_name, btn in self.theme_buttons:
+            if t_name == theme_name:
+                btn.setText("Seleccionado")
+                btn.setEnabled(False)
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #238636;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    }
+                """)
+            else:
+                btn.setText("Seleccionar")
+                btn.setEnabled(True)
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #0078d4;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #106ebe;
+                    }
+                """)
+        
+        QMessageBox.information(
+            self,
+            "Tema cambiado",
+            f"El tema '{theme_name}' ha sido seleccionado.\n\nReinicia la aplicación para ver los cambios."
+        )
