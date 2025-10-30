@@ -26,14 +26,14 @@ class CloneDialog(QDialog):
         title_layout.addWidget(icon_label)
         
         title = QLabel("Clonar Repositorio Git")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: white; margin-bottom: 10px;")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(bright-text); margin-bottom: 10px;")
         title_layout.addWidget(title)
         title_layout.addStretch()
         
         layout.addLayout(title_layout)
         
         description = QLabel("Descarga una copia de un repositorio remoto a tu computadora")
-        description.setStyleSheet("color: palette(mid); font-size: 12px; margin-bottom: 10px;")
+        description.setStyleSheet("color: palette(text); font-size: 12px; margin-bottom: 10px;")
         description.setWordWrap(True)
         layout.addWidget(description)
         
@@ -92,15 +92,16 @@ class CloneDialog(QDialog):
         clone_btn.setDefault(True)
         clone_btn.setStyleSheet("""
             QPushButton {
-                background-color: #16825d;
+                background-color: palette(highlight);
+                color: palette(bright-text);
                 font-weight: bold;
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #1a9d6f;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #136d4d;
+                background-color: palette(highlight);
             }
         """)
         button_layout.addWidget(clone_btn)
@@ -144,8 +145,8 @@ class CloneDialog(QDialog):
                 border: 2px solid #0e639c;
             }
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: none;
                 border-radius: 4px;
                 padding: 10px 20px;
@@ -153,9 +154,9 @@ class CloneDialog(QDialog):
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #1177bb;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #0d5a8f;
+                background-color: palette(highlight);
             }
         """)

@@ -105,7 +105,7 @@ class RepositoryTab(QWidget):
         branch_layout.setSpacing(3)
         
         branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
-        branch_title.setStyleSheet("color: palette(mid); font-size: 9px; font-weight: bold;")
+        branch_title.setStyleSheet("color: palette(text); font-size: 9px; font-weight: bold;")
         branch_title.setMaximumHeight(14)
         branch_layout.addWidget(branch_title)
         
@@ -120,18 +120,19 @@ class RepositoryTab(QWidget):
                 font-size: 13px;
                 color: palette(link);
                 background-color: palette(window);
-                border: 2px solid #4ec9b0;
+                border: 2px solid palette(link);
                 border-radius: 5px;
                 padding: 2px 12px;
                 text-align: left;
             }
             QPushButton:hover {
                 background-color: palette(button);
-                border-color: #5fd9c0;
-                color: #5fd9c0;
+                border-color: palette(link);
+                color: palette(link);
             }
             QPushButton:pressed {
-                background-color: #0e639c;
+                background-color: palette(link);
+                color: palette(bright-text);
             }
         """)
         self.branch_button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -151,7 +152,7 @@ class RepositoryTab(QWidget):
         separator1 = QWidget()
         separator1.setFixedWidth(1)
         separator1.setFixedHeight(24)
-        separator1.setStyleSheet("background-color: palette(mid);")
+        separator1.setStyleSheet("background-color: palette(text);")
         layout.addWidget(separator1)
         
         layout.addSpacing(10)
@@ -188,7 +189,7 @@ class RepositoryTab(QWidget):
         separator2 = QWidget()
         separator2.setFixedWidth(1)
         separator2.setFixedHeight(24)
-        separator2.setStyleSheet("background-color: palette(mid);")
+        separator2.setStyleSheet("background-color: palette(text);")
         layout.addWidget(separator2)
         
         layout.addSpacing(10)
@@ -268,7 +269,7 @@ class RepositoryTab(QWidget):
                 background-color: palette(button);
             }
             QListWidget::item:selected {
-                background-color: #094771;
+                background-color: palette(highlight);
                 border-left-color: #007acc;
             }
         """)
@@ -332,15 +333,16 @@ class RepositoryTab(QWidget):
         self.commit_btn.setMinimumHeight(40)
         self.commit_btn.setStyleSheet("""
             QPushButton {
-                background-color: #16825d;
+                background-color: palette(highlight);
+                color: palette(bright-text);
                 font-size: 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #1a9d6f;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #136d4d;
+                background-color: palette(highlight);
             }
         """)
         self.commit_btn.setToolTip("Guardar todos los cambios preparados con este mensaje")
@@ -431,12 +433,12 @@ class RepositoryTab(QWidget):
         
         title_label = QLabel(title)
         title_label.setWordWrap(True)
-        title_label.setStyleSheet("color: white; font-size: 12px; font-weight: bold;")
+        title_label.setStyleSheet("color: #4ec9b0; font-size: 12px; font-weight: bold;")
         text_layout.addWidget(title_label)
         
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: palette(mid); font-size: 10px;")
+        desc_label.setStyleSheet("color: palette(text); font-size: 10px;")
         text_layout.addWidget(desc_label)
         
         layout.addLayout(text_layout)
@@ -476,7 +478,7 @@ class RepositoryTab(QWidget):
                 border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background-color: palette(mid);
+                background-color: palette(text);
                 border-radius: 6px;
                 min-height: 20px;
             }
@@ -549,6 +551,9 @@ class RepositoryTab(QWidget):
                 color: palette(window-text);
             }
         """)
+        palette = self.diff_view.palette()
+        palette.setColor(palette.ColorRole.PlaceholderText, palette.color(palette.ColorRole.Text))
+        self.diff_view.setPalette(palette)
         diff_layout.addWidget(self.diff_view)
         
         diff_group = QWidget()
@@ -562,7 +567,7 @@ class RepositoryTab(QWidget):
         right_splitter.setHandleWidth(3)
         right_splitter.setStyleSheet("""
             QSplitter::handle {
-                background-color: palette(mid);
+                background-color: palette(text);
             }
             QSplitter::handle:hover {
                 background-color: #007acc;
@@ -822,15 +827,15 @@ class RepositoryTab(QWidget):
         
         for line in lines:
             if line.startswith('diff --git'):
-                html += f'<span style="color: #569cd6; font-weight: bold;">{line}</span>\n'
+                html += f'<span style="color: palette(link); font-weight: bold;">{line}</span>\n'
             elif line.startswith('index ') or line.startswith('---') or line.startswith('+++'):
-                html += f'<span style="color: #858585;">{line}</span>\n'
+                html += f'<span style="color: palette(text);">{line}</span>\n'
             elif line.startswith('@@'):
-                html += f'<span style="color: #c586c0; font-weight: bold;">{line}</span>\n'
+                html += f'<span style="color: palette(link); font-weight: bold;">{line}</span>\n'
             elif line.startswith('+') and not line.startswith('+++'):
                 html += f'<span style="background-color: #1a3d1a; color: palette(link);">{line}</span>\n'
             elif line.startswith('-') and not line.startswith('---'):
-                html += f'<span style="background-color: #3d1a1a; color: #f48771;">{line}</span>\n'
+                html += f'<span style="background-color: #3d1a1a; color: palette(bright-text);">{line}</span>\n'
             else:
                 html += f'<span style="color: palette(window-text);">{line}</span>\n'
         
@@ -936,11 +941,11 @@ class RepositoryTab(QWidget):
                 font-size: 13px;
             }
             QMenu::item:selected {
-                background-color: #094771;
+                background-color: palette(highlight);
             }
             QMenu::separator {
                 height: 1px;
-                background-color: palette(mid);
+                background-color: palette(text);
                 margin: 5px 0;
             }
         """)
@@ -1171,7 +1176,7 @@ class RepositoryTab(QWidget):
                     font-weight: bold;
                 }}
                 QPushButton:hover {{
-                    background-color: palette(mid);
+                    background-color: palette(text);
                     border-color: #5fd9c0;
                 }}
             """)
@@ -1207,7 +1212,7 @@ class RepositoryTab(QWidget):
                 color: palette(window-text);
             }
             QMenu::item:selected {
-                background-color: #094771;
+                background-color: palette(highlight);
                 color: palette(bright-text);
             }
         """)
@@ -1319,8 +1324,8 @@ class RepositoryTab(QWidget):
     def apply_left_panel_styles(self):
         style = """
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: none;
                 border-radius: 4px;
                 padding: 8px 12px;
@@ -1329,14 +1334,14 @@ class RepositoryTab(QWidget):
                 min-height: 32px;
             }
             QPushButton:hover {
-                background-color: #1177bb;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #0d5a8f;
+                background-color: palette(highlight);
             }
             QPushButton:disabled {
-                background-color: palette(mid);
-                color: palette(mid);
+                background-color: palette(text);
+                color: palette(text);
             }
             QListWidget {
                 background-color: palette(window);
@@ -1352,8 +1357,8 @@ class RepositoryTab(QWidget):
                 margin: 2px 0;
             }
             QListWidget::item:selected {
-                background-color: #094771;
-                color: white;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
             QListWidget::item:hover {
                 background-color: palette(button);
@@ -1374,7 +1379,7 @@ class RepositoryTab(QWidget):
         diff_style = """
             QTextEdit {
                 background-color: palette(window);
-                color: #d4d4d4;
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 10px;
@@ -1400,8 +1405,8 @@ class RepositoryTab(QWidget):
                 border-radius: 3px;
             }
             QListWidget::item:selected {
-                background-color: #094771;
-                color: white;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
             QListWidget::item:hover {
                 background-color: palette(button);

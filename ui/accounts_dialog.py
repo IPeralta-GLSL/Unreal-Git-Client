@@ -64,7 +64,7 @@ class AccountsDialog(QDialog):
             }
             QTabBar::tab {
                 background-color: palette(base);
-                color: palette(mid);
+                color: palette(text);
                 padding: 8px 16px;
                 margin-right: 1px;
                 border-top-left-radius: 4px;
@@ -73,7 +73,7 @@ class AccountsDialog(QDialog):
             }
             QTabBar::tab:selected {
                 background-color: palette(button);
-                color: #fff;
+                color: palette(bright-text);
             }
             QTabBar::tab:hover {
                 background-color: palette(button);
@@ -252,11 +252,11 @@ class AccountsDialog(QDialog):
         layout.addWidget(separator)
         
         advanced_label = QLabel("🔧 Métodos alternativos:")
-        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(mid); font-size: 12px;")
+        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(text); font-size: 12px;")
         layout.addWidget(advanced_label)
         
         manual_label = QLabel("Agregar un Personal Access Token manualmente:")
-        manual_label.setStyleSheet("margin-top: 10px; font-size: 11px; color: palette(mid);")
+        manual_label.setStyleSheet("margin-top: 10px; font-size: 11px; color: palette(text);")
         layout.addWidget(manual_label)
         
         token_layout = QHBoxLayout()
@@ -280,7 +280,7 @@ class AccountsDialog(QDialog):
         add_token_btn.setStyleSheet("""
             QPushButton {
                 background-color: palette(highlight);
-                color: white;
+                color: palette(bright-text);
                 font-size: 12px;
                 font-weight: bold;
                 border-radius: 5px;
@@ -413,7 +413,7 @@ class AccountsDialog(QDialog):
         layout.addWidget(separator)
         
         advanced_label = QLabel("🔧 Métodos alternativos:")
-        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(mid); font-size: 12px;")
+        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(text); font-size: 12px;")
         layout.addWidget(advanced_label)
         
         form_layout = QVBoxLayout()
@@ -457,7 +457,7 @@ class AccountsDialog(QDialog):
         connect_btn.setStyleSheet("""
             QPushButton {
                 background-color: palette(highlight);
-                color: white;
+                color: palette(bright-text);
                 font-size: 14px;
                 font-weight: bold;
                 border-radius: 5px;
@@ -531,7 +531,7 @@ class AccountsDialog(QDialog):
         save_btn.setStyleSheet("""
             QPushButton {
                 background-color: palette(highlight);
-                color: white;
+                color: palette(bright-text);
                 font-size: 14px;
                 font-weight: bold;
                 border-radius: 5px;
@@ -660,7 +660,7 @@ class AccountsDialog(QDialog):
             
             if email:
                 email_label = QLabel(f"📧 {email}")
-                email_label.setStyleSheet("font-size: 12px; color: palette(mid);")
+                email_label.setStyleSheet("font-size: 12px; color: palette(text);")
                 info_layout.addWidget(email_label)
             else:
                 info_layout.addStretch()
@@ -715,7 +715,7 @@ class AccountsDialog(QDialog):
         copy_button.setStyleSheet("""
             QPushButton {
                 background-color: palette(highlight);
-                color: white;
+                color: palette(bright-text);
                 font-size: 14px;
                 border-radius: 5px;
                 border: none;
@@ -727,7 +727,7 @@ class AccountsDialog(QDialog):
         copy_button.clicked.connect(lambda: self.copy_code_to_clipboard(user_code))
         
         code_layout = QHBoxLayout()
-        code_label = QLabel(f"<b>📋 Código:</b> <span style='font-size: 20px; color: #0e639c; font-family: monospace;'>{user_code}</span>")
+        code_label = QLabel(f"<b>📋 Código:</b> <span style='font-size: 20px; font-family: monospace;'>{user_code}</span>")
         code_layout.addWidget(code_label)
         code_layout.addWidget(copy_button)
         code_layout.addStretch()
@@ -816,7 +816,7 @@ class AccountsDialog(QDialog):
         interval = flow_data['interval']
         
         self.gitlab_status_label.setText(
-            f"<b>📋 Código de verificación:</b> <span style='font-size: 24px; color: #FC6D26;'>{user_code}</span><br><br>"
+            f"<b>📋 Código de verificación:</b> <span style='font-size: 24px;'>{user_code}</span><br><br>"
             f"Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
             f"Ingresa el código cuando se te solicite."
         )
@@ -1290,11 +1290,11 @@ class AccountsDialog(QDialog):
             
             if plugin.get('description'):
                 desc_label = QLabel(plugin['description'])
-                desc_label.setStyleSheet("font-size: 12px; color: palette(mid);")
+                desc_label.setStyleSheet("font-size: 12px; color: palette(text);")
                 info_layout.addWidget(desc_label)
             
             version_label = QLabel(f"Versión: {plugin.get('version', '1.0.0')}")
-            version_label.setStyleSheet("font-size: 11px; color: palette(mid);")
+            version_label.setStyleSheet("font-size: 11px; color: palette(text);")
             info_layout.addWidget(version_label)
             
             plugin_layout.addLayout(info_layout, 1)
@@ -1305,7 +1305,7 @@ class AccountsDialog(QDialog):
             toggle_btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {'#c42b1c' if is_enabled else '#238636'};
-                    color: white;
+                    color: palette(bright-text);
                     padding: 8px 16px;
                     border-radius: 5px;
                     font-weight: bold;
@@ -1380,7 +1380,7 @@ class AccountsDialog(QDialog):
         theme_layout.setSpacing(15)
         
         info_label = QLabel("Selecciona el tema que prefieras para la interfaz:")
-        info_label.setStyleSheet("color: palette(mid); font-size: 12px; margin: 5px 0;")
+        info_label.setStyleSheet("color: palette(text); font-size: 12px; margin: 5px 0;")
         theme_layout.addWidget(info_label)
         
         # Obtener tema actual
@@ -1427,7 +1427,7 @@ class AccountsDialog(QDialog):
             info_v_layout.addWidget(name_label)
             
             desc_label = QLabel(theme_desc)
-            desc_label.setStyleSheet("font-size: 12px; color: palette(mid);")
+            desc_label.setStyleSheet("font-size: 12px; color: palette(text);")
             desc_label.setWordWrap(True)
             info_v_layout.addWidget(desc_label)
             
@@ -1443,7 +1443,7 @@ class AccountsDialog(QDialog):
                 select_btn.setStyleSheet("""
                     QPushButton {
                         background-color: palette(highlight);
-                        color: white;
+                        color: palette(bright-text);
                         padding: 10px 20px;
                         border-radius: 5px;
                         font-weight: bold;
@@ -1453,7 +1453,7 @@ class AccountsDialog(QDialog):
                 select_btn.setStyleSheet("""
                     QPushButton {
                         background-color: palette(highlight);
-                        color: white;
+                        color: palette(bright-text);
                         padding: 10px 20px;
                         border-radius: 5px;
                         font-weight: bold;
@@ -1485,7 +1485,7 @@ class AccountsDialog(QDialog):
         restart_info = QLabel("✨ Los cambios de tema se aplican inmediatamente sin necesidad de reiniciar")
         restart_info.setStyleSheet("""
             background-color: palette(highlight);
-            color: white;
+            color: palette(bright-text);
             padding: 12px;
             border-radius: 5px;
             font-size: 12px;
@@ -1523,7 +1523,7 @@ class AccountsDialog(QDialog):
                 btn.setStyleSheet("""
                     QPushButton {
                         background-color: palette(highlight);
-                        color: white;
+                        color: palette(bright-text);
                         padding: 10px 20px;
                         border-radius: 5px;
                         font-weight: bold;
@@ -1535,7 +1535,7 @@ class AccountsDialog(QDialog):
                 btn.setStyleSheet("""
                     QPushButton {
                         background-color: palette(highlight);
-                        color: white;
+                        color: palette(bright-text);
                         padding: 10px 20px;
                         border-radius: 5px;
                         font-weight: bold;
@@ -1545,8 +1545,4 @@ class AccountsDialog(QDialog):
                     }
                 """)
         
-        QMessageBox.information(
-            self,
-            "Tema cambiado",
-            f"El tema '{theme_name}' ha sido aplicado exitosamente.\n\n✨ Los cambios se aplicaron inmediatamente."
-        )
+        # No mostramos mensaje, el cambio es visual e inmediato

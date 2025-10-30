@@ -35,7 +35,7 @@ class HomeView(QWidget):
                 border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background-color: palette(mid);
+                background-color: palette(text);
                 border-radius: 6px;
                 min-height: 30px;
             }
@@ -63,7 +63,7 @@ class HomeView(QWidget):
         title.setStyleSheet("""
             font-size: 32px;
             font-weight: bold;
-            color: white;
+            color: palette(bright-text);
             margin: 5px;
         """)
         header_layout.addWidget(title)
@@ -115,7 +115,7 @@ class HomeView(QWidget):
         else:
             placeholder = QLabel("No hay repositorios recientes")
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            placeholder.setStyleSheet("color: palette(mid); font-size: 14px; padding: 40px;")
+            placeholder.setStyleSheet("color: palette(text); font-size: 14px; padding: 40px;")
             left_layout.addWidget(placeholder)
         
         left_layout.addStretch()
@@ -195,13 +195,13 @@ class HomeView(QWidget):
         shortcuts_label = QLabel("Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar")
         shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         shortcuts_label.setWordWrap(True)
-        shortcuts_label.setStyleSheet("color: palette(mid); font-size: 11px;")
+        shortcuts_label.setStyleSheet("color: palette(text); font-size: 11px;")
         footer_layout.addWidget(shortcuts_label)
         
         version_label = QLabel("v1.0.0 • Soporte para Git LFS y Unreal Engine")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_label.setWordWrap(True)
-        version_label.setStyleSheet("font-size: 10px; color: palette(mid);")
+        version_label.setStyleSheet("font-size: 10px; color: palette(text);")
         footer_layout.addWidget(version_label)
         
         layout.addWidget(footer)
@@ -261,7 +261,7 @@ class HomeView(QWidget):
                 border-radius: 5px;
             }
             QScrollBar::handle:vertical {
-                background-color: palette(mid);
+                background-color: palette(text);
                 border-radius: 5px;
             }
             QScrollBar::handle:vertical:hover {
@@ -302,7 +302,7 @@ class HomeView(QWidget):
         btn.setStyleSheet("""
             QPushButton {
                 background-color: palette(window);
-                border: 2px solid #3d3d3d;
+                border: 2px solid palette(mid);
                 border-radius: 8px;
                 padding: 12px 15px;
                 text-align: left;
@@ -310,10 +310,11 @@ class HomeView(QWidget):
             }
             QPushButton:hover {
                 background-color: palette(button);
-                border-color: #007acc;
+                border-color: palette(link);
             }
             QPushButton:pressed {
-                background-color: #094771;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
         """)
         
@@ -362,7 +363,7 @@ class HomeView(QWidget):
         btn_text.setStyleSheet("""
             font-size: 16px;
             font-weight: bold;
-            color: white;
+            color: palette(bright-text);
             background: transparent;
         """)
         layout.addWidget(btn_text)

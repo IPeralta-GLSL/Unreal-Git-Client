@@ -43,7 +43,7 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(widget)
         
         header = QLabel("Administrar Cuentas de GitHub")
-        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #0e639c; padding: 10px;")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
         layout.addWidget(header)
         
         form_group = QGroupBox("Agregar/Editar Cuenta")
@@ -115,7 +115,7 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(widget)
         
         header = QLabel("Administrar Cuentas de GitLab")
-        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #fc6d26; padding: 10px;")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
         layout.addWidget(header)
         
         form_group = QGroupBox("Agregar/Editar Cuenta")
@@ -402,8 +402,8 @@ class SettingsDialog(QDialog):
                 border: 1px solid #0e639c;
             }
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: none;
                 border-radius: 4px;
                 padding: 8px 16px;
@@ -411,10 +411,10 @@ class SettingsDialog(QDialog):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #1177bb;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #094771;
+                background-color: palette(highlight);
             }
             QListWidget {
                 background-color: palette(base);
@@ -429,8 +429,8 @@ class SettingsDialog(QDialog):
                 border-radius: 3px;
             }
             QListWidget::item:selected {
-                background-color: #094771;
-                color: white;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
             QListWidget::item:hover {
                 background-color: #2a2d2e;
@@ -451,11 +451,11 @@ class SettingsDialog(QDialog):
             }
             QTabBar::tab:selected {
                 background-color: palette(base);
-                color: white;
+                color: palette(bright-text);
                 border-bottom: 2px solid #0e639c;
             }
             QTabBar::tab:hover:!selected {
-                background-color: palette(mid);
+                background-color: palette(text);
             }
             QGroupBox {
                 color: palette(window-text);

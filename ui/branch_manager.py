@@ -29,13 +29,13 @@ class BranchManagerDialog(QDialog):
         title_layout.addWidget(title_icon)
         
         title = QLabel(" Administrador de Ramas")
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: white;")
+        title.setStyleSheet("font-size: 20px; font-weight: bold; color: palette(bright-text);")
         title_layout.addWidget(title)
         title_layout.addStretch()
         layout.addLayout(title_layout)
         
         current_branch_label = QLabel("Rama actual:")
-        current_branch_label.setStyleSheet("color: palette(mid); font-size: 12px;")
+        current_branch_label.setStyleSheet("color: palette(text); font-size: 12px;")
         layout.addWidget(current_branch_label)
         
         self.current_branch = QLabel()
@@ -219,14 +219,14 @@ class BranchManagerDialog(QDialog):
                 margin: 2px;
             }
             QListWidget::item:selected {
-                background-color: #094771;
+                background-color: palette(highlight);
             }
             QListWidget::item:hover {
                 background-color: palette(button);
             }
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: none;
                 border-radius: 4px;
                 padding: 10px 15px;
@@ -234,10 +234,10 @@ class BranchManagerDialog(QDialog):
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #1177bb;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #0d5a8f;
+                background-color: palette(highlight);
             }
         """)
 
@@ -262,7 +262,7 @@ class CreateBranchDialog(QDialog):
         title_layout.addWidget(icon_label)
         
         title_text = QLabel("Crear Nueva Rama")
-        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(bright-text);")
         title_layout.addWidget(title_text)
         title_layout.addStretch()
         
@@ -355,7 +355,7 @@ class CreateBranchDialog(QDialog):
             }
             QLineEdit:disabled {
                 background-color: palette(window);
-                color: palette(mid);
+                color: palette(text);
             }
             QGroupBox {
                 color: palette(window-text);
@@ -379,8 +379,8 @@ class CreateBranchDialog(QDialog):
                 height: 15px;
             }
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: none;
                 border-radius: 4px;
                 padding: 10px 20px;
@@ -388,10 +388,10 @@ class CreateBranchDialog(QDialog):
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #1177bb;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #0d5a8f;
+                background-color: palette(highlight);
             }
         """)
 
@@ -418,7 +418,7 @@ class CommitActionsDialog(QDialog):
         title_layout.addWidget(icon_label)
         
         title_text = QLabel("Acciones del Commit")
-        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(bright-text);")
         title_layout.addWidget(title_text)
         title_layout.addStretch()
         
@@ -454,10 +454,11 @@ class CommitActionsDialog(QDialog):
         self.reset_hard_btn.setToolTip("Volver a este commit descartando TODOS los cambios")
         self.reset_hard_btn.setStyleSheet("""
             QPushButton {
-                background-color: #c53030;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
             QPushButton:hover {
-                background-color: #e53e3e;
+                background-color: palette(highlight);
             }
         """)
         self.reset_hard_btn.clicked.connect(lambda: self.reset_commit('hard'))
@@ -548,8 +549,8 @@ class CommitActionsDialog(QDialog):
                 color: palette(window-text);
             }
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: none;
                 border-radius: 4px;
                 padding: 12px 15px;
@@ -559,9 +560,9 @@ class CommitActionsDialog(QDialog):
                 min-height: 40px;
             }
             QPushButton:hover {
-                background-color: #1177bb;
+                background-color: palette(highlight);
             }
             QPushButton:pressed {
-                background-color: #0d5a8f;
+                background-color: palette(highlight);
             }
         """)

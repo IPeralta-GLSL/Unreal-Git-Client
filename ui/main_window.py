@@ -75,8 +75,8 @@ class MainWindow(QMainWindow):
         self.new_tab_button.clicked.connect(self.add_empty_tab)
         self.new_tab_button.setStyleSheet("""
             QPushButton {
-                background-color: #0e639c;
-                color: white;
+                background-color: palette(link);
+                color: palette(bright-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 font-size: 20px;
@@ -85,11 +85,11 @@ class MainWindow(QMainWindow):
                 margin: 2px;
             }
             QPushButton:hover {
-                background-color: #1177bb;
-                color: white;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
             QPushButton:pressed {
-                background-color: #094771;
+                background-color: palette(highlight);
             }
         """)
         
@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid rgba(255, 255, 255, 0.3);
                 border-radius: 6px;
                 font-size: 16px;
-                color: white;
+                color: palette(bright-text);
                 padding: 2px;
                 margin-left: 5px;
                 margin-right: 10px;
@@ -244,11 +244,11 @@ class MainWindow(QMainWindow):
             }
             QTabBar::tab:selected {
                 background-color: palette(base);
-                color: white;
+                color: palette(bright-text);
                 border-bottom: 2px solid #0e639c;
             }
             QTabBar::tab:hover:!selected {
-                background-color: palette(mid);
+                background-color: palette(text);
             }
             QTabBar::close-button {
                 image: url(none);
@@ -261,7 +261,7 @@ class MainWindow(QMainWindow):
             }
             QStatusBar {
                 background-color: #007acc;
-                color: white;
+                color: palette(bright-text);
                 font-weight: bold;
             }
             QMenuBar {
@@ -275,7 +275,7 @@ class MainWindow(QMainWindow):
                 border-radius: 4px;
             }
             QMenuBar::item:selected {
-                background-color: palette(mid);
+                background-color: palette(text);
             }
             QMenu {
                 background-color: palette(button);
@@ -288,12 +288,12 @@ class MainWindow(QMainWindow):
                 border-radius: 4px;
             }
             QMenu::item:selected {
-                background-color: #094771;
-                color: white;
+                background-color: palette(highlight);
+                color: palette(bright-text);
             }
             QMenu::separator {
                 height: 1px;
-                background-color: palette(mid);
+                background-color: palette(text);
                 margin: 5px 0px;
             }
         """)

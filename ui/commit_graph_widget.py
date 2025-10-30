@@ -150,7 +150,8 @@ class CommitGraphWidget(QWidget):
         text_x = self.graph_width + 10
         text_y = y - 20
         
-        painter.setPen(QPen(QColor("#ffffff")))
+        text_color = self.palette().color(self.palette().ColorRole.WindowText)
+        painter.setPen(QPen(text_color))
         font = QFont("Segoe UI", 10, QFont.Weight.Bold)
         painter.setFont(font)
         
@@ -159,7 +160,8 @@ class CommitGraphWidget(QWidget):
             message += "..."
         painter.drawText(text_x, text_y, message)
         
-        painter.setPen(QPen(QColor("#888888")))
+        secondary_color = self.palette().color(self.palette().ColorRole.Text)
+        painter.setPen(QPen(secondary_color))
         font = QFont("Segoe UI", 9)
         painter.setFont(font)
         
