@@ -19,7 +19,7 @@ class AccountManager:
         self.oauth_code = None
         self.oauth_state = None
         
-        self.github_client_id = "Ov23liMpjGLMJR9Jqq3V"
+        self.github_client_id = "Iv1.b507a08c87ecfe98"
         
     def ensure_config_exists(self):
         self.config_dir.mkdir(exist_ok=True)
@@ -179,14 +179,19 @@ class AccountManager:
     
     def start_github_device_flow(self):
         try:
+            print(f"Iniciando device flow con client_id: {self.github_client_id}")
             response = requests.post(
                 'https://github.com/login/device/code',
                 headers={'Accept': 'application/json'},
                 data={
                     'client_id': self.github_client_id,
                     'scope': 'repo user'
-                }
+                },
+                timeout=10
             )
+            
+            print(f"Response status: {response.status_code}")
+            print(f"Response body: {response.text}")
             
             if response.status_code == 200:
                 data = response.json()
@@ -197,8 +202,12 @@ class AccountManager:
                     'expires_in': data.get('expires_in', 900),
                     'interval': data.get('interval', 5)
                 }
+            else:
+                print(f"Error response: {response.status_code} - {response.text}")
         except Exception as e:
-            print(f"Error starting device flow: {e}")
+            print(f"Exception starting device flow: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
         return None
     
     def poll_github_device_token(self, device_code, interval=5):
