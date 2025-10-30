@@ -3,8 +3,9 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QListWidgetItem, QComboBox, QRadioButton, QButtonGroup,
                              QGroupBox, QTextEdit)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QColor
 from ui.icon_manager import IconManager
+from ui.theme import get_current_theme
 
 class BranchManagerDialog(QDialog):
     def __init__(self, git_manager, parent=None):
@@ -95,6 +96,8 @@ class BranchManagerDialog(QDialog):
         self.branches_list.clear()
         branches = self.git_manager.get_all_branches()
         
+        theme = get_current_theme()
+        
         for branch in branches:
             name = branch['name']
             item = QListWidgetItem()
@@ -102,15 +105,15 @@ class BranchManagerDialog(QDialog):
             if branch['is_current']:
                 item.setText(f"  {name} (actual)")
                 item.setIcon(self.icon_manager.get_icon("check", size=16))
-                item.setForeground(Qt.GlobalColor.green)
+                item.setForeground(QColor(theme.colors['success']))
             elif branch['is_remote']:
                 item.setText(f"  {name}")
                 item.setIcon(self.icon_manager.get_icon("share-network", size=16))
-                item.setForeground(Qt.GlobalColor.cyan)
+                item.setForeground(QColor(theme.colors['primary']))
             else:
                 item.setText(f"  {name}")
                 item.setIcon(self.icon_manager.get_icon("git-branch", size=16))
-                item.setForeground(Qt.GlobalColor.white)
+                item.setForeground(QColor(theme.colors['text']))
             
             item.setData(Qt.ItemDataRole.UserRole, name)
             self.branches_list.addItem(item)
@@ -198,47 +201,51 @@ class BranchManagerDialog(QDialog):
                 QMessageBox.warning(self, "Error", f"Error en merge:\n{message}")
                 
     def apply_styles(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: palette(window);
-            }
-            QLabel {
-                color: palette(window-text);
-            }
-            QListWidget {
-                background-color: palette(base);
-                color: palette(window-text);
-                border: 1px solid #3d3d3d;
+        from ui.theme import get_current_theme
+        theme = get_current_theme()
+        
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {theme.colors['background']};
+            }}
+            QLabel {{
+                color: {theme.colors['text']};
+            }}
+            QListWidget {{
+                background-color: {theme.colors['background_secondary']};
+                color: {theme.colors['text']};
+                border: 1px solid {theme.colors['border']};
                 border-radius: 4px;
                 padding: 5px;
                 font-size: 13px;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 8px;
                 border-radius: 3px;
                 margin: 2px;
-            }
-            QListWidget::item:selected {
-                background-color: palette(highlight);
-            }
-            QListWidget::item:hover {
-                background-color: palette(button);
-            }
-            QPushButton {
-                background-color: palette(link);
-                color: palette(bright-text);
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme.colors['surface_selected']};
+                color: {theme.colors['text_inverse']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+            QPushButton {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
                 border: none;
                 border-radius: 4px;
                 padding: 10px 15px;
                 font-weight: bold;
                 font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
         """)
 
 class CreateBranchDialog(QDialog):
@@ -335,64 +342,67 @@ class CreateBranchDialog(QDialog):
             QMessageBox.warning(self, "Error", f"No se pudo crear la rama:\n{message}")
             
     def apply_styles(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: palette(window);
-            }
-            QLabel {
-                color: palette(window-text);
-            }
-            QLineEdit {
-                background-color: palette(base);
-                color: palette(window-text);
-                border: 2px solid #3d3d3d;
+        from ui.theme import get_current_theme
+        theme = get_current_theme()
+        
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {theme.colors['background']};
+            }}
+            QLabel {{
+                color: {theme.colors['text']};
+            }}
+            QLineEdit {{
+                background-color: {theme.colors['input_bg']};
+                color: {theme.colors['text']};
+                border: 2px solid {theme.colors['border']};
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 2px solid #0e639c;
-            }
-            QLineEdit:disabled {
-                background-color: palette(window);
-                color: palette(text);
-            }
-            QGroupBox {
-                color: palette(window-text);
-                border: 2px solid #3d3d3d;
+            }}
+            QLineEdit:focus {{
+                border: 2px solid {theme.colors['border_focus']};
+            }}
+            QLineEdit:disabled {{
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['text_disabled']};
+            }}
+            QGroupBox {{
+                color: {theme.colors['text']};
+                border: 2px solid {theme.colors['border']};
                 border-radius: 5px;
                 margin-top: 10px;
                 padding-top: 10px;
                 font-weight: bold;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
-            QRadioButton {
-                color: palette(window-text);
+            }}
+            QRadioButton {{
+                color: {theme.colors['text']};
                 font-size: 13px;
-            }
-            QRadioButton::indicator {
+            }}
+            QRadioButton::indicator {{
                 width: 15px;
                 height: 15px;
-            }
-            QPushButton {
-                background-color: palette(link);
-                color: palette(bright-text);
+            }}
+            QPushButton {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
                 border: none;
                 border-radius: 4px;
                 padding: 10px 20px;
                 font-weight: bold;
                 font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
         """)
 
 class CommitActionsDialog(QDialog):
@@ -541,16 +551,19 @@ class CommitActionsDialog(QDialog):
                 QMessageBox.warning(self, "Error", f"Error:\n{message}")
                 
     def apply_styles(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: palette(window);
-            }
-            QLabel {
-                color: palette(window-text);
-            }
-            QPushButton {
-                background-color: palette(link);
-                color: palette(bright-text);
+        from ui.theme import get_current_theme
+        theme = get_current_theme()
+        
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {theme.colors['background']};
+            }}
+            QLabel {{
+                color: {theme.colors['text']};
+            }}
+            QPushButton {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
                 border: none;
                 border-radius: 4px;
                 padding: 12px 15px;
@@ -558,11 +571,11 @@ class CommitActionsDialog(QDialog):
                 font-size: 13px;
                 text-align: left;
                 min-height: 40px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
         """)

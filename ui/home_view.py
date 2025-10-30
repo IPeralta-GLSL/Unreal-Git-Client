@@ -79,10 +79,12 @@ class HomeView(QWidget):
         buttons_layout.setSpacing(15)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         
+        theme = get_current_theme()
+        
         open_btn = self.create_action_button(
             " Abrir Repositorio",
             "Abre un repositorio Git existente",
-            "#0e639c",
+            theme.colors['primary'],
             "folder-open"
         )
         open_btn.clicked.connect(self.open_repo_requested.emit)
@@ -91,7 +93,7 @@ class HomeView(QWidget):
         clone_btn = self.create_action_button(
             "↓ Clonar Repositorio",
             "Descarga un repositorio remoto",
-            "#0e639c"
+            theme.colors['primary']
         )
         clone_btn.clicked.connect(self.clone_repo_requested.emit)
         buttons_layout.addWidget(clone_btn)
@@ -336,6 +338,8 @@ class HomeView(QWidget):
         button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         
+        theme = get_current_theme()
+        
         if icon_name:
             button.setIcon(self.icon_manager.get_icon(icon_name, size=32))
             button.setIconSize(QSize(32, 32))
@@ -349,10 +353,10 @@ class HomeView(QWidget):
                 text-align: left;
             }}
             QPushButton:hover {{
-                background-color: {self.lighten_color(color)};
+                background-color: {theme.colors['primary_hover']};
             }}
             QPushButton:pressed {{
-                background-color: {self.darken_color(color)};
+                background-color: {theme.colors['primary_pressed']};
             }}
         """)
         
