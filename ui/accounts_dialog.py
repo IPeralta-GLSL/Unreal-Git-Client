@@ -653,7 +653,15 @@ class AccountsDialog(QDialog):
                 avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 avatar_label.setStyleSheet("border-radius: 20px; background-color: #3d3d3d; font-size: 20px;")
             
-            layout.addWidget(avatar_label)
+            avatar_container = QWidget()
+            avatar_container.setFixedWidth(44)
+            avatar_layout = QVBoxLayout(avatar_container)
+            avatar_layout.setContentsMargins(0, 0, 0, 0)
+            avatar_layout.addStretch()
+            avatar_layout.addWidget(avatar_label)
+            avatar_layout.addStretch()
+            
+            layout.addWidget(avatar_container)
             
             info_layout = QVBoxLayout()
             info_layout.setSpacing(4)
@@ -674,8 +682,10 @@ class AccountsDialog(QDialog):
                 email_label = QLabel(f"📧 {email}")
                 email_label.setStyleSheet("font-size: 12px; color: #999;")
                 info_layout.addWidget(email_label)
+            else:
+                info_layout.addStretch()
             
-            layout.addLayout(info_layout)
+            layout.addLayout(info_layout, 1)
             layout.addStretch()
             
             item = QListWidgetItem()
