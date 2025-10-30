@@ -8,6 +8,7 @@ class Theme:
         self.fonts = {}
         self.spacing = {}
         self.borders = {}
+        self.shadows = {}
         self.load_theme()
     
     def load_theme(self):
@@ -16,6 +17,7 @@ class Theme:
                 'primary': '#4ec9b0',
                 'primary_hover': '#5fd9c0',
                 'primary_pressed': '#3db89f',
+                'primary_text': '#ffffff',
                 
                 'secondary': '#0e639c',
                 'secondary_hover': '#1177bb',
@@ -152,12 +154,21 @@ class Theme:
         if not self.borders:
             self.borders = {
                 'radius_sm': 4,
-                'radius_md': 5,
+                'radius_md': 6,
                 'radius_lg': 8,
-                'radius_xl': 10,
+                'radius_xl': 12,
+                'radius_2xl': 16,
                 'width_thin': 1,
                 'width_medium': 2,
                 'width_thick': 3,
+            }
+        
+        if not self.shadows:
+            self.shadows = {
+                'sm': 'box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);',
+                'md': 'box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);',
+                'lg': 'box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);',
+                'xl': 'box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);',
             }
     
     def get_stylesheet(self):
@@ -605,5 +616,140 @@ class Theme:
         font.setPointSize(self.fonts['size_base'])
         app.setFont(font)
 
+    def get_button_style(self, variant='default'):
+        base_style = f"""
+            QPushButton {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['primary']};
+                border: {self.borders['width_thin']}px solid {self.colors['border']};
+                border-radius: {self.borders['radius_md']}px;
+                padding: {self.spacing['sm']}px {self.spacing['lg']}px;
+                font-size: {self.fonts['size_md']}px;
+                font-weight: {self.fonts['weight_bold']};
+                min-height: 28px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['surface_hover']};
+                border-color: {self.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {self.colors['background_secondary']};
+            }}
+            QPushButton:disabled {{
+                color: {self.colors['text_disabled']};
+                border-color: {self.colors['border']};
+            }}
+        """
+        
+        if variant == 'primary':
+            return f"""
+                QPushButton {{
+                    background-color: {self.colors['primary']};
+                    color: {self.colors['primary_text']};
+                    border: none;
+                    border-radius: {self.borders['radius_md']}px;
+                    padding: {self.spacing['sm']}px {self.spacing['lg']}px;
+                    font-size: {self.fonts['size_md']}px;
+                    font-weight: {self.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: {self.colors['primary_hover']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {self.colors['primary_pressed']};
+                }}
+            """
+        elif variant == 'success':
+            return f"""
+                QPushButton {{
+                    background-color: {self.colors['success']};
+                    color: {self.colors['text_inverse']};
+                    border: none;
+                    border-radius: {self.borders['radius_md']}px;
+                    padding: {self.spacing['sm']}px {self.spacing['lg']}px;
+                    font-size: {self.fonts['size_md']}px;
+                    font-weight: {self.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: {self.colors['success_hover']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {self.colors['success_pressed']};
+                }}
+            """
+        elif variant == 'danger':
+            return f"""
+                QPushButton {{
+                    background-color: {self.colors['danger']};
+                    color: {self.colors['text_inverse']};
+                    border: none;
+                    border-radius: {self.borders['radius_md']}px;
+                    padding: {self.spacing['sm']}px {self.spacing['lg']}px;
+                    font-size: {self.fonts['size_md']}px;
+                    font-weight: {self.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: {self.colors['danger_hover']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {self.colors['danger_pressed']};
+                }}
+            """
+        
+        return base_style
+    
+    def get_section_header_style(self):
+        return f"""
+            QFrame {{
+                background-color: {self.colors['surface']};
+                border-bottom: {self.borders['width_medium']}px solid {self.colors['primary']};
+                border-radius: {self.borders['radius_sm']}px {self.borders['radius_sm']}px 0px 0px;
+            }}
+        """
+    
+    def get_input_style(self):
+        return f"""
+            QLineEdit, QTextEdit {{
+                background-color: {self.colors['input_bg']};
+                color: {self.colors['text']};
+                border: {self.borders['width_thin']}px solid {self.colors['input_border']};
+                border-radius: {self.borders['radius_md']}px;
+                padding: {self.spacing['sm']}px;
+                selection-background-color: {self.colors['surface_selected']};
+            }}
+            QLineEdit:focus, QTextEdit:focus {{
+                border-color: {self.colors['input_focus']};
+                border-width: {self.borders['width_medium']}px;
+            }}
+        """
+    
+    def get_list_style(self):
+        return f"""
+            QListWidget {{
+                background-color: {self.colors['background_secondary']};
+                border: {self.borders['width_thin']}px solid {self.colors['border']};
+                border-radius: {self.borders['radius_md']}px;
+                padding: {self.spacing['xs']}px;
+            }}
+            QListWidget::item {{
+                padding: {self.spacing['md']}px;
+                border-radius: {self.borders['radius_sm']}px;
+                margin: {self.spacing['xs']}px 0px;
+            }}
+            QListWidget::item:hover {{
+                background-color: {self.colors['surface']};
+            }}
+            QListWidget::item:selected {{
+                background-color: {self.colors['surface_selected']};
+                color: {self.colors['text_inverse']};
+            }}
+        """
+
 # Variable global para acceder al tema actual
 current_theme = None
+
+def get_current_theme():
+    global current_theme
+    if current_theme is None:
+        current_theme = Theme("Dark")
+    return current_theme

@@ -9,6 +9,7 @@ from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
+from ui.theme import get_current_theme
 import os
 import sys
 import hashlib
@@ -84,14 +85,15 @@ class RepositoryTab(QWidget):
         self.show_home_view()
         
     def create_top_bar(self):
+        theme = get_current_theme()
         self.top_bar = QFrame()
         self.top_bar.setMaximumHeight(70)
         self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-        self.top_bar.setStyleSheet("""
-            QFrame {
-                background-color: palette(button);
-                border-bottom: 2px solid #0e639c;
-            }
+        self.top_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: {theme.borders['width_thin']}px solid {theme.colors['border']};
+            }}
         """)
         
         layout = QHBoxLayout(self.top_bar)
@@ -105,7 +107,7 @@ class RepositoryTab(QWidget):
         branch_layout.setSpacing(3)
         
         branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
-        branch_title.setStyleSheet("color: #4ec9b0; font-size: 9px; font-weight: bold;")
+        branch_title.setStyleSheet(f"color: {theme.colors['primary']}; font-size: {theme.fonts['size_xs']}px; font-weight: {theme.fonts['weight_bold']};")
         branch_title.setMaximumHeight(14)
         branch_layout.addWidget(branch_title)
         
@@ -114,26 +116,26 @@ class RepositoryTab(QWidget):
         self.branch_button.setMinimumSize(180, 28)
         self.branch_button.setMaximumHeight(28)
         self.branch_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.branch_button.setStyleSheet("""
-            QPushButton {
-                font-weight: bold;
-                font-size: 13px;
-                color: palette(link);
-                background-color: palette(window);
-                border: 2px solid palette(link);
-                border-radius: 5px;
-                padding: 2px 12px;
+        self.branch_button.setStyleSheet(f"""
+            QPushButton {{
+                font-weight: {theme.fonts['weight_bold']};
+                font-size: {theme.fonts['size_md']}px;
+                color: {theme.colors['primary']};
+                background-color: {theme.colors['background']};
+                border: {theme.borders['width_medium']}px solid {theme.colors['primary']};
+                border-radius: {theme.borders['radius_md']}px;
+                padding: {theme.spacing['xs']}px {theme.spacing['md']}px;
                 text-align: left;
-            }
-            QPushButton:hover {
-                background-color: palette(button);
-                border-color: palette(link);
-                color: palette(link);
-            }
-            QPushButton:pressed {
-                background-color: palette(link);
-                color: palette(bright-text);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface']};
+                border-color: {theme.colors['primary_hover']};
+                color: {theme.colors['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['primary_text']};
+            }}
         """)
         self.branch_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.branch_button.clicked.connect(self.show_branch_menu)
@@ -152,17 +154,37 @@ class RepositoryTab(QWidget):
         separator1 = QWidget()
         separator1.setFixedWidth(1)
         separator1.setFixedHeight(24)
-        separator1.setStyleSheet("background-color: palette(text);")
+        separator1.setStyleSheet(f"background-color: {theme.colors['border']};")
         layout.addWidget(separator1)
         
         layout.addSpacing(10)
+        
+        button_style = f"""
+            QPushButton {{
+                color: {theme.colors['primary']};
+                background-color: transparent;
+                border: {theme.borders['width_thin']}px solid transparent;
+                border-radius: {theme.borders['radius_md']}px;
+                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                font-size: {theme.fonts['size_md']}px;
+                font-weight: {theme.fonts['weight_bold']};
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['primary_text']};
+            }}
+        """
         
         self.open_folder_btn = QPushButton(" Carpeta")
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         self.open_folder_btn.setMinimumSize(100, 36)
         self.open_folder_btn.setMaximumSize(130, 36)
         self.open_folder_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.open_folder_btn.setStyleSheet("QPushButton { color: #4ec9b0; font-size: 13px; font-weight: bold; }")
+        self.open_folder_btn.setStyleSheet(button_style)
         self.open_folder_btn.setToolTip("Abrir carpeta del proyecto")
         self.open_folder_btn.clicked.connect(self.open_project_folder)
         layout.addWidget(self.open_folder_btn)
@@ -172,7 +194,7 @@ class RepositoryTab(QWidget):
         self.open_terminal_btn.setMinimumSize(100, 36)
         self.open_terminal_btn.setMaximumSize(130, 36)
         self.open_terminal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.open_terminal_btn.setStyleSheet("QPushButton { color: #4ec9b0; font-size: 13px; font-weight: bold; }")
+        self.open_terminal_btn.setStyleSheet(button_style)
         self.open_terminal_btn.setToolTip("Abrir terminal en la carpeta del proyecto")
         self.open_terminal_btn.clicked.connect(self.open_terminal)
         layout.addWidget(self.open_terminal_btn)
@@ -182,7 +204,7 @@ class RepositoryTab(QWidget):
         self.open_unreal_btn.setMinimumSize(100, 36)
         self.open_unreal_btn.setMaximumSize(130, 36)
         self.open_unreal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.open_unreal_btn.setStyleSheet("QPushButton { color: #4ec9b0; font-size: 13px; font-weight: bold; }")
+        self.open_unreal_btn.setStyleSheet(button_style)
         self.open_unreal_btn.setToolTip("Abrir proyecto con Unreal Engine")
         self.open_unreal_btn.clicked.connect(self.open_with_unreal)
         layout.addWidget(self.open_unreal_btn)
@@ -192,7 +214,7 @@ class RepositoryTab(QWidget):
         separator2 = QWidget()
         separator2.setFixedWidth(1)
         separator2.setFixedHeight(24)
-        separator2.setStyleSheet("background-color: palette(text);")
+        separator2.setStyleSheet(f"background-color: {theme.colors['border']};")
         layout.addWidget(separator2)
         
         layout.addSpacing(10)
@@ -202,7 +224,7 @@ class RepositoryTab(QWidget):
         self.pull_btn.setMinimumSize(85, 36)
         self.pull_btn.setMaximumSize(110, 36)
         self.pull_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.pull_btn.setStyleSheet("QPushButton { color: #4ec9b0; font-size: 13px; font-weight: bold; }")
+        self.pull_btn.setStyleSheet(button_style)
         self.pull_btn.setToolTip("Descargar cambios del servidor")
         self.pull_btn.clicked.connect(self.do_pull)
         layout.addWidget(self.pull_btn)
@@ -212,7 +234,7 @@ class RepositoryTab(QWidget):
         self.push_btn.setMinimumSize(85, 36)
         self.push_btn.setMaximumSize(110, 36)
         self.push_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.push_btn.setStyleSheet("QPushButton { color: #4ec9b0; font-size: 13px; font-weight: bold; }")
+        self.push_btn.setStyleSheet(button_style)
         self.push_btn.setToolTip("Subir tus cambios al servidor")
         self.push_btn.clicked.connect(self.do_push)
         layout.addWidget(self.push_btn)
@@ -222,7 +244,7 @@ class RepositoryTab(QWidget):
         self.fetch_btn.setMinimumSize(85, 36)
         self.fetch_btn.setMaximumSize(110, 36)
         self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.fetch_btn.setStyleSheet("QPushButton { color: #4ec9b0; font-size: 13px; font-weight: bold; }")
+        self.fetch_btn.setStyleSheet(button_style)
         self.fetch_btn.setToolTip("Actualizar información sin descargar")
         self.fetch_btn.clicked.connect(self.do_fetch)
         layout.addWidget(self.fetch_btn)
@@ -230,6 +252,7 @@ class RepositoryTab(QWidget):
         self.refresh_btn = QPushButton()
         self.refresh_btn.setIcon(self.icon_manager.get_icon("git-commit", size=20))
         self.refresh_btn.setFixedSize(36, 36)
+        self.refresh_btn.setStyleSheet(button_style)
         self.refresh_btn.setToolTip("Actualizar estado del repositorio")
         self.refresh_btn.clicked.connect(self.refresh_status)
         layout.addWidget(self.refresh_btn)
@@ -414,19 +437,21 @@ class RepositoryTab(QWidget):
         return widget
         
     def create_section_header(self, title, description, icon_name=None):
+        theme = get_current_theme()
         header = QFrame()
-        header.setStyleSheet("""
-            QFrame {
-                background-color: palette(button);
-                border-bottom: 1px solid #3d3d3d;
-            }
+        header.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: {theme.borders['width_thin']}px solid {theme.colors['border']};
+                border-radius: {theme.borders['radius_sm']}px {theme.borders['radius_sm']}px 0px 0px;
+            }}
         """)
         header.setMinimumHeight(50)
         header.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(15, 8, 15, 8)
-        layout.setSpacing(10)
+        layout.setContentsMargins(theme.spacing['lg'], theme.spacing['sm'], theme.spacing['lg'], theme.spacing['sm'])
+        layout.setSpacing(theme.spacing['md'])
         
         if icon_name:
             icon_label = QLabel()
@@ -439,12 +464,12 @@ class RepositoryTab(QWidget):
         
         title_label = QLabel(title)
         title_label.setWordWrap(True)
-        title_label.setStyleSheet("color: #4ec9b0; font-size: 12px; font-weight: bold;")
+        title_label.setStyleSheet(f"color: {theme.colors['primary']}; font-size: {theme.fonts['size_base']}px; font-weight: {theme.fonts['weight_bold']};")
         text_layout.addWidget(title_label)
         
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: palette(text); font-size: 10px;")
+        desc_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: {theme.fonts['size_xs']}px;")
         text_layout.addWidget(desc_label)
         
         layout.addLayout(text_layout)
