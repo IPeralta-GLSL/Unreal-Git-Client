@@ -5,6 +5,8 @@ import secrets
 import http.server
 import socketserver
 import threading
+import requests
+import time
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
@@ -16,6 +18,8 @@ class AccountManager:
         self.oauth_server = None
         self.oauth_code = None
         self.oauth_state = None
+        
+        self.github_client_id = "Ov23liMpjGLMJR9Jqq3V"
         
     def ensure_config_exists(self):
         self.config_dir.mkdir(exist_ok=True)
@@ -163,19 +167,86 @@ class AccountManager:
         scopes = "api,read_user,write_repository"
         return f"{gitlab_url}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scopes}&state={state}"
     
-    def configure_git_credentials(self, platform, username, token, email=None):
+    def configure_git_credentials(self, name, email):
         try:
-            if platform == 'github':
-                os.system(f'git config --global credential.helper store')
-                os.system(f'git config --global user.name "{username}"')
-                if email:
-                    os.system(f'git config --global user.email "{email}"')
-            elif platform == 'gitlab':
-                os.system(f'git config --global credential.helper store')
-                os.system(f'git config --global user.name "{username}"')
-                if email:
-                    os.system(f'git config --global user.email "{email}"')
+            import subprocess
+            subprocess.run(['git', 'config', '--global', 'user.name', name], check=True)
+            subprocess.run(['git', 'config', '--global', 'user.email', email], check=True)
             return True
         except Exception as e:
             print(f"Error configuring git: {e}")
             return False
+    
+    def start_github_device_flow(self):
+        try:
+            response = requests.post(
+                'https://github.com/login/device/code',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': self.github_client_id,
+                    'scope': 'repo user'
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'device_code': data.get('device_code'),
+                    'user_code': data.get('user_code'),
+                    'verification_uri': data.get('verification_uri'),
+                    'expires_in': data.get('expires_in', 900),
+                    'interval': data.get('interval', 5)
+                }
+        except Exception as e:
+            print(f"Error starting device flow: {e}")
+        return None
+    
+    def poll_github_device_token(self, device_code, interval=5):
+        try:
+            response = requests.post(
+                'https://github.com/login/oauth/access_token',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': self.github_client_id,
+                    'device_code': device_code,
+                    'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'access_token' in data:
+                    return data['access_token']
+                elif data.get('error') == 'authorization_pending':
+                    return 'pending'
+                elif data.get('error') == 'slow_down':
+                    return 'slow_down'
+                else:
+                    return None
+        except Exception as e:
+            print(f"Error polling token: {e}")
+        return None
+    
+    def get_github_user_info(self, token):
+        try:
+            response = requests.get(
+                'https://api.github.com/user',
+                headers={
+                    'Authorization': f'token {token}',
+                    'Accept': 'application/json'
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'username': data.get('login'),
+                    'email': data.get('email', ''),
+                    'name': data.get('name', '')
+                }
+        except Exception as e:
+            print(f"Error getting user info: {e}")
+        return None
+    
+    def start_gitlab_device_flow(self, gitlab_url):
+        return None

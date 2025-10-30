@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
 import webbrowser
 import requests
+import secrets
 
 class AccountsDialog(QDialog):
     accounts_changed = pyqtSignal()
@@ -170,29 +171,68 @@ class AccountsDialog(QDialog):
         info_layout = QVBoxLayout(info_box)
         
         info_text = QLabel(
-            "Para conectar tu cuenta de GitHub, necesitas crear una OAuth App:\n\n"
-            "1. Ve a GitHub → Settings → Developer settings → OAuth Apps\n"
-            "2. Click en 'New OAuth App'\n"
-            "3. Completa:\n"
-            "   • Application name: Unreal Git Client\n"
-            "   • Homepage URL: http://localhost\n"
-            "   • Authorization callback URL: http://localhost:8888/callback\n"
-            "4. Copia el Client ID y genera un Client Secret\n"
-            "5. Pégalos abajo y haz click en 'Conectar con GitHub'"
+            "Conecta tu cuenta de GitHub de forma simple y segura.\n\n"
+            "Haz click en 'Login con GitHub' y sigue las instrucciones en el navegador."
         )
         info_text.setWordWrap(True)
-        info_text.setStyleSheet("font-size: 12px; font-weight: normal; padding: 10px;")
+        info_text.setStyleSheet("font-size: 13px; font-weight: normal; padding: 10px;")
         info_layout.addWidget(info_text)
         
         layout.addWidget(info_box)
         
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(10)
+        connect_btn = QPushButton("🌐 Login con GitHub")
+        connect_btn.setMinimumHeight(55)
+        connect_btn.clicked.connect(self.start_github_device_flow)
+        connect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #238636;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 8px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #2ea043;
+            }
+            QPushButton:pressed {
+                background-color: #1a7f37;
+            }
+        """)
+        layout.addWidget(connect_btn)
         
-        client_id_label = QLabel("Client ID:")
-        self.github_client_id = QLineEdit()
-        self.github_client_id.setPlaceholderText("Ingresa tu GitHub Client ID")
-        self.github_client_id.setStyleSheet("""
+        self.github_status_label = QLabel("")
+        self.github_status_label.setWordWrap(True)
+        self.github_status_label.setStyleSheet("""
+            QLabel {
+                padding: 15px;
+                background-color: #2d2d2d;
+                border: 1px solid #3d3d3d;
+                border-radius: 6px;
+                font-size: 13px;
+                margin-top: 10px;
+            }
+        """)
+        self.github_status_label.hide()
+        layout.addWidget(self.github_status_label)
+        
+        separator = QLabel("━" * 80)
+        separator.setStyleSheet("color: #3d3d3d; margin-top: 20px; margin-bottom: 10px;")
+        layout.addWidget(separator)
+        
+        advanced_label = QLabel("🔧 Métodos alternativos:")
+        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: #888; font-size: 12px;")
+        layout.addWidget(advanced_label)
+        
+        manual_label = QLabel("Agregar un Personal Access Token manualmente:")
+        manual_label.setStyleSheet("margin-top: 10px; font-size: 11px; color: #999;")
+        layout.addWidget(manual_label)
+        
+        token_layout = QHBoxLayout()
+        self.github_token = QLineEdit()
+        self.github_token.setPlaceholderText("ghp_...")
+        self.github_token.setEchoMode(QLineEdit.EchoMode.Password)
+        self.github_token.setStyleSheet("""
             QLineEdit {
                 background-color: #252526;
                 border: 1px solid #3d3d3d;
@@ -201,27 +241,16 @@ class AccountsDialog(QDialog):
                 color: #cccccc;
             }
         """)
-        form_layout.addWidget(client_id_label)
-        form_layout.addWidget(self.github_client_id)
+        token_layout.addWidget(self.github_token)
         
-        client_secret_label = QLabel("Client Secret:")
-        self.github_client_secret = QLineEdit()
-        self.github_client_secret.setPlaceholderText("Ingresa tu GitHub Client Secret")
-        self.github_client_secret.setEchoMode(QLineEdit.EchoMode.Password)
-        self.github_client_secret.setStyleSheet(self.github_client_id.styleSheet())
-        form_layout.addWidget(client_secret_label)
-        form_layout.addWidget(self.github_client_secret)
-        
-        layout.addLayout(form_layout)
-        
-        connect_btn = QPushButton("🔗 Conectar con GitHub")
-        connect_btn.setMinimumHeight(40)
-        connect_btn.clicked.connect(self.connect_github)
-        connect_btn.setStyleSheet("""
+        add_token_btn = QPushButton("➕ Agregar Token")
+        add_token_btn.clicked.connect(self.add_github_token)
+        add_token_btn.setMinimumHeight(35)
+        add_token_btn.setStyleSheet("""
             QPushButton {
                 background-color: #0e639c;
                 color: white;
-                font-size: 14px;
+                font-size: 12px;
                 font-weight: bold;
                 border-radius: 5px;
             }
@@ -229,22 +258,6 @@ class AccountsDialog(QDialog):
                 background-color: #1177bb;
             }
         """)
-        layout.addWidget(connect_btn)
-        
-        manual_label = QLabel("O agrega manualmente un Personal Access Token:")
-        manual_label.setStyleSheet("margin-top: 20px; font-size: 12px;")
-        layout.addWidget(manual_label)
-        
-        token_layout = QHBoxLayout()
-        self.github_token = QLineEdit()
-        self.github_token.setPlaceholderText("ghp_...")
-        self.github_token.setEchoMode(QLineEdit.EchoMode.Password)
-        self.github_token.setStyleSheet(self.github_client_id.styleSheet())
-        token_layout.addWidget(self.github_token)
-        
-        add_token_btn = QPushButton("➕ Agregar Token")
-        add_token_btn.clicked.connect(self.add_github_token)
-        add_token_btn.setStyleSheet(connect_btn.styleSheet())
         token_layout.addWidget(add_token_btn)
         
         layout.addLayout(token_layout)
@@ -501,29 +514,96 @@ class AccountsDialog(QDialog):
             self.load_accounts()
             self.accounts_changed.emit()
     
+    def start_github_device_flow(self):
+        self.github_status_label.setText("⏳ Iniciando autenticación...")
+        self.github_status_label.show()
+        
+        flow_data = self.account_manager.start_github_device_flow()
+        
+        if not flow_data:
+            self.github_status_label.setText("❌ Error al iniciar la autenticación. Verifica tu conexión a internet.")
+            return
+        
+        user_code = flow_data['user_code']
+        verification_uri = flow_data['verification_uri']
+        device_code = flow_data['device_code']
+        interval = flow_data['interval']
+        
+        self.github_status_label.setText(
+            f"<b>📋 Código de verificación:</b> <span style='font-size: 24px; color: #0e639c;'>{user_code}</span><br><br>"
+            f"Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
+            f"Ingresa el código cuando se te solicite."
+        )
+        
+        webbrowser.open(verification_uri)
+        
+        self.poll_timer = QTimer()
+        self.poll_timer.timeout.connect(lambda: self.poll_github_token(device_code, interval))
+        self.poll_timer.start(interval * 1000)
+        
+        self.poll_attempts = 0
+        self.max_poll_attempts = 60
+    
+    def poll_github_token(self, device_code, interval):
+        self.poll_attempts += 1
+        
+        if self.poll_attempts > self.max_poll_attempts:
+            self.poll_timer.stop()
+            self.github_status_label.setText("❌ Tiempo de espera agotado. Intenta nuevamente.")
+            return
+        
+        result = self.account_manager.poll_github_device_token(device_code, interval)
+        
+        if result == 'pending':
+            return
+        elif result == 'slow_down':
+            self.poll_timer.setInterval((interval + 5) * 1000)
+            return
+        elif result and result != 'pending' and result != 'slow_down':
+            self.poll_timer.stop()
+            
+            user_info = self.account_manager.get_github_user_info(result)
+            
+            if user_info:
+                username = user_info['username']
+                email = user_info['email']
+                
+                self.account_manager.add_account('GitHub', username, result, email)
+                
+                self.github_status_label.setText(
+                    f"✅ <b>Conectado exitosamente como:</b> {username}<br>"
+                    f"📧 Email: {email or 'No disponible'}"
+                )
+                
+                self.load_accounts()
+                self.accounts_changed.emit()
+            else:
+                self.github_status_label.setText("❌ Error al obtener información del usuario.")
+        else:
+            self.poll_timer.stop()
+            self.github_status_label.setText("❌ Error en la autenticación. Intenta nuevamente.")
+    
     def connect_github(self):
         client_id = self.github_client_id.text().strip()
         client_secret = self.github_client_secret.text().strip()
         
         if not client_id or not client_secret:
-            QMessageBox.warning(self, "Error", "Ingresa Client ID y Client Secret")
+            QMessageBox.warning(self, "Error", "Por favor ingresa el Client ID y Client Secret")
             return
         
-        success, result = self.account_manager.start_oauth_server(8888)
-        if not success:
-            QMessageBox.warning(self, "Error", f"No se pudo iniciar servidor OAuth:\n{result}")
-            return
+        state = secrets.token_urlsafe(32)
+        self.account_manager.oauth_state = state
         
-        redirect_uri = "http://localhost:8888/callback"
-        auth_url = self.account_manager.github_oauth_url(client_id, redirect_uri)
+        auth_url = self.account_manager.github_oauth_url(client_id, state)
+        
+        self.account_manager.start_oauth_server()
         
         webbrowser.open(auth_url)
         
         QMessageBox.information(
             self,
-            "Autenticación en progreso",
-            "Se abrió tu navegador para autenticar.\n\n"
-            "Autoriza la aplicación y espera a que se complete."
+            "Esperando autorización",
+            "Se ha abierto tu navegador.\n\nAutoriza la aplicación y luego regresa aquí."
         )
         
         self.wait_for_oauth('github', client_id, client_secret)
