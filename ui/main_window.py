@@ -111,22 +111,25 @@ class MainWindow(QMainWindow):
         self.settings_button.clicked.connect(self.open_settings)
         self.settings_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {theme.colors['primary']};
-                color: {theme.colors['primary_text']};
-                border: 2px solid {theme.colors['primary']};
-                border-radius: 22px;
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['primary']};
+                border: 2px solid {theme.colors['border']};
+                border-radius: 8px;
                 padding: 8px;
             }}
             QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
-                border: 2px solid {theme.colors['primary_hover']};
+                background-color: {theme.colors['surface_hover']};
+                border: 2px solid {theme.colors['primary']};
             }}
             QPushButton:pressed {{
-                background-color: {theme.colors['primary_pressed']};
+                background-color: {theme.colors['surface_selected']};
+                border: 2px solid {theme.colors['primary']};
             }}
         """)
         self.settings_button.raise_()
-        self.settings_button.move(self.width() - 64, 10)
+        tab_bar_height = self.tab_widget.tabBar().height()
+        button_y = (tab_bar_height - 44) // 2
+        self.settings_button.move(self.width() - 64, button_y if button_y > 0 else 5)
         
         self.add_empty_tab()
         
@@ -150,8 +153,10 @@ class MainWindow(QMainWindow):
         
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if hasattr(self, 'settings_button'):
-            self.settings_button.move(self.width() - 64, 10)
+        if hasattr(self, 'settings_button') and hasattr(self, 'tab_widget'):
+            tab_bar_height = self.tab_widget.tabBar().height()
+            button_y = (tab_bar_height - 44) // 2
+            self.settings_button.move(self.width() - 64, button_y if button_y > 0 else 5)
             self.settings_button.raise_()
     
     def update_new_tab_button_position(self):
