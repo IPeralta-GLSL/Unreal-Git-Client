@@ -2,12 +2,16 @@ import sys
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 from ui.main_window import MainWindow
+from ui.theme import theme
 from core.plugin_manager import PluginManager
 
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Git Client")
     app.setOrganizationName("GitClient")
+    
+    # Aplicar tema universal
+    theme.apply_to_app(app)
     
     plugin_manager = PluginManager()
     
