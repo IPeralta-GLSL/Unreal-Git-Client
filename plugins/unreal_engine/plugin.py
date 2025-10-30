@@ -41,7 +41,8 @@ class Plugin:
                 'icon': '🎮',
                 'text': f'Unreal Engine: {project_name}',
                 'tooltip': f'Proyecto de Unreal Engine detectado\n{project_name}',
-                'color': '#0E1128'
+                'color': '#0E1128',
+                'plugin_name': 'unreal_engine'
             }
         return None
     

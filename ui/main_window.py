@@ -59,54 +59,7 @@ class MainWindow(QMainWindow):
         from ui.theme import get_current_theme
         
         theme = get_current_theme()
-        icon_manager = IconManager()
-        
-        toolbar = QToolBar("Barra de herramientas principal")
-        toolbar.setMovable(False)
-        toolbar.setFloatable(False)
-        toolbar.setStyleSheet(f"""
-            QToolBar {{
-                background-color: {theme.colors['surface']};
-                border-bottom: 1px solid {theme.colors['border']};
-                spacing: 10px;
-                padding: 5px;
-            }}
-        """)
-        self.addToolBar(toolbar)
-        
-        # Spacer para empujar el botón de configuración a la derecha
-        spacer = QWidget()
-        spacer.setSizePolicy(QWidget.SizePolicy.Policy.Expanding, QWidget.SizePolicy.Policy.Preferred)
-        toolbar.addWidget(spacer)
-        
-        # Botón de configuración
-        self.settings_action = QPushButton(" Configuración")
-        self.settings_action.setIcon(icon_manager.get_icon("gear-six", size=18))
-        self.settings_action.setFixedHeight(36)
-        self.settings_action.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.settings_action.setToolTip("Configuración y cuentas")
-        self.settings_action.clicked.connect(self.open_settings)
-        self.settings_action.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {theme.colors['surface']};
-                color: {theme.colors['primary']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: 600;
-                padding: 6px 12px;
-                margin-right: 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['surface_hover']};
-                border: 1px solid {theme.colors['primary']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['primary']};
-                color: {theme.colors['primary_text']};
-            }}
-        """)
-        toolbar.addWidget(self.settings_action)
+        self.icon_manager = IconManager()
         
     def setup_central_widget(self):
         central_widget = QWidget()
@@ -150,6 +103,31 @@ class MainWindow(QMainWindow):
             }}
         """)
         
+        self.settings_button = QPushButton(central_widget)
+        self.settings_button.setIcon(icon_manager.get_icon("gear-six", size=22))
+        self.settings_button.setFixedSize(44, 44)
+        self.settings_button.setToolTip("Configuración y cuentas")
+        self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.settings_button.clicked.connect(self.open_settings)
+        self.settings_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['primary_text']};
+                border: 2px solid {theme.colors['primary']};
+                border-radius: 22px;
+                padding: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
+                border: 2px solid {theme.colors['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
+        """)
+        self.settings_button.raise_()
+        self.settings_button.move(self.width() - 64, 10)
+        
         self.add_empty_tab()
         
     def setup_shortcuts(self):
@@ -170,6 +148,12 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Listo")
         
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, 'settings_button'):
+            self.settings_button.move(self.width() - 64, 10)
+            self.settings_button.raise_()
+    
     def update_new_tab_button_position(self):
         """Reposiciona el botón de nueva pestaña al final de las pestañas"""
         tab_bar = self.tab_widget.tabBar()

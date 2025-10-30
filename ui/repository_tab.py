@@ -1198,6 +1198,23 @@ class RepositoryTab(QWidget):
         indicators = self.plugin_manager.get_repository_indicators(self.repo_path)
         
         for indicator in indicators:
+            container = QWidget()
+            container_layout = QHBoxLayout(container)
+            container_layout.setContentsMargins(0, 0, 0, 0)
+            container_layout.setSpacing(8)
+            
+            plugin_name = indicator.get('plugin_name', 'unreal_engine')
+            plugin = self.plugin_manager.get_plugin(plugin_name)
+            
+            if plugin:
+                plugin_icon_path = plugin.get_icon()
+                if plugin_icon_path and os.path.exists(plugin_icon_path):
+                    plugin_icon_label = QLabel()
+                    plugin_pixmap = QPixmap(plugin_icon_path)
+                    plugin_icon_label.setPixmap(plugin_pixmap.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                    plugin_icon_label.setFixedSize(24, 24)
+                    container_layout.addWidget(plugin_icon_label)
+            
             btn = QPushButton(f"{indicator['icon']} {indicator['text']}")
             btn.setToolTip(indicator['tooltip'])
             btn.setMinimumHeight(36)
@@ -1206,7 +1223,7 @@ class RepositoryTab(QWidget):
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {indicator.get('color', theme.colors['surface'])};
-                    color: palette(bright-text);
+                    color: {theme.colors['text_inverse']};
                     border: 1px solid {theme.colors['primary']};
                     border-radius: 5px;
                     padding: 4px 12px;
@@ -1214,12 +1231,14 @@ class RepositoryTab(QWidget):
                     font-weight: bold;
                 }}
                 QPushButton:hover {{
-                    background-color: palette(text);
+                    background-color: {theme.colors['surface_hover']};
                     border-color: {theme.colors['primary_hover']};
                 }}
             """)
             btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions())
-            self.plugin_indicators_layout.addWidget(btn)
+            container_layout.addWidget(btn)
+            
+            self.plugin_indicators_layout.addWidget(container)
         
         unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
         is_unreal_enabled = unreal_plugin is not None
