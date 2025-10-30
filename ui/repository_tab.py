@@ -262,6 +262,7 @@ class RepositoryTab(QWidget):
         layout.addStretch()
         
     def create_left_panel(self):
+        theme = get_current_theme()
         widget = QWidget()
         widget.setStyleSheet("background-color: palette(base);")
         widget.setMinimumWidth(300)
@@ -362,19 +363,21 @@ class RepositoryTab(QWidget):
         self.commit_btn = QPushButton(" Hacer Commit y Guardar")
         self.commit_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18))
         self.commit_btn.setMinimumHeight(40)
-        self.commit_btn.setStyleSheet("""
-            QPushButton {
-                background-color: palette(highlight);
-                color: palette(bright-text);
+        self.commit_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['success']};
+                color: {theme.colors['text_inverse']};
                 font-size: 14px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
+                border: none;
+                border-radius: 6px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['success_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['success_pressed']};
+            }}
         """)
         self.commit_btn.setToolTip("Guardar todos los cambios preparados con este mensaje")
         self.commit_btn.clicked.connect(self.do_commit)
