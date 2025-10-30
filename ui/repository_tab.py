@@ -28,12 +28,13 @@ class CloneThread(QThread):
         self.finished.emit(success, message)
 
 class RepositoryTab(QWidget):
-    def __init__(self, git_manager, settings_manager=None, parent_window=None):
+    def __init__(self, git_manager, settings_manager=None, parent_window=None, plugin_manager=None):
         super().__init__()
         self.git_manager = git_manager
         self.settings_manager = settings_manager
         self.repo_path = None
         self.parent_window = parent_window
+        self.plugin_manager = plugin_manager
         self.avatar_cache = {}
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self.on_avatar_downloaded)
@@ -138,6 +139,12 @@ class RepositoryTab(QWidget):
         branch_layout.addWidget(self.branch_button)
         
         layout.addWidget(branch_container, 1)
+        
+        self.plugin_indicators_container = QWidget()
+        self.plugin_indicators_layout = QHBoxLayout(self.plugin_indicators_container)
+        self.plugin_indicators_layout.setContentsMargins(0, 0, 0, 0)
+        self.plugin_indicators_layout.setSpacing(8)
+        layout.addWidget(self.plugin_indicators_container)
         
         layout.addSpacing(10)
         
@@ -609,7 +616,7 @@ class RepositoryTab(QWidget):
         self.update_repo_info()
         self.load_history()
         self.check_lfs_status()
-        self.detect_unreal_project()
+        self.update_plugin_indicators()
         
     def refresh_status(self):
         if not self.repo_path:
@@ -1133,27 +1140,99 @@ class RepositoryTab(QWidget):
         
         reply.deleteLater()
     
-    def detect_unreal_project(self):
+    def update_plugin_indicators(self):
+        if not self.plugin_manager or not self.repo_path:
+            return
+        
+        while self.plugin_indicators_layout.count():
+            item = self.plugin_indicators_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        indicators = self.plugin_manager.get_repository_indicators(self.repo_path)
+        
+        for indicator in indicators:
+            btn = QPushButton(f"{indicator['icon']} {indicator['text']}")
+            btn.setToolTip(indicator['tooltip'])
+            btn.setMinimumHeight(36)
+            btn.setMaximumHeight(36)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {indicator.get('color', '#2d2d2d')};
+                    color: #ffffff;
+                    border: 1px solid #4ec9b0;
+                    border-radius: 5px;
+                    padding: 4px 12px;
+                    font-size: 12px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: #3d3d3d;
+                    border-color: #5fd9c0;
+                }}
+            """)
+            btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions())
+            self.plugin_indicators_layout.addWidget(btn)
+    
+    def show_plugin_actions(self):
+        if not self.plugin_manager or not self.repo_path:
+            return
+        
+        actions = self.plugin_manager.get_plugin_actions('repository')
+        
+        if not actions:
+            return
+        
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #2d2d2d;
+                border: 1px solid #4ec9b0;
+                padding: 5px;
+            }
+            QMenu::item {
+                padding: 8px 25px;
+                color: #cccccc;
+            }
+            QMenu::item:selected {
+                background-color: #094771;
+                color: #ffffff;
+            }
+        """)
+        
+        for action_data in actions:
+            if not action_data.get('requires_unreal'):
+                continue
+            
+            action = QAction(f"{action_data['icon']} {action_data['name']}", self)
+            action.triggered.connect(lambda checked, ad=action_data: self.execute_plugin_action(ad))
+            menu.addAction(action)
+        
+        cursor_pos = QCursor.pos()
+        menu.exec(cursor_pos)
+    
+    def execute_plugin_action(self, action_data):
         if not self.repo_path:
             return
         
-        if self.git_manager.is_unreal_project():
-            project_name = self.git_manager.get_unreal_project_name()
-            if project_name:
-                QMessageBox.information(
-                    self,
-                    "Proyecto de Unreal Engine Detectado",
-                    f"Se ha detectado un proyecto de Unreal Engine:\n\n"
-                    f"Proyecto: {project_name}\n\n"
-                    f"ℹ️ Recomendación: Asegúrate de tener Git LFS configurado para archivos .uasset, .umap, etc."
-                )
+        callback = action_data.get('callback')
+        if not callback:
+            return
+        
+        success, message = callback(self.repo_path)
+        
+        if success:
+            if len(message) > 100:
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle(action_data['name'])
+                msg_box.setText(message)
+                msg_box.setIcon(QMessageBox.Icon.Information)
+                msg_box.exec()
             else:
-                QMessageBox.information(
-                    self,
-                    "Proyecto de Unreal Engine Detectado",
-                    f"Se ha detectado un proyecto de Unreal Engine.\n\n"
-                    f"ℹ️ Recomendación: Configura Git LFS en la sección correspondiente."
-                )
+                QMessageBox.information(self, action_data['name'], message)
+        else:
+            QMessageBox.warning(self, "Error", message)
         
     def check_lfs_status(self):
         if not self.repo_path:

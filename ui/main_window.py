@@ -11,11 +11,12 @@ from core.account_manager import AccountManager
 import os
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, plugin_manager=None):
         super().__init__()
         self.git_manager = GitManager()
         self.settings_manager = SettingsManager()
         self.account_manager = AccountManager()
+        self.plugin_manager = plugin_manager
         self.init_ui()
         self.setup_shortcuts()
         
@@ -143,7 +144,7 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Listo")
         
     def add_empty_tab(self):
-        repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self)
+        repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
         index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
         self.tab_widget.setCurrentIndex(index)
         
@@ -211,7 +212,7 @@ class MainWindow(QMainWindow):
     
     def open_settings(self):
         from ui.accounts_dialog import AccountsDialog
-        dialog = AccountsDialog(self.account_manager, self)
+        dialog = AccountsDialog(self.account_manager, self.plugin_manager, self)
         dialog.accounts_changed.connect(self.on_accounts_changed)
         dialog.exec()
     

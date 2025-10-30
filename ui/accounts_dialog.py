@@ -13,18 +13,19 @@ import os
 class AccountsDialog(QDialog):
     accounts_changed = pyqtSignal()
     
-    def __init__(self, account_manager, parent=None):
+    def __init__(self, account_manager, plugin_manager=None, parent=None):
         super().__init__(parent)
         self.account_manager = account_manager
-        self.setWindowTitle("Administración de Cuentas")
+        self.plugin_manager = plugin_manager
+        self.setWindowTitle("⚙️ Ajustes")
         self.setModal(True)
-        self.setMinimumSize(700, 500)
+        self.setMinimumSize(800, 600)
         self.init_ui()
         
     def init_ui(self):
         layout = QVBoxLayout(self)
         
-        title = QLabel("🔐 Gestión de Cuentas Git")
+        title = QLabel("⚙️ Ajustes")
         title.setStyleSheet("font-size: 20px; font-weight: bold; color: #4ec9b0; margin: 10px;")
         layout.addWidget(title)
         
@@ -53,10 +54,9 @@ class AccountsDialog(QDialog):
             }
         """)
         
-        tabs.addTab(self.create_accounts_tab(), "📋 Mis Cuentas")
-        tabs.addTab(self.create_github_tab(), "🐙 GitHub")
-        tabs.addTab(self.create_gitlab_tab(), "🦊 GitLab")
-        tabs.addTab(self.create_git_tab(), "📝 Git Local")
+        tabs.addTab(self.create_accounts_section(), "� Cuentas")
+        if self.plugin_manager:
+            tabs.addTab(self.create_plugins_section(), "� Plugins")
         
         layout.addWidget(tabs)
         
@@ -90,6 +90,43 @@ class AccountsDialog(QDialog):
                 color: #cccccc;
             }
         """)
+    
+    def create_accounts_section(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        section_tabs = QTabWidget()
+        section_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: none;
+                background-color: transparent;
+            }
+            QTabBar::tab {
+                background-color: #252526;
+                color: #999;
+                padding: 8px 16px;
+                margin-right: 1px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                font-size: 12px;
+            }
+            QTabBar::tab:selected {
+                background-color: #2d2d2d;
+                color: #fff;
+            }
+            QTabBar::tab:hover {
+                background-color: #2a2a2a;
+            }
+        """)
+        
+        section_tabs.addTab(self.create_accounts_tab(), "📋 Mis Cuentas")
+        section_tabs.addTab(self.create_github_tab(), "🐙 GitHub")
+        section_tabs.addTab(self.create_gitlab_tab(), "🦊 GitLab")
+        section_tabs.addTab(self.create_git_tab(), "📝 Git Local")
+        
+        layout.addWidget(section_tabs)
+        
+        return widget
     
     def create_accounts_tab(self):
         widget = QWidget()
@@ -1190,3 +1227,178 @@ class AccountsDialog(QDialog):
             
         except Exception as e:
             self.current_config.setText(f"Error al cargar configuración:\n{str(e)}")
+    
+    def create_plugins_section(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        info = QLabel("Plugins instalados:")
+        info.setStyleSheet("font-size: 13px; margin: 10px;")
+        layout.addWidget(info)
+        
+        self.plugins_list = QListWidget()
+        self.plugins_list.setStyleSheet("""
+            QListWidget {
+                background-color: #252526;
+                border: 1px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            QListWidget::item {
+                padding: 12px;
+                border-radius: 4px;
+                margin: 2px;
+            }
+            QListWidget::item:hover {
+                background-color: #2d2d2d;
+            }
+            QListWidget::item:selected {
+                background-color: #094771;
+            }
+        """)
+        layout.addWidget(self.plugins_list)
+        
+        btn_layout = QHBoxLayout()
+        
+        refresh_btn = QPushButton("🔄 Actualizar")
+        refresh_btn.clicked.connect(self.load_plugins)
+        btn_layout.addWidget(refresh_btn)
+        
+        btn_layout.addStretch()
+        
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d2d;
+                padding: 8px 16px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #3d3d3d;
+            }
+        """)
+        
+        layout.addLayout(btn_layout)
+        
+        self.load_plugins()
+        
+        return widget
+    
+    def load_plugins(self):
+        self.plugins_list.clear()
+        
+        if not self.plugin_manager:
+            item = QListWidgetItem("No hay plugin manager disponible")
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
+            self.plugins_list.addItem(item)
+            return
+        
+        plugins = self.plugin_manager.get_plugins()
+        
+        if not plugins:
+            item = QListWidgetItem("No hay plugins instalados")
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
+            self.plugins_list.addItem(item)
+            return
+        
+        for plugin in plugins:
+            widget = QWidget()
+            widget.setMinimumHeight(70)
+            plugin_layout = QHBoxLayout(widget)
+            plugin_layout.setContentsMargins(10, 8, 10, 8)
+            plugin_layout.setSpacing(12)
+            
+            icon_container = QWidget()
+            icon_container.setFixedWidth(48)
+            icon_layout = QVBoxLayout(icon_container)
+            icon_layout.setContentsMargins(0, 0, 0, 0)
+            icon_layout.addStretch()
+            
+            icon_label = QLabel()
+            icon_label.setFixedSize(48, 48)
+            
+            is_enabled = self.plugin_manager.is_plugin_enabled(plugin['name'])
+            icon_path = "ui/Icons/plugs-connected.svg" if is_enabled else "ui/Icons/plugs.svg"
+            
+            if os.path.exists(icon_path):
+                pixmap = QPixmap(48, 48)
+                pixmap.fill(Qt.GlobalColor.transparent)
+                renderer = QSvgRenderer(icon_path)
+                painter = QPainter(pixmap)
+                renderer.render(painter)
+                painter.end()
+                icon_label.setPixmap(pixmap)
+            else:
+                icon_label.setText("🔌")
+                icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                icon_label.setStyleSheet("font-size: 24px;")
+            
+            icon_layout.addWidget(icon_label)
+            icon_layout.addStretch()
+            
+            plugin_layout.addWidget(icon_container)
+            
+            info_layout = QVBoxLayout()
+            info_layout.setSpacing(4)
+            
+            status_emoji = "✅" if is_enabled else "⭕"
+            name_label = QLabel(f"{status_emoji} <b>{plugin['name']}</b>")
+            name_label.setStyleSheet("font-size: 14px;")
+            info_layout.addWidget(name_label)
+            
+            if plugin.get('description'):
+                desc_label = QLabel(plugin['description'])
+                desc_label.setStyleSheet("font-size: 12px; color: #999;")
+                info_layout.addWidget(desc_label)
+            
+            version_label = QLabel(f"Versión: {plugin.get('version', '1.0.0')}")
+            version_label.setStyleSheet("font-size: 11px; color: #888;")
+            info_layout.addWidget(version_label)
+            
+            plugin_layout.addLayout(info_layout, 1)
+            
+            toggle_btn = QPushButton("Desactivar" if is_enabled else "Activar")
+            toggle_btn.setFixedWidth(100)
+            toggle_btn.clicked.connect(lambda checked, p=plugin['name']: self.toggle_plugin(p))
+            toggle_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {'#c42b1c' if is_enabled else '#238636'};
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 5px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {'#a52315' if is_enabled else '#2ea043'};
+                }}
+            """)
+            plugin_layout.addWidget(toggle_btn)
+            
+            plugin_layout.addStretch()
+            
+            item = QListWidgetItem()
+            item.setSizeHint(widget.sizeHint())
+            self.plugins_list.addItem(item)
+            self.plugins_list.setItemWidget(item, widget)
+    
+    def toggle_plugin(self, plugin_name):
+        if not self.plugin_manager:
+            return
+        
+        is_enabled = self.plugin_manager.is_plugin_enabled(plugin_name)
+        
+        if is_enabled:
+            self.plugin_manager.disable_plugin(plugin_name)
+            QMessageBox.information(
+                self,
+                "Plugin desactivado",
+                f"El plugin '{plugin_name}' ha sido desactivado.\nReinicia la aplicación para aplicar los cambios."
+            )
+        else:
+            self.plugin_manager.enable_plugin(plugin_name)
+            QMessageBox.information(
+                self,
+                "Plugin activado",
+                f"El plugin '{plugin_name}' ha sido activado.\nReinicia la aplicación para aplicar los cambios."
+            )
+        
+        self.load_plugins()
