@@ -1,13 +1,25 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
-                             QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu)
+                         def close_current_tab(self):
+        current_index = self.tabs.currentIndex()
+        self.close_tab(current_index)
+    
+    def open_settings(self):
+        from ui.accounts_dialog import AccountsDialog
+        dialog = AccountsDialog(self.account_manager, self)
+        dialog.accounts_changed.connect(self.on_accounts_changed)
+        dialog.exec()
+    
+    def on_accounts_changed(self):
+        self.status_bar.showMessage("Cuentas actualizadas", 3000)     QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
+from ui.settings_view import SettingsDialog
+from ui.icon_manager import IconManager
 from core.git_manager import GitManager
 from core.settings_manager import SettingsManager
-from core.account_manager import AccountManager
 import os
 
 class MainWindow(QMainWindow):
@@ -15,7 +27,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.git_manager = GitManager()
         self.settings_manager = SettingsManager()
-        self.account_manager = AccountManager()
+        self.icon_manager = IconManager()
         self.init_ui()
         self.setup_shortcuts()
         
@@ -51,6 +63,13 @@ class MainWindow(QMainWindow):
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
+        
+        edit_menu = menubar.addMenu("Editar")
+        
+        settings_action = QAction("Ajustes", self)
+        settings_action.setShortcut("Ctrl+,")
+        settings_action.triggered.connect(self.open_settings)
+        edit_menu.addAction(settings_action)
         
     def setup_toolbar(self):
         pass
@@ -96,6 +115,8 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(self.tab_widget)
         
+        self.setup_shortcuts()
+        
         self.add_empty_tab()
         
     def setup_shortcuts(self):
@@ -114,38 +135,12 @@ class MainWindow(QMainWindow):
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        
-        self.settings_button = QPushButton("⚙️")
-        self.settings_button.setFixedSize(35, 28)
-        self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.settings_button.setToolTip("Configuración y cuentas")
-        self.settings_button.clicked.connect(self.open_settings)
-        self.settings_button.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 6px;
-                font-size: 16px;
-                color: white;
-                padding: 2px;
-                margin-left: 5px;
-                margin-right: 10px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-            }
-            QPushButton:pressed {
-                background-color: rgba(255, 255, 255, 0.3);
-            }
-        """)
-        self.status_bar.addWidget(self.settings_button)
         self.status_bar.showMessage("Listo")
         
     def add_empty_tab(self):
         repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self)
-        index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
-        self.tab_widget.setCurrentIndex(index)
+        index = self.tabs.addTab(repo_tab, "🏠 Inicio")
+        self.tabs.setCurrentIndex(index)
         
     def open_repository(self):
         folder = QFileDialog.getExistingDirectory(
@@ -161,7 +156,8 @@ class MainWindow(QMainWindow):
                     current_tab.load_repository(folder)
                     repo_name = os.path.basename(folder)
                     current_index = self.tab_widget.currentIndex()
-                    self.tab_widget.setTabText(current_index, f"📁 {repo_name}")
+                    self.tab_widget.setTabText(current_index, f" {repo_name}")
+                    self.tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder", size=16))
                     self.status_bar.showMessage(f"Repositorio cargado: {folder}")
             else:
                 QMessageBox.warning(
@@ -210,13 +206,8 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage("Listo")
     
     def open_settings(self):
-        from ui.accounts_dialog import AccountsDialog
-        dialog = AccountsDialog(self.account_manager, self)
-        dialog.accounts_changed.connect(self.on_accounts_changed)
+        dialog = SettingsDialog(self.settings_manager, self)
         dialog.exec()
-    
-    def on_accounts_changed(self):
-        self.status_bar.showMessage("Cuentas actualizadas", 3000)
                 
     def apply_styles(self):
         self.setStyleSheet("""
