@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QListWidget, QListWidgetItem, QMessageBox,
                              QInputDialog, QLineEdit, QTabWidget, QWidget,
-                             QTextEdit, QGroupBox, QFrame)
+                             QTextEdit, QGroupBox, QFrame, QApplication)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont, QPixmap, QPainter
+from PyQt6.QtGui import QFont, QPixmap, QPainter, QPainterPath
 from PyQt6.QtSvg import QSvgRenderer
 import webbrowser
 import requests
@@ -199,7 +199,20 @@ class AccountsDialog(QDialog):
         
         layout.addWidget(info_box)
         
-        connect_btn = QPushButton("🌐 Login con GitHub")
+        connect_btn_layout = QHBoxLayout()
+        
+        github_logo_label = QLabel()
+        github_logo_path = "ui/Icons/github-logo.svg"
+        if os.path.exists(github_logo_path):
+            pixmap = QPixmap(24, 24)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            renderer = QSvgRenderer(github_logo_path)
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+            github_logo_label.setPixmap(pixmap)
+        
+        connect_btn = QPushButton(" Login con GitHub")
         connect_btn.setMinimumHeight(55)
         connect_btn.clicked.connect(self.start_github_device_flow)
         connect_btn.setStyleSheet("""
@@ -210,6 +223,7 @@ class AccountsDialog(QDialog):
                 font-weight: bold;
                 border-radius: 8px;
                 border: none;
+                padding-left: 40px;
             }
             QPushButton:hover {
                 background-color: #2ea043;
@@ -218,7 +232,16 @@ class AccountsDialog(QDialog):
                 background-color: #1a7f37;
             }
         """)
-        layout.addWidget(connect_btn)
+        
+        btn_container = QWidget()
+        btn_layout = QHBoxLayout(btn_container)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        btn_layout.addWidget(connect_btn)
+        
+        github_logo_label.setParent(connect_btn)
+        github_logo_label.move(15, 15)
+        
+        layout.addWidget(btn_container)
         
         self.github_status_label = QLabel("")
         self.github_status_label.setWordWrap(True)
@@ -348,7 +371,18 @@ class AccountsDialog(QDialog):
         url_layout.addWidget(self.gitlab_url_input)
         layout.addLayout(url_layout)
         
-        connect_btn = QPushButton("🌐 Login con GitLab")
+        gitlab_logo_label = QLabel()
+        gitlab_logo_path = "ui/Icons/gitlab-logo.svg"
+        if os.path.exists(gitlab_logo_path):
+            pixmap = QPixmap(24, 24)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            renderer = QSvgRenderer(gitlab_logo_path)
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+            gitlab_logo_label.setPixmap(pixmap)
+        
+        connect_btn = QPushButton(" Login con GitLab")
         connect_btn.setMinimumHeight(55)
         connect_btn.clicked.connect(self.start_gitlab_device_flow)
         connect_btn.setStyleSheet("""
@@ -359,6 +393,7 @@ class AccountsDialog(QDialog):
                 font-weight: bold;
                 border-radius: 8px;
                 border: none;
+                padding-left: 40px;
             }
             QPushButton:hover {
                 background-color: #FCA326;
@@ -367,7 +402,16 @@ class AccountsDialog(QDialog):
                 background-color: #E24329;
             }
         """)
-        layout.addWidget(connect_btn)
+        
+        btn_container = QWidget()
+        btn_layout = QHBoxLayout(btn_container)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        btn_layout.addWidget(connect_btn)
+        
+        gitlab_logo_label.setParent(connect_btn)
+        gitlab_logo_label.move(15, 15)
+        
+        layout.addWidget(btn_container)
         
         self.gitlab_status_label = QLabel("")
         self.gitlab_status_label.setWordWrap(True)
@@ -564,22 +608,79 @@ class AccountsDialog(QDialog):
             return
         
         for account in accounts:
+            platform = account['platform'].lower()
+            username = account['username']
+            email = account.get('email', '')
+            
+            widget = QWidget()
+            layout = QHBoxLayout(widget)
+            layout.setContentsMargins(5, 5, 5, 5)
+            
+            avatar_label = QLabel()
+            avatar_label.setFixedSize(40, 40)
+            avatar_label.setStyleSheet("border-radius: 20px; background-color: #3d3d3d;")
+            
+            if email:
+                import hashlib
+                email_hash = hashlib.md5(email.lower().encode('utf-8')).hexdigest()
+                avatar_url = f"https://www.gravatar.com/avatar/{email_hash}?s=40&d=identicon"
+                
+                try:
+                    import urllib.request
+                    data = urllib.request.urlopen(avatar_url, timeout=2).read()
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(data)
+                    
+                    rounded_pixmap = QPixmap(40, 40)
+                    rounded_pixmap.fill(Qt.GlobalColor.transparent)
+                    painter = QPainter(rounded_pixmap)
+                    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                    path = QPainterPath()
+                    path.addEllipse(0, 0, 40, 40)
+                    painter.setClipPath(path)
+                    painter.drawPixmap(0, 0, 40, 40, pixmap)
+                    painter.end()
+                    
+                    avatar_label.setPixmap(rounded_pixmap)
+                except:
+                    avatar_label.setText("👤")
+                    avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    avatar_label.setStyleSheet("border-radius: 20px; background-color: #3d3d3d; font-size: 20px;")
+            else:
+                avatar_label.setText("�")
+                avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                avatar_label.setStyleSheet("border-radius: 20px; background-color: #3d3d3d; font-size: 20px;")
+            
+            layout.addWidget(avatar_label)
+            
+            info_layout = QVBoxLayout()
+            info_layout.setSpacing(2)
+            
             platform_icons = {
                 'github': '🐙',
                 'gitlab': '🦊',
                 'git': '📝'
             }
-            
-            icon = platform_icons.get(account['platform'], '📝')
+            icon = platform_icons.get(platform, '📝')
             status = '✅' if account.get('active', True) else '⭕'
             
-            text = f"{icon} {status} {account['platform'].upper()}: {account['username']}"
-            if account.get('email'):
-                text += f" ({account['email']})"
+            name_label = QLabel(f"{icon} {status} <b>{platform.upper()}</b>: {username}")
+            name_label.setStyleSheet("font-size: 13px;")
+            info_layout.addWidget(name_label)
             
-            item = QListWidgetItem(text)
+            if email:
+                email_label = QLabel(f"📧 {email}")
+                email_label.setStyleSheet("font-size: 11px; color: #888;")
+                info_layout.addWidget(email_label)
+            
+            layout.addLayout(info_layout)
+            layout.addStretch()
+            
+            item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, account)
+            item.setSizeHint(widget.sizeHint())
             self.accounts_list.addItem(item)
+            self.accounts_list.setItemWidget(item, widget)
     
     def remove_selected_account(self):
         item = self.accounts_list.currentItem()
@@ -617,8 +718,38 @@ class AccountsDialog(QDialog):
         device_code = flow_data['device_code']
         interval = flow_data['interval']
         
+        copy_button = QPushButton(f"📋 Copiar: {user_code}")
+        copy_button.setMinimumHeight(40)
+        copy_button.setStyleSheet("""
+            QPushButton {
+                background-color: #238636;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 6px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #2ea043;
+            }
+        """)
+        copy_button.clicked.connect(lambda: self.copy_code_to_clipboard(user_code))
+        
+        code_layout = QVBoxLayout()
+        code_label = QLabel(f"<b>📋 Código de verificación:</b> <span style='font-size: 24px; color: #0e639c;'>{user_code}</span>")
+        code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        code_layout.addWidget(code_label)
+        code_layout.addWidget(copy_button)
+        
+        status_layout = self.github_status_label.parent().layout() if self.github_status_label.parent() else None
+        if status_layout:
+            for i in range(status_layout.count()):
+                item = status_layout.itemAt(i)
+                if item and item.widget() == self.github_status_label:
+                    status_layout.insertLayout(i, code_layout)
+                    break
+        
         self.github_status_label.setText(
-            f"<b>📋 Código de verificación:</b> <span style='font-size: 24px; color: #0e639c;'>{user_code}</span><br><br>"
             f"Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
             f"Ingresa el código cuando se te solicite."
         )
@@ -986,6 +1117,15 @@ class AccountsDialog(QDialog):
                 QMessageBox.warning(self, "Error", "Token inválido o sin permisos")
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Error al verificar token:\n{str(e)}")
+    
+    def copy_code_to_clipboard(self, code):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(code)
+        QMessageBox.information(
+            self, 
+            "Código copiado", 
+            f"El código '{code}' ha sido copiado al portapapeles."
+        )
     
     def save_git_config(self):
         name = self.git_name.text().strip()
