@@ -613,17 +613,19 @@ class AccountsDialog(QDialog):
             email = account.get('email', '')
             
             widget = QWidget()
+            widget.setMinimumHeight(60)
             layout = QHBoxLayout(widget)
-            layout.setContentsMargins(5, 5, 5, 5)
+            layout.setContentsMargins(10, 8, 10, 8)
+            layout.setSpacing(12)
             
             avatar_label = QLabel()
-            avatar_label.setFixedSize(40, 40)
-            avatar_label.setStyleSheet("border-radius: 20px; background-color: #3d3d3d;")
+            avatar_label.setFixedSize(44, 44)
+            avatar_label.setStyleSheet("border-radius: 22px; background-color: #3d3d3d;")
             
             if email:
                 import hashlib
                 email_hash = hashlib.md5(email.lower().encode('utf-8')).hexdigest()
-                avatar_url = f"https://www.gravatar.com/avatar/{email_hash}?s=40&d=identicon"
+                avatar_url = f"https://www.gravatar.com/avatar/{email_hash}?s=44&d=identicon"
                 
                 try:
                     import urllib.request
@@ -631,21 +633,21 @@ class AccountsDialog(QDialog):
                     pixmap = QPixmap()
                     pixmap.loadFromData(data)
                     
-                    rounded_pixmap = QPixmap(40, 40)
+                    rounded_pixmap = QPixmap(44, 44)
                     rounded_pixmap.fill(Qt.GlobalColor.transparent)
                     painter = QPainter(rounded_pixmap)
                     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
                     path = QPainterPath()
-                    path.addEllipse(0, 0, 40, 40)
+                    path.addEllipse(0, 0, 44, 44)
                     painter.setClipPath(path)
-                    painter.drawPixmap(0, 0, 40, 40, pixmap)
+                    painter.drawPixmap(0, 0, 44, 44, pixmap)
                     painter.end()
                     
                     avatar_label.setPixmap(rounded_pixmap)
                 except:
                     avatar_label.setText("👤")
                     avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    avatar_label.setStyleSheet("border-radius: 20px; background-color: #3d3d3d; font-size: 20px;")
+                    avatar_label.setStyleSheet("border-radius: 22px; background-color: #3d3d3d; font-size: 20px;")
             else:
                 avatar_label.setText("�")
                 avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -654,7 +656,7 @@ class AccountsDialog(QDialog):
             layout.addWidget(avatar_label)
             
             info_layout = QVBoxLayout()
-            info_layout.setSpacing(2)
+            info_layout.setSpacing(4)
             
             platform_icons = {
                 'github': '🐙',
@@ -665,12 +667,12 @@ class AccountsDialog(QDialog):
             status = '✅' if account.get('active', True) else '⭕'
             
             name_label = QLabel(f"{icon} {status} <b>{platform.upper()}</b>: {username}")
-            name_label.setStyleSheet("font-size: 13px;")
+            name_label.setStyleSheet("font-size: 14px;")
             info_layout.addWidget(name_label)
             
             if email:
                 email_label = QLabel(f"📧 {email}")
-                email_label.setStyleSheet("font-size: 11px; color: #888;")
+                email_label.setStyleSheet("font-size: 12px; color: #999;")
                 info_layout.addWidget(email_label)
             
             layout.addLayout(info_layout)
@@ -718,15 +720,14 @@ class AccountsDialog(QDialog):
         device_code = flow_data['device_code']
         interval = flow_data['interval']
         
-        copy_button = QPushButton(f"📋 Copiar: {user_code}")
-        copy_button.setMinimumHeight(40)
+        copy_button = QPushButton("📋")
+        copy_button.setFixedSize(30, 30)
         copy_button.setStyleSheet("""
             QPushButton {
                 background-color: #238636;
                 color: white;
-                font-size: 16px;
-                font-weight: bold;
-                border-radius: 6px;
+                font-size: 14px;
+                border-radius: 5px;
                 border: none;
             }
             QPushButton:hover {
@@ -735,11 +736,16 @@ class AccountsDialog(QDialog):
         """)
         copy_button.clicked.connect(lambda: self.copy_code_to_clipboard(user_code))
         
-        code_layout = QVBoxLayout()
-        code_label = QLabel(f"<b>📋 Código de verificación:</b> <span style='font-size: 24px; color: #0e639c;'>{user_code}</span>")
-        code_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        code_layout = QHBoxLayout()
+        code_label = QLabel(f"<b>📋 Código:</b> <span style='font-size: 20px; color: #0e639c; font-family: monospace;'>{user_code}</span>")
         code_layout.addWidget(code_label)
         code_layout.addWidget(copy_button)
+        code_layout.addStretch()
+        
+        self.github_status_label.setText(
+            f"<br>Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
+            f"Ingresa el código cuando se te solicite.<br>"
+        )
         
         status_layout = self.github_status_label.parent().layout() if self.github_status_label.parent() else None
         if status_layout:
@@ -748,11 +754,6 @@ class AccountsDialog(QDialog):
                 if item and item.widget() == self.github_status_label:
                     status_layout.insertLayout(i, code_layout)
                     break
-        
-        self.github_status_label.setText(
-            f"Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
-            f"Ingresa el código cuando se te solicite."
-        )
         
         webbrowser.open(verification_uri)
         
