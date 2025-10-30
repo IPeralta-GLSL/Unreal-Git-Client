@@ -745,7 +745,6 @@ class Theme:
             }}
         """
 
-# Variable global para acceder al tema actual
 current_theme = None
 
 def get_current_theme():
