@@ -42,7 +42,7 @@ class Theme:
                 
                 'surface': '#2d2d2d',
                 'surface_hover': '#3d3d3d',
-                'surface_selected': '#094771',
+                'surface_selected': '#1a4d2e',
                 
                 'border': '#3d3d3d',
                 'border_focus': '#4ec9b0',

@@ -55,7 +55,58 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exit_action)
         
     def setup_toolbar(self):
-        pass
+        from ui.icon_manager import IconManager
+        from ui.theme import get_current_theme
+        
+        theme = get_current_theme()
+        icon_manager = IconManager()
+        
+        toolbar = QToolBar("Barra de herramientas principal")
+        toolbar.setMovable(False)
+        toolbar.setFloatable(False)
+        toolbar.setStyleSheet(f"""
+            QToolBar {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+                spacing: 10px;
+                padding: 5px;
+            }}
+        """)
+        self.addToolBar(toolbar)
+        
+        # Spacer para empujar el botón de configuración a la derecha
+        spacer = QWidget()
+        spacer.setSizePolicy(QWidget.SizePolicy.Policy.Expanding, QWidget.SizePolicy.Policy.Preferred)
+        toolbar.addWidget(spacer)
+        
+        # Botón de configuración
+        self.settings_action = QPushButton(" Configuración")
+        self.settings_action.setIcon(icon_manager.get_icon("gear-six", size=18))
+        self.settings_action.setFixedHeight(36)
+        self.settings_action.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.settings_action.setToolTip("Configuración y cuentas")
+        self.settings_action.clicked.connect(self.open_settings)
+        self.settings_action.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['primary']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 6px 12px;
+                margin-right: 10px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border: 1px solid {theme.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['primary_text']};
+            }}
+        """)
+        toolbar.addWidget(self.settings_action)
         
     def setup_central_widget(self):
         central_widget = QWidget()
@@ -70,28 +121,29 @@ class MainWindow(QMainWindow):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
+        theme = get_current_theme()
         self.new_tab_button = QPushButton("+")
         self.new_tab_button.setFixedSize(35, 35)
         self.new_tab_button.setToolTip("Nueva pestaña (Ctrl+T)")
         self.new_tab_button.clicked.connect(self.add_empty_tab)
-        self.new_tab_button.setStyleSheet("""
-            QPushButton {
-                background-color: palette(link);
+        self.new_tab_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['primary']};
                 color: palette(bright-text);
-                border: 1px solid #3d3d3d;
+                border: 1px solid {theme.colors['border']};
                 border-radius: 4px;
                 font-size: 20px;
                 font-weight: bold;
                 padding: 0px;
                 margin: 2px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
                 color: palette(bright-text);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
         """)
         
         self.tab_widget.setCornerWidget(self.new_tab_button, Qt.Corner.TopRightCorner)
@@ -116,32 +168,6 @@ class MainWindow(QMainWindow):
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        
-        self.settings_button = QPushButton("⚙️")
-        self.settings_button.setFixedSize(35, 28)
-        self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.settings_button.setToolTip("Configuración y cuentas")
-        self.settings_button.clicked.connect(self.open_settings)
-        self.settings_button.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 6px;
-                font-size: 16px;
-                color: palette(bright-text);
-                padding: 2px;
-                margin-left: 5px;
-                margin-right: 10px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-            }
-            QPushButton:pressed {
-                background-color: rgba(255, 255, 255, 0.3);
-            }
-        """)
-        self.status_bar.addWidget(self.settings_button)
         self.status_bar.showMessage("Listo")
         
     def add_empty_tab(self):
