@@ -121,28 +121,30 @@ class MainWindow(QMainWindow):
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
+        from ui.icon_manager import IconManager
         theme = get_current_theme()
-        self.new_tab_button = QPushButton("+")
-        self.new_tab_button.setFixedSize(35, 35)
+        icon_manager = IconManager()
+        
+        self.new_tab_button = QPushButton()
+        self.new_tab_button.setIcon(icon_manager.get_icon("file-plus", size=18))
+        self.new_tab_button.setFixedSize(32, 32)
         self.new_tab_button.setToolTip("Nueva pestaña (Ctrl+T)")
+        self.new_tab_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.new_tab_button.clicked.connect(self.add_empty_tab)
         self.new_tab_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {theme.colors['primary']};
-                color: palette(bright-text);
+                background-color: transparent;
+                color: {theme.colors['primary']};
                 border: 1px solid {theme.colors['border']};
                 border-radius: 4px;
-                font-size: 20px;
-                font-weight: bold;
-                padding: 0px;
-                margin: 2px;
+                padding: 6px;
             }}
             QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
-                color: palette(bright-text);
+                background-color: {theme.colors['surface_hover']};
+                border: 1px solid {theme.colors['primary']};
             }}
             QPushButton:pressed {{
-                background-color: {theme.colors['primary_pressed']};
+                background-color: {theme.colors['primary']};
             }}
         """)
         
