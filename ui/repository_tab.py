@@ -250,7 +250,7 @@ class RepositoryTab(QWidget):
         layout.addWidget(self.fetch_btn)
         
         self.refresh_btn = QPushButton(" Refresh")
-        self.refresh_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18))
+        self.refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
         self.refresh_btn.setMinimumSize(85, 36)
         self.refresh_btn.setMaximumSize(110, 36)
         self.refresh_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
