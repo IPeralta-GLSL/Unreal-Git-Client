@@ -172,9 +172,23 @@ class Theme:
                 background-color: {self.colors['background']};
             }}
             
+            QDialog {{
+                background-color: {self.colors['background']};
+                color: {self.colors['text']};
+            }}
+            
+            QFileDialog {{
+                background-color: {self.colors['background']};
+                color: {self.colors['text']};
+            }}
+            
+            QMessageBox {{
+                background-color: {self.colors['background']};
+                color: {self.colors['text']};
+            }}
+            
             QWidget {{
                 color: {self.colors['text']};
-                background-color: transparent;
             }}
             
             /* Buttons */
@@ -244,6 +258,36 @@ class Theme:
             
             QPushButton.danger:pressed {{
                 background-color: {self.colors['danger_pressed']};
+            }}
+            
+            QPushButton.github {{
+                background-color: {self.colors['github']};
+                color: {self.colors['text_inverse']};
+                border: none;
+                font-weight: {self.fonts['weight_bold']};
+            }}
+            
+            QPushButton.github:hover {{
+                background-color: #2ea043;
+            }}
+            
+            QPushButton.github:pressed {{
+                background-color: #1a7f37;
+            }}
+            
+            QPushButton.gitlab {{
+                background-color: {self.colors['gitlab']};
+                color: {self.colors['text_inverse']};
+                border: none;
+                font-weight: {self.fonts['weight_bold']};
+            }}
+            
+            QPushButton.gitlab:hover {{
+                background-color: #FCA326;
+            }}
+            
+            QPushButton.gitlab:pressed {{
+                background-color: #E24329;
             }}
             
             /* Input fields */
@@ -539,6 +583,9 @@ class Theme:
         """
     
     def apply_to_app(self, app: QApplication):
+        global current_theme
+        current_theme = self
+        
         app.setStyleSheet(self.get_stylesheet())
         
         palette = QPalette()
@@ -558,4 +605,5 @@ class Theme:
         font.setPointSize(self.fonts['size_base'])
         app.setFont(font)
 
-theme = Theme("Dark")
+# Variable global para acceder al tema actual
+current_theme = None

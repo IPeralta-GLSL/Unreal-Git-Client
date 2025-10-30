@@ -384,15 +384,15 @@ class SettingsDialog(QDialog):
     def apply_styles(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
             QLabel {
-                color: #cccccc;
+                color: palette(window-text);
                 font-size: 12px;
             }
             QLineEdit {
                 background-color: #3c3c3c;
-                color: #ffffff;
+                color: palette(bright-text);
                 border: 1px solid #5a5a5a;
                 border-radius: 4px;
                 padding: 8px;
@@ -417,8 +417,8 @@ class SettingsDialog(QDialog):
                 background-color: #094771;
             }
             QListWidget {
-                background-color: #252526;
-                color: #cccccc;
+                background-color: palette(base);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 5px;
@@ -437,12 +437,12 @@ class SettingsDialog(QDialog):
             }
             QTabWidget::pane {
                 border: 1px solid #3d3d3d;
-                background-color: #252526;
+                background-color: palette(base);
                 border-top: 2px solid #0e639c;
             }
             QTabBar::tab {
-                background-color: #2d2d2d;
-                color: #cccccc;
+                background-color: palette(button);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 padding: 10px 20px;
                 margin-right: 2px;
@@ -450,15 +450,15 @@ class SettingsDialog(QDialog):
                 border-top-right-radius: 4px;
             }
             QTabBar::tab:selected {
-                background-color: #252526;
+                background-color: palette(base);
                 color: white;
                 border-bottom: 2px solid #0e639c;
             }
             QTabBar::tab:hover:!selected {
-                background-color: #3d3d3d;
+                background-color: palette(mid);
             }
             QGroupBox {
-                color: #cccccc;
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
                 margin-top: 10px;

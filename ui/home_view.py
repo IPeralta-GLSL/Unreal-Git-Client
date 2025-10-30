@@ -27,15 +27,15 @@ class HomeView(QWidget):
         scroll.setStyleSheet("""
             QScrollArea {
                 border: none;
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
             QScrollBar:vertical {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 width: 12px;
                 border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background-color: #3d3d3d;
+                background-color: palette(mid);
                 border-radius: 6px;
                 min-height: 30px;
             }
@@ -115,7 +115,7 @@ class HomeView(QWidget):
         else:
             placeholder = QLabel("No hay repositorios recientes")
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            placeholder.setStyleSheet("color: #666666; font-size: 14px; padding: 40px;")
+            placeholder.setStyleSheet("color: palette(mid); font-size: 14px; padding: 40px;")
             left_layout.addWidget(placeholder)
         
         left_layout.addStretch()
@@ -129,7 +129,7 @@ class HomeView(QWidget):
         tips_container = QFrame()
         tips_container.setStyleSheet("""
             QFrame {
-                background-color: #252526;
+                background-color: palette(base);
                 border-radius: 10px;
                 padding: 20px;
             }
@@ -144,7 +144,7 @@ class HomeView(QWidget):
         tips_title_layout.addWidget(tips_icon)
         
         tips_title = QLabel(" Consejos Rápidos")
-        tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #4ec9b0;")
+        tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link);")
         tips_title_layout.addWidget(tips_title)
         tips_title_layout.addStretch()
         tips_layout.addLayout(tips_title_layout)
@@ -171,7 +171,7 @@ class HomeView(QWidget):
             
             tip_label = QLabel(tip)
             tip_label.setWordWrap(True)
-            tip_label.setStyleSheet("font-size: 12px; color: #cccccc;")
+            tip_label.setStyleSheet("font-size: 12px; color: palette(window-text);")
             tip_layout.addWidget(tip_label, stretch=1)
             
             tips_layout.addWidget(tip_container)
@@ -195,13 +195,13 @@ class HomeView(QWidget):
         shortcuts_label = QLabel("Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar")
         shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         shortcuts_label.setWordWrap(True)
-        shortcuts_label.setStyleSheet("color: #666666; font-size: 11px;")
+        shortcuts_label.setStyleSheet("color: palette(mid); font-size: 11px;")
         footer_layout.addWidget(shortcuts_label)
         
         version_label = QLabel("v1.0.0 • Soporte para Git LFS y Unreal Engine")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_label.setWordWrap(True)
-        version_label.setStyleSheet("font-size: 10px; color: #555555;")
+        version_label.setStyleSheet("font-size: 10px; color: palette(mid);")
         footer_layout.addWidget(version_label)
         
         layout.addWidget(footer)
@@ -211,7 +211,7 @@ class HomeView(QWidget):
         
         self.setStyleSheet("""
             QWidget {
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
         """)
     
@@ -226,7 +226,7 @@ class HomeView(QWidget):
         section = QFrame()
         section.setStyleSheet("""
             QFrame {
-                background-color: #252526;
+                background-color: palette(base);
                 border-radius: 10px;
                 padding: 20px;
             }
@@ -242,7 +242,7 @@ class HomeView(QWidget):
         header_layout.addWidget(header_icon)
         
         header = QLabel(" Repositorios Recientes")
-        header.setStyleSheet("color: #ffffff; font-size: 15px; font-weight: bold;")
+        header.setStyleSheet("color: palette(bright-text); font-size: 15px; font-weight: bold;")
         header_layout.addWidget(header)
         header_layout.addStretch()
         layout.addLayout(header_layout)
@@ -256,12 +256,12 @@ class HomeView(QWidget):
                 background-color: transparent;
             }
             QScrollBar:vertical {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 width: 10px;
                 border-radius: 5px;
             }
             QScrollBar::handle:vertical {
-                background-color: #3d3d3d;
+                background-color: palette(mid);
                 border-radius: 5px;
             }
             QScrollBar::handle:vertical:hover {
@@ -301,7 +301,7 @@ class HomeView(QWidget):
         
         btn.setStyleSheet("""
             QPushButton {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 border: 2px solid #3d3d3d;
                 border-radius: 8px;
                 padding: 12px 15px;
@@ -309,7 +309,7 @@ class HomeView(QWidget):
                 font-size: 13px;
             }
             QPushButton:hover {
-                background-color: #2d2d2d;
+                background-color: palette(button);
                 border-color: #007acc;
             }
             QPushButton:pressed {

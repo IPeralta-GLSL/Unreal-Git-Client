@@ -35,22 +35,22 @@ class BranchManagerDialog(QDialog):
         layout.addLayout(title_layout)
         
         current_branch_label = QLabel("Rama actual:")
-        current_branch_label.setStyleSheet("color: #888888; font-size: 12px;")
+        current_branch_label.setStyleSheet("color: palette(mid); font-size: 12px;")
         layout.addWidget(current_branch_label)
         
         self.current_branch = QLabel()
         self.current_branch.setStyleSheet("""
             font-size: 16px;
             font-weight: bold;
-            color: #4ec9b0;
-            background-color: #2d2d2d;
+            color: palette(link);
+            background-color: palette(button);
             padding: 10px;
             border-radius: 4px;
         """)
         layout.addWidget(self.current_branch)
         
         list_label = QLabel("Todas las Ramas:")
-        list_label.setStyleSheet("color: #cccccc; font-weight: bold; margin-top: 10px;")
+        list_label.setStyleSheet("color: palette(window-text); font-weight: bold; margin-top: 10px;")
         layout.addWidget(list_label)
         
         self.branches_list = QListWidget()
@@ -200,14 +200,14 @@ class BranchManagerDialog(QDialog):
     def apply_styles(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
             QLabel {
-                color: #cccccc;
+                color: palette(window-text);
             }
             QListWidget {
-                background-color: #252526;
-                color: #cccccc;
+                background-color: palette(base);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 5px;
@@ -222,7 +222,7 @@ class BranchManagerDialog(QDialog):
                 background-color: #094771;
             }
             QListWidget::item:hover {
-                background-color: #2d2d2d;
+                background-color: palette(button);
             }
             QPushButton {
                 background-color: #0e639c;
@@ -269,7 +269,7 @@ class CreateBranchDialog(QDialog):
         layout.addLayout(title_layout)
         
         name_label = QLabel("Nombre de la rama:")
-        name_label.setStyleSheet("color: #cccccc; font-weight: bold;")
+        name_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
         layout.addWidget(name_label)
         
         self.branch_name_input = QLineEdit()
@@ -337,14 +337,14 @@ class CreateBranchDialog(QDialog):
     def apply_styles(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
             QLabel {
-                color: #cccccc;
+                color: palette(window-text);
             }
             QLineEdit {
-                background-color: #252526;
-                color: #cccccc;
+                background-color: palette(base);
+                color: palette(window-text);
                 border: 2px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 8px;
@@ -354,11 +354,11 @@ class CreateBranchDialog(QDialog):
                 border: 2px solid #0e639c;
             }
             QLineEdit:disabled {
-                background-color: #1e1e1e;
-                color: #666666;
+                background-color: palette(window);
+                color: palette(mid);
             }
             QGroupBox {
-                color: #cccccc;
+                color: palette(window-text);
                 border: 2px solid #3d3d3d;
                 border-radius: 5px;
                 margin-top: 10px;
@@ -371,7 +371,7 @@ class CreateBranchDialog(QDialog):
                 padding: 0 5px;
             }
             QRadioButton {
-                color: #cccccc;
+                color: palette(window-text);
                 font-size: 13px;
             }
             QRadioButton::indicator {
@@ -425,16 +425,16 @@ class CommitActionsDialog(QDialog):
         layout.addLayout(title_layout)
         
         info_label = QLabel(f"Commit: {self.commit_hash[:7]}")
-        info_label.setStyleSheet("color: #4ec9b0; font-size: 14px; font-weight: bold;")
+        info_label.setStyleSheet("color: palette(link); font-size: 14px; font-weight: bold;")
         layout.addWidget(info_label)
         
         msg_label = QLabel(f"Mensaje: {self.commit_info}")
         msg_label.setWordWrap(True)
-        msg_label.setStyleSheet("color: #cccccc; font-size: 12px; padding: 10px; background-color: #2d2d2d; border-radius: 4px;")
+        msg_label.setStyleSheet("color: palette(window-text); font-size: 12px; padding: 10px; background-color: palette(button); border-radius: 4px;")
         layout.addWidget(msg_label)
         
         actions_label = QLabel("Selecciona una acción:")
-        actions_label.setStyleSheet("color: #cccccc; font-weight: bold; margin-top: 10px;")
+        actions_label.setStyleSheet("color: palette(window-text); font-weight: bold; margin-top: 10px;")
         layout.addWidget(actions_label)
         
         self.reset_soft_btn = QPushButton("  Reset Soft (mantener cambios)")
@@ -542,10 +542,10 @@ class CommitActionsDialog(QDialog):
     def apply_styles(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
             QLabel {
-                color: #cccccc;
+                color: palette(window-text);
             }
             QPushButton {
                 background-color: #0e639c;

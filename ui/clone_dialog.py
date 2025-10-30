@@ -33,12 +33,12 @@ class CloneDialog(QDialog):
         layout.addLayout(title_layout)
         
         description = QLabel("Descarga una copia de un repositorio remoto a tu computadora")
-        description.setStyleSheet("color: #888888; font-size: 12px; margin-bottom: 10px;")
+        description.setStyleSheet("color: palette(mid); font-size: 12px; margin-bottom: 10px;")
         description.setWordWrap(True)
         layout.addWidget(description)
         
         url_label = QLabel("URL del Repositorio:")
-        url_label.setStyleSheet("color: #cccccc; font-weight: bold; font-size: 13px;")
+        url_label.setStyleSheet("color: palette(window-text); font-weight: bold; font-size: 13px;")
         layout.addWidget(url_label)
         
         self.url_input = QLineEdit()
@@ -49,7 +49,7 @@ class CloneDialog(QDialog):
         layout.addSpacing(10)
         
         path_label = QLabel("Carpeta de Destino:")
-        path_label.setStyleSheet("color: #cccccc; font-weight: bold; font-size: 13px;")
+        path_label.setStyleSheet("color: palette(window-text); font-weight: bold; font-size: 13px;")
         layout.addWidget(path_label)
         
         path_layout = QHBoxLayout()
@@ -69,7 +69,7 @@ class CloneDialog(QDialog):
         layout.addLayout(path_layout)
         
         helper_text = QLabel("ℹ️ El repositorio se clonará en una nueva carpeta dentro de la ubicación seleccionada")
-        helper_text.setStyleSheet("color: #4ec9b0; font-size: 11px; font-style: italic;")
+        helper_text.setStyleSheet("color: palette(link); font-size: 11px; font-style: italic;")
         helper_text.setWordWrap(True)
         layout.addWidget(helper_text)
         
@@ -127,14 +127,14 @@ class CloneDialog(QDialog):
     def apply_styles(self):
         self.setStyleSheet("""
             QDialog {
-                background-color: #1e1e1e;
+                background-color: palette(window);
             }
             QLabel {
-                color: #cccccc;
+                color: palette(window-text);
             }
             QLineEdit {
-                background-color: #252526;
-                color: #cccccc;
+                background-color: palette(base);
+                color: palette(window-text);
                 border: 2px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 10px;

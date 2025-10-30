@@ -89,7 +89,7 @@ class RepositoryTab(QWidget):
         self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.top_bar.setStyleSheet("""
             QFrame {
-                background-color: #2d2d2d;
+                background-color: palette(button);
                 border-bottom: 2px solid #0e639c;
             }
         """)
@@ -105,7 +105,7 @@ class RepositoryTab(QWidget):
         branch_layout.setSpacing(3)
         
         branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
-        branch_title.setStyleSheet("color: #888888; font-size: 9px; font-weight: bold;")
+        branch_title.setStyleSheet("color: palette(mid); font-size: 9px; font-weight: bold;")
         branch_title.setMaximumHeight(14)
         branch_layout.addWidget(branch_title)
         
@@ -118,15 +118,15 @@ class RepositoryTab(QWidget):
             QPushButton {
                 font-weight: bold;
                 font-size: 13px;
-                color: #4ec9b0;
-                background-color: #1e1e1e;
+                color: palette(link);
+                background-color: palette(window);
                 border: 2px solid #4ec9b0;
                 border-radius: 5px;
                 padding: 2px 12px;
                 text-align: left;
             }
             QPushButton:hover {
-                background-color: #2d2d2d;
+                background-color: palette(button);
                 border-color: #5fd9c0;
                 color: #5fd9c0;
             }
@@ -151,7 +151,7 @@ class RepositoryTab(QWidget):
         separator1 = QWidget()
         separator1.setFixedWidth(1)
         separator1.setFixedHeight(24)
-        separator1.setStyleSheet("background-color: #3d3d3d;")
+        separator1.setStyleSheet("background-color: palette(mid);")
         layout.addWidget(separator1)
         
         layout.addSpacing(10)
@@ -188,7 +188,7 @@ class RepositoryTab(QWidget):
         separator2 = QWidget()
         separator2.setFixedWidth(1)
         separator2.setFixedHeight(24)
-        separator2.setStyleSheet("background-color: #3d3d3d;")
+        separator2.setStyleSheet("background-color: palette(mid);")
         layout.addWidget(separator2)
         
         layout.addSpacing(10)
@@ -231,7 +231,7 @@ class RepositoryTab(QWidget):
         
     def create_left_panel(self):
         widget = QWidget()
-        widget.setStyleSheet("background-color: #252526;")
+        widget.setStyleSheet("background-color: palette(base);")
         widget.setMinimumWidth(300)
         widget.setMaximumWidth(600)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -243,7 +243,7 @@ class RepositoryTab(QWidget):
         layout.addWidget(changes_header)
         
         changes_container = QWidget()
-        changes_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
+        changes_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         changes_layout = QVBoxLayout(changes_container)
         changes_layout.setContentsMargins(10, 10, 10, 10)
         
@@ -251,7 +251,7 @@ class RepositoryTab(QWidget):
         self.changes_list.setMinimumHeight(200)
         self.changes_list.setStyleSheet("""
             QListWidget {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
                 padding: 5px;
@@ -265,7 +265,7 @@ class RepositoryTab(QWidget):
                 border-left: 3px solid transparent;
             }
             QListWidget::item:hover {
-                background-color: #2d2d2d;
+                background-color: palette(button);
             }
             QListWidget::item:selected {
                 background-color: #094771;
@@ -304,7 +304,7 @@ class RepositoryTab(QWidget):
         layout.addWidget(commit_header)
         
         commit_container = QWidget()
-        commit_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
+        commit_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         commit_layout = QVBoxLayout(commit_container)
         commit_layout.setContentsMargins(10, 10, 10, 10)
         
@@ -314,12 +314,12 @@ class RepositoryTab(QWidget):
         self.commit_message.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.commit_message.setStyleSheet("""
             QTextEdit {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 border: 2px solid #3d3d3d;
                 border-radius: 5px;
                 padding: 8px;
                 font-size: 13px;
-                color: #cccccc;
+                color: palette(window-text);
             }
             QTextEdit:focus {
                 border-color: #007acc;
@@ -353,12 +353,12 @@ class RepositoryTab(QWidget):
         layout.addWidget(lfs_header)
         
         lfs_container = QWidget()
-        lfs_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
+        lfs_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         lfs_layout = QVBoxLayout(lfs_container)
         lfs_layout.setContentsMargins(10, 10, 10, 10)
         
         status_widget = QWidget()
-        status_widget.setStyleSheet("background-color: #2d2d2d; border-radius: 4px; padding: 8px;")
+        status_widget.setStyleSheet("background-color: palette(button); border-radius: 4px; padding: 8px;")
         status_layout = QHBoxLayout(status_widget)
         status_layout.setContentsMargins(10, 8, 10, 8)
         
@@ -367,7 +367,7 @@ class RepositoryTab(QWidget):
         status_layout.addWidget(status_icon)
         
         self.lfs_status_label = QLabel("Estado: No inicializado")
-        self.lfs_status_label.setStyleSheet("color: #cccccc; font-weight: bold;")
+        self.lfs_status_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
         status_layout.addWidget(self.lfs_status_label)
         status_layout.addStretch()
         
@@ -409,7 +409,7 @@ class RepositoryTab(QWidget):
         header = QFrame()
         header.setStyleSheet("""
             QFrame {
-                background-color: #2d2d2d;
+                background-color: palette(button);
                 border-bottom: 1px solid #3d3d3d;
             }
         """)
@@ -436,7 +436,7 @@ class RepositoryTab(QWidget):
         
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #888888; font-size: 10px;")
+        desc_label.setStyleSheet("color: palette(mid); font-size: 10px;")
         text_layout.addWidget(desc_label)
         
         layout.addLayout(text_layout)
@@ -445,7 +445,7 @@ class RepositoryTab(QWidget):
     
     def create_middle_panel(self):
         widget = QWidget()
-        widget.setStyleSheet("background-color: #1e1e1e;")
+        widget.setStyleSheet("background-color: palette(window);")
         widget.setMinimumWidth(400)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(widget)
@@ -456,7 +456,7 @@ class RepositoryTab(QWidget):
         layout.addWidget(history_header)
         
         history_container = QWidget()
-        history_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
+        history_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         history_layout = QVBoxLayout(history_container)
         history_layout.setContentsMargins(10, 10, 10, 10)
         
@@ -466,17 +466,17 @@ class RepositoryTab(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setStyleSheet("""
             QScrollArea {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
             }
             QScrollBar:vertical {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 width: 12px;
                 border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background-color: #3d3d3d;
+                background-color: palette(mid);
                 border-radius: 6px;
                 min-height: 20px;
             }
@@ -486,7 +486,7 @@ class RepositoryTab(QWidget):
         """)
         
         self.commit_graph = CommitGraphWidget()
-        self.commit_graph.setStyleSheet("background-color: #1e1e1e;")
+        self.commit_graph.setStyleSheet("background-color: palette(window);")
         self.commit_graph.commit_clicked.connect(self.on_graph_commit_clicked)
         scroll.setWidget(self.commit_graph)
         
@@ -497,7 +497,7 @@ class RepositoryTab(QWidget):
     
     def create_right_panel(self):
         widget = QWidget()
-        widget.setStyleSheet("background-color: #1e1e1e;")
+        widget.setStyleSheet("background-color: palette(window);")
         widget.setMinimumWidth(400)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(widget)
@@ -508,7 +508,7 @@ class RepositoryTab(QWidget):
         layout.addWidget(info_header)
         
         info_container = QWidget()
-        info_container.setStyleSheet("background-color: #252526; padding: 15px;")
+        info_container.setStyleSheet("background-color: palette(base); padding: 15px;")
         info_container.setMinimumHeight(100)
         info_container.setMaximumHeight(150)
         info_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -516,7 +516,7 @@ class RepositoryTab(QWidget):
         
         self.repo_info = QLabel("No hay repositorio cargado")
         self.repo_info.setWordWrap(True)
-        self.repo_info.setStyleSheet("color: #cccccc; line-height: 1.6;")
+        self.repo_info.setStyleSheet("color: palette(window-text); line-height: 1.6;")
         info_layout.addWidget(self.repo_info)
         
         info_group = QWidget()
@@ -529,7 +529,7 @@ class RepositoryTab(QWidget):
         diff_header = self.create_section_header("DIFERENCIAS", "Cambios en el archivo seleccionado", "git-diff")
         
         diff_container = QWidget()
-        diff_container.setStyleSheet("background-color: #1e1e1e; padding: 10px;")
+        diff_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         diff_layout = QVBoxLayout(diff_container)
         diff_layout.setContentsMargins(10, 10, 10, 10)
         
@@ -539,14 +539,14 @@ class RepositoryTab(QWidget):
         self.diff_view.setPlaceholderText("Selecciona un archivo para ver sus cambios...")
         self.diff_view.setStyleSheet("""
             QTextEdit {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
                 padding: 10px;
                 font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
                 font-size: 12px;
                 line-height: 1.6;
-                color: #cccccc;
+                color: palette(window-text);
             }
         """)
         diff_layout.addWidget(self.diff_view)
@@ -562,7 +562,7 @@ class RepositoryTab(QWidget):
         right_splitter.setHandleWidth(3)
         right_splitter.setStyleSheet("""
             QSplitter::handle {
-                background-color: #3d3d3d;
+                background-color: palette(mid);
             }
             QSplitter::handle:hover {
                 background-color: #007acc;
@@ -828,11 +828,11 @@ class RepositoryTab(QWidget):
             elif line.startswith('@@'):
                 html += f'<span style="color: #c586c0; font-weight: bold;">{line}</span>\n'
             elif line.startswith('+') and not line.startswith('+++'):
-                html += f'<span style="background-color: #1a3d1a; color: #4ec9b0;">{line}</span>\n'
+                html += f'<span style="background-color: #1a3d1a; color: palette(link);">{line}</span>\n'
             elif line.startswith('-') and not line.startswith('---'):
                 html += f'<span style="background-color: #3d1a1a; color: #f48771;">{line}</span>\n'
             else:
-                html += f'<span style="color: #cccccc;">{line}</span>\n'
+                html += f'<span style="color: palette(window-text);">{line}</span>\n'
         
         html += '</pre>'
         return html
@@ -925,8 +925,8 @@ class RepositoryTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu {
-                background-color: #2d2d2d;
-                color: #cccccc;
+                background-color: palette(button);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 padding: 5px;
             }
@@ -940,7 +940,7 @@ class RepositoryTab(QWidget):
             }
             QMenu::separator {
                 height: 1px;
-                background-color: #3d3d3d;
+                background-color: palette(mid);
                 margin: 5px 0;
             }
         """)
@@ -1163,7 +1163,7 @@ class RepositoryTab(QWidget):
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {indicator.get('color', '#2d2d2d')};
-                    color: #ffffff;
+                    color: palette(bright-text);
                     border: 1px solid #4ec9b0;
                     border-radius: 5px;
                     padding: 4px 12px;
@@ -1171,7 +1171,7 @@ class RepositoryTab(QWidget):
                     font-weight: bold;
                 }}
                 QPushButton:hover {{
-                    background-color: #3d3d3d;
+                    background-color: palette(mid);
                     border-color: #5fd9c0;
                 }}
             """)
@@ -1198,17 +1198,17 @@ class RepositoryTab(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu {
-                background-color: #2d2d2d;
+                background-color: palette(button);
                 border: 1px solid #4ec9b0;
                 padding: 5px;
             }
             QMenu::item {
                 padding: 8px 25px;
-                color: #cccccc;
+                color: palette(window-text);
             }
             QMenu::item:selected {
                 background-color: #094771;
-                color: #ffffff;
+                color: palette(bright-text);
             }
         """)
         
@@ -1335,12 +1335,12 @@ class RepositoryTab(QWidget):
                 background-color: #0d5a8f;
             }
             QPushButton:disabled {
-                background-color: #3d3d3d;
-                color: #888888;
+                background-color: palette(mid);
+                color: palette(mid);
             }
             QListWidget {
-                background-color: #1e1e1e;
-                color: #cccccc;
+                background-color: palette(window);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 5px;
@@ -1356,11 +1356,11 @@ class RepositoryTab(QWidget):
                 color: white;
             }
             QListWidget::item:hover {
-                background-color: #2d2d2d;
+                background-color: palette(button);
             }
             QTextEdit {
-                background-color: #1e1e1e;
-                color: #cccccc;
+                background-color: palette(window);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 8px;
@@ -1373,7 +1373,7 @@ class RepositoryTab(QWidget):
     def apply_right_panel_styles(self):
         diff_style = """
             QTextEdit {
-                background-color: #1e1e1e;
+                background-color: palette(window);
                 color: #d4d4d4;
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
@@ -1387,8 +1387,8 @@ class RepositoryTab(QWidget):
         
         history_style = """
             QListWidget {
-                background-color: #1e1e1e;
-                color: #cccccc;
+                background-color: palette(window);
+                color: palette(window-text);
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 padding: 5px;
@@ -1404,7 +1404,7 @@ class RepositoryTab(QWidget):
                 color: white;
             }
             QListWidget::item:hover {
-                background-color: #2d2d2d;
+                background-color: palette(button);
             }
         """
     
