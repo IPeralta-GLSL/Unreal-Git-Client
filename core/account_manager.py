@@ -257,5 +257,87 @@ class AccountManager:
             print(f"Error getting user info: {e}")
         return None
     
-    def start_gitlab_device_flow(self, gitlab_url):
+    def start_gitlab_device_flow(self, gitlab_url="https://gitlab.com"):
+        try:
+            print(f"Iniciando GitLab device flow en: {gitlab_url}")
+            
+            client_id = "f89f3b90e66063fb3d9e463ccca52797f4c5bfda77dce764e798e26f877c57bd"
+            
+            response = requests.post(
+                f'{gitlab_url}/oauth/token',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': client_id,
+                    'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
+                    'scope': 'read_user write_repository api'
+                },
+                timeout=10
+            )
+            
+            print(f"GitLab response status: {response.status_code}")
+            print(f"GitLab response: {response.text}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'device_code': data.get('device_code'),
+                    'user_code': data.get('user_code'),
+                    'verification_uri': data.get('verification_uri', f'{gitlab_url}/-/profile/applications'),
+                    'verification_uri_complete': data.get('verification_uri_complete'),
+                    'expires_in': data.get('expires_in', 900),
+                    'interval': data.get('interval', 5)
+                }
+        except Exception as e:
+            print(f"Exception starting GitLab device flow: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
+        return None
+    
+    def poll_gitlab_device_token(self, gitlab_url, device_code, interval=5):
+        try:
+            client_id = "f89f3b90e66063fb3d9e463ccca52797f4c5bfda77dce764e798e26f877c57bd"
+            
+            response = requests.post(
+                f'{gitlab_url}/oauth/token',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': client_id,
+                    'device_code': device_code,
+                    'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'access_token' in data:
+                    return data['access_token']
+                elif data.get('error') == 'authorization_pending':
+                    return 'pending'
+                elif data.get('error') == 'slow_down':
+                    return 'slow_down'
+                else:
+                    return None
+        except Exception as e:
+            print(f"Error polling GitLab token: {e}")
+        return None
+    
+    def get_gitlab_user_info(self, gitlab_url, token):
+        try:
+            response = requests.get(
+                f'{gitlab_url}/api/v4/user',
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Accept': 'application/json'
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'username': data.get('username'),
+                    'email': data.get('email', ''),
+                    'name': data.get('name', '')
+                }
+        except Exception as e:
+            print(f"Error getting GitLab user info: {e}")
         return None

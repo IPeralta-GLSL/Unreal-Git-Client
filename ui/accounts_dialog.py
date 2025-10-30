@@ -3,10 +3,12 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QInputDialog, QLineEdit, QTabWidget, QWidget,
                              QTextEdit, QGroupBox, QFrame)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QPixmap, QPainter
+from PyQt6.QtSvg import QSvgRenderer
 import webbrowser
 import requests
 import secrets
+import os
 
 class AccountsDialog(QDialog):
     accounts_changed = pyqtSignal()
@@ -153,6 +155,23 @@ class AccountsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
+        github_icon = QLabel()
+        github_icon_path = "ui/Icons/github-logo.svg"
+        if os.path.exists(github_icon_path):
+            from PyQt6.QtGui import QPixmap
+            from PyQt6.QtSvg import QSvgRenderer
+            from PyQt6.QtCore import QByteArray
+            pixmap = QPixmap(40, 40)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            renderer = QSvgRenderer(github_icon_path)
+            from PyQt6.QtGui import QPainter
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+            github_icon.setPixmap(pixmap)
+            github_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(github_icon)
+        
         info_box = QGroupBox("ℹ️ Conectar con GitHub")
         info_box.setStyleSheet("""
             QGroupBox {
@@ -270,6 +289,19 @@ class AccountsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
+        gitlab_icon = QLabel()
+        gitlab_icon_path = "ui/Icons/gitlab-logo.svg"
+        if os.path.exists(gitlab_icon_path):
+            pixmap = QPixmap(40, 40)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            renderer = QSvgRenderer(gitlab_icon_path)
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+            gitlab_icon.setPixmap(pixmap)
+            gitlab_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(gitlab_icon)
+        
         info_box = QGroupBox("ℹ️ Conectar con GitLab")
         info_box.setStyleSheet("""
             QGroupBox {
@@ -288,21 +320,77 @@ class AccountsDialog(QDialog):
         info_layout = QVBoxLayout(info_box)
         
         info_text = QLabel(
-            "Para conectar tu cuenta de GitLab:\n\n"
-            "1. Ve a GitLab → Preferences → Applications\n"
-            "2. Click en 'Add new application'\n"
-            "3. Completa:\n"
-            "   • Name: Unreal Git Client\n"
-            "   • Redirect URI: http://localhost:8888/callback\n"
-            "   • Scopes: api, read_user, write_repository\n"
-            "4. Copia el Application ID y Secret\n"
-            "5. Pégalos abajo y haz click en 'Conectar con GitLab'"
+            "Conecta tu cuenta de GitLab de forma simple y segura.\n\n"
+            "Haz click en 'Login con GitLab' y sigue las instrucciones en el navegador."
         )
         info_text.setWordWrap(True)
-        info_text.setStyleSheet("font-size: 12px; font-weight: normal; padding: 10px;")
+        info_text.setStyleSheet("font-size: 13px; font-weight: normal; padding: 10px;")
         info_layout.addWidget(info_text)
         
         layout.addWidget(info_box)
+        
+        url_layout = QHBoxLayout()
+        url_label = QLabel("URL de GitLab:")
+        url_label.setStyleSheet("font-size: 12px;")
+        self.gitlab_url_input = QLineEdit()
+        self.gitlab_url_input.setText("https://gitlab.com")
+        self.gitlab_url_input.setPlaceholderText("https://gitlab.com")
+        self.gitlab_url_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #252526;
+                border: 1px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 8px;
+                color: #cccccc;
+            }
+        """)
+        url_layout.addWidget(url_label)
+        url_layout.addWidget(self.gitlab_url_input)
+        layout.addLayout(url_layout)
+        
+        connect_btn = QPushButton("🌐 Login con GitLab")
+        connect_btn.setMinimumHeight(55)
+        connect_btn.clicked.connect(self.start_gitlab_device_flow)
+        connect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FC6D26;
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 8px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #FCA326;
+            }
+            QPushButton:pressed {
+                background-color: #E24329;
+            }
+        """)
+        layout.addWidget(connect_btn)
+        
+        self.gitlab_status_label = QLabel("")
+        self.gitlab_status_label.setWordWrap(True)
+        self.gitlab_status_label.setStyleSheet("""
+            QLabel {
+                padding: 15px;
+                background-color: #2d2d2d;
+                border: 1px solid #3d3d3d;
+                border-radius: 6px;
+                font-size: 13px;
+                margin-top: 10px;
+            }
+        """)
+        self.gitlab_status_label.hide()
+        layout.addWidget(self.gitlab_status_label)
+        
+        separator = QLabel("━" * 80)
+        separator.setStyleSheet("color: #3d3d3d; margin-top: 20px; margin-bottom: 10px;")
+        layout.addWidget(separator)
+        
+        advanced_label = QLabel("🔧 Métodos alternativos:")
+        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: #888; font-size: 12px;")
+        layout.addWidget(advanced_label)
         
         form_layout = QVBoxLayout()
         form_layout.setSpacing(10)
@@ -582,6 +670,82 @@ class AccountsDialog(QDialog):
         else:
             self.poll_timer.stop()
             self.github_status_label.setText("❌ Error en la autenticación. Intenta nuevamente.")
+    
+    def start_gitlab_device_flow(self):
+        gitlab_url = self.gitlab_url_input.text().strip()
+        if not gitlab_url:
+            gitlab_url = "https://gitlab.com"
+        
+        self.gitlab_status_label.setText("⏳ Iniciando autenticación con GitLab...")
+        self.gitlab_status_label.show()
+        
+        flow_data = self.account_manager.start_gitlab_device_flow(gitlab_url)
+        
+        if not flow_data:
+            self.gitlab_status_label.setText(
+                "⚠️ GitLab aún no soporta Device Flow públicamente.\n\n"
+                "Por favor, usa un Personal Access Token en el método alternativo abajo."
+            )
+            return
+        
+        user_code = flow_data['user_code']
+        verification_uri = flow_data.get('verification_uri_complete') or flow_data['verification_uri']
+        device_code = flow_data['device_code']
+        interval = flow_data['interval']
+        
+        self.gitlab_status_label.setText(
+            f"<b>📋 Código de verificación:</b> <span style='font-size: 24px; color: #FC6D26;'>{user_code}</span><br><br>"
+            f"Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
+            f"Ingresa el código cuando se te solicite."
+        )
+        
+        webbrowser.open(verification_uri)
+        
+        self.gitlab_poll_timer = QTimer()
+        self.gitlab_poll_timer.timeout.connect(lambda: self.poll_gitlab_token(gitlab_url, device_code, interval))
+        self.gitlab_poll_timer.start(interval * 1000)
+        
+        self.gitlab_poll_attempts = 0
+        self.gitlab_max_poll_attempts = 60
+    
+    def poll_gitlab_token(self, gitlab_url, device_code, interval):
+        self.gitlab_poll_attempts += 1
+        
+        if self.gitlab_poll_attempts > self.gitlab_max_poll_attempts:
+            self.gitlab_poll_timer.stop()
+            self.gitlab_status_label.setText("❌ Tiempo de espera agotado. Intenta nuevamente.")
+            return
+        
+        result = self.account_manager.poll_gitlab_device_token(gitlab_url, device_code, interval)
+        
+        if result == 'pending':
+            return
+        elif result == 'slow_down':
+            self.gitlab_poll_timer.setInterval((interval + 5) * 1000)
+            return
+        elif result and result != 'pending' and result != 'slow_down':
+            self.gitlab_poll_timer.stop()
+            
+            user_info = self.account_manager.get_gitlab_user_info(gitlab_url, result)
+            
+            if user_info:
+                username = user_info['username']
+                email = user_info['email']
+                
+                self.account_manager.add_account('GitLab', username, result, email)
+                
+                self.gitlab_status_label.setText(
+                    f"✅ <b>Conectado exitosamente como:</b> {username}<br>"
+                    f"📧 Email: {email or 'No disponible'}"
+                )
+                
+                self.load_accounts()
+                self.accounts_changed.emit()
+            else:
+                self.gitlab_status_label.setText("❌ Error al obtener información del usuario.")
+        else:
+            self.gitlab_poll_timer.stop()
+            self.gitlab_status_label.setText("❌ Error en la autenticación. Intenta nuevamente.")
     
     def connect_github(self):
         client_id = self.github_client_id.text().strip()
