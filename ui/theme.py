@@ -9,6 +9,7 @@ class Theme:
         self.spacing = {}
         self.borders = {}
         self.shadows = {}
+        self.animations = {}
         self.load_theme()
     
     def load_theme(self):
@@ -170,6 +171,14 @@ class Theme:
                 'lg': 'box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);',
                 'xl': 'box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);',
             }
+        
+        if not self.animations:
+            self.animations = {
+                'duration_fast': 150,      # ms - para interacciones rápidas como hover
+                'duration_normal': 250,     # ms - para transiciones normales
+                'duration_slow': 350,       # ms - para animaciones más elaboradas
+                'easing': 'ease-in-out',   # tipo de curva de animación
+            }
     
     def get_stylesheet(self):
         return f"""
@@ -210,6 +219,7 @@ class Theme:
                 border-radius: {self.borders['radius_md']}px;
                 padding: {self.spacing['sm']}px {self.spacing['md']}px;
                 font-size: {self.fonts['size_md']}px;
+                
             }}
             
             QPushButton:hover {{
@@ -308,6 +318,7 @@ class Theme:
                 border: {self.borders['width_thin']}px solid {self.colors['input_border']};
                 border-radius: {self.borders['radius_md']}px;
                 padding: {self.spacing['sm']}px;
+                
             }}
             
             QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
@@ -331,6 +342,7 @@ class Theme:
                 padding: {self.spacing['md']}px;
                 border-radius: {self.borders['radius_sm']}px;
                 margin: {self.spacing['xs']}px;
+                
             }}
             
             QListWidget::item:hover {{
@@ -381,6 +393,7 @@ class Theme:
                 margin-right: {self.spacing['xs']}px;
                 border-top-left-radius: {self.borders['radius_md']}px;
                 border-top-right-radius: {self.borders['radius_md']}px;
+                
             }}
             
             QTabBar::tab:selected {{
@@ -404,6 +417,7 @@ class Theme:
                 background-color: {self.colors['scrollbar']};
                 min-height: 20px;
                 border-radius: 6px;
+                
             }}
             
             QScrollBar::handle:vertical:hover {{
@@ -424,6 +438,7 @@ class Theme:
                 background-color: {self.colors['scrollbar']};
                 min-width: 20px;
                 border-radius: 6px;
+                
             }}
             
             QScrollBar::handle:horizontal:hover {{
@@ -446,6 +461,7 @@ class Theme:
                 padding: {self.spacing['sm']}px {self.spacing['xl']}px;
                 color: {self.colors['text']};
                 border-radius: {self.borders['radius_sm']}px;
+                
             }}
             
             QMenu::item:selected {{
@@ -562,6 +578,7 @@ class Theme:
                 border-radius: {self.borders['radius_md']}px;
                 padding: {self.spacing['sm']}px;
                 min-width: 80px;
+                
             }}
             
             QComboBox:hover {{
@@ -586,6 +603,7 @@ class Theme:
             /* Splitter */
             QSplitter::handle {{
                 background-color: {self.colors['border']};
+                
             }}
             
             QSplitter::handle:hover {{
@@ -627,6 +645,7 @@ class Theme:
                 font-size: {self.fonts['size_md']}px;
                 font-weight: {self.fonts['weight_bold']};
                 min-height: 28px;
+                
             }}
             QPushButton:hover {{
                 background-color: {self.colors['surface_hover']};
@@ -651,6 +670,7 @@ class Theme:
                     padding: {self.spacing['sm']}px {self.spacing['lg']}px;
                     font-size: {self.fonts['size_md']}px;
                     font-weight: {self.fonts['weight_bold']};
+                    
                 }}
                 QPushButton:hover {{
                     background-color: {self.colors['primary_hover']};
@@ -669,6 +689,7 @@ class Theme:
                     padding: {self.spacing['sm']}px {self.spacing['lg']}px;
                     font-size: {self.fonts['size_md']}px;
                     font-weight: {self.fonts['weight_bold']};
+                    
                 }}
                 QPushButton:hover {{
                     background-color: {self.colors['success_hover']};
@@ -687,6 +708,7 @@ class Theme:
                     padding: {self.spacing['sm']}px {self.spacing['lg']}px;
                     font-size: {self.fonts['size_md']}px;
                     font-weight: {self.fonts['weight_bold']};
+                    
                 }}
                 QPushButton:hover {{
                     background-color: {self.colors['danger_hover']};
@@ -716,6 +738,7 @@ class Theme:
                 border-radius: {self.borders['radius_md']}px;
                 padding: {self.spacing['sm']}px;
                 selection-background-color: {self.colors['surface_selected']};
+                
             }}
             QLineEdit:focus, QTextEdit:focus {{
                 border-color: {self.colors['input_focus']};
@@ -735,6 +758,7 @@ class Theme:
                 padding: {self.spacing['md']}px;
                 border-radius: {self.borders['radius_sm']}px;
                 margin: {self.spacing['xs']}px 0px;
+                
             }}
             QListWidget::item:hover {{
                 background-color: {self.colors['surface']};

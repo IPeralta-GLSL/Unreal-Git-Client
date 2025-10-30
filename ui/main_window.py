@@ -123,7 +123,6 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(self.tab_widget)
         
-        # Crear el botón de nueva pestaña
         from ui.icon_manager import IconManager
         theme = get_current_theme()
         icon_manager = IconManager()
@@ -151,7 +150,6 @@ class MainWindow(QMainWindow):
             }}
         """)
         
-        # Agregar pestaña inicial
         self.add_empty_tab()
         
     def setup_shortcuts(self):
@@ -231,7 +229,6 @@ class MainWindow(QMainWindow):
         if self.tab_widget.count() == 0:
             self.add_empty_tab()
         else:
-            # Reposicionar el botón después de cerrar la pestaña
             QTimer.singleShot(0, self.update_new_tab_button_position)
             
     def close_current_tab(self):
