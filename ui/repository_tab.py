@@ -301,7 +301,7 @@ class RepositoryTab(QWidget):
             }
             QListWidget::item:selected {
                 background-color: palette(highlight);
-                border-left-color: #007acc;
+                border-left-color: {theme.colors['border_focus']};
             }
         """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
@@ -354,7 +354,7 @@ class RepositoryTab(QWidget):
                 color: palette(window-text);
             }
             QTextEdit:focus {
-                border-color: #007acc;
+                border-color: {theme.colors['border_focus']};
             }
         """)
         commit_layout.addWidget(self.commit_message)
@@ -516,7 +516,7 @@ class RepositoryTab(QWidget):
                 min-height: 20px;
             }
             QScrollBar::handle:vertical:hover {
-                background-color: #007acc;
+                background-color: {theme.colors['primary']};
             }
         """)
         
@@ -603,7 +603,7 @@ class RepositoryTab(QWidget):
                 background-color: palette(text);
             }
             QSplitter::handle:hover {
-                background-color: #007acc;
+                background-color: {theme.colors['primary']};
             }
         """)
         right_splitter.addWidget(info_group)
@@ -855,6 +855,7 @@ class RepositoryTab(QWidget):
             self.diff_view.setHtml(formatted_diff)
     
     def format_diff(self, diff_text):
+        theme = get_current_theme()
         lines = diff_text.split('\n')
         html = '<pre style="margin: 0; line-height: 1.6;">'
         
@@ -866,9 +867,9 @@ class RepositoryTab(QWidget):
             elif line.startswith('@@'):
                 html += f'<span style="color: palette(link); font-weight: bold;">{line}</span>\n'
             elif line.startswith('+') and not line.startswith('+++'):
-                html += f'<span style="background-color: #1a3d1a; color: palette(link);">{line}</span>\n'
+                html += f'<span style="background-color: {theme.colors["success_pressed"]}; color: palette(link);">{line}</span>\n'
             elif line.startswith('-') and not line.startswith('---'):
-                html += f'<span style="background-color: #3d1a1a; color: palette(bright-text);">{line}</span>\n'
+                html += f'<span style="background-color: {theme.colors["danger_pressed"]}; color: palette(bright-text);">{line}</span>\n'
             else:
                 html += f'<span style="color: palette(window-text);">{line}</span>\n'
         
@@ -1182,6 +1183,7 @@ class RepositoryTab(QWidget):
         reply.deleteLater()
     
     def update_plugin_indicators(self):
+        theme = get_current_theme()
         if not self.plugin_manager or not self.repo_path:
             return
         
@@ -1200,9 +1202,9 @@ class RepositoryTab(QWidget):
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {indicator.get('color', '#2d2d2d')};
+                    background-color: {indicator.get('color', theme.colors['surface'])};
                     color: palette(bright-text);
-                    border: 1px solid #4ec9b0;
+                    border: 1px solid {theme.colors['primary']};
                     border-radius: 5px;
                     padding: 4px 12px;
                     font-size: 12px;
@@ -1210,7 +1212,7 @@ class RepositoryTab(QWidget):
                 }}
                 QPushButton:hover {{
                     background-color: palette(text);
-                    border-color: #5fd9c0;
+                    border-color: {theme.colors['primary_hover']};
                 }}
             """)
             btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions())

@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from ui.icon_manager import IconManager
+from ui.theme import get_current_theme
 
 
 class SettingsDialog(QDialog):
@@ -382,26 +383,27 @@ class SettingsDialog(QDialog):
         self.gitlab_list.clearSelection()
         
     def apply_styles(self):
-        self.setStyleSheet("""
-            QDialog {
+        theme = get_current_theme()
+        self.setStyleSheet(f"""
+            QDialog {{
                 background-color: palette(window);
-            }
-            QLabel {
+            }}
+            QLabel {{
                 color: palette(window-text);
                 font-size: 12px;
-            }
-            QLineEdit {
-                background-color: #3c3c3c;
+            }}
+            QLineEdit {{
+                background-color: {theme.colors['surface']};
                 color: palette(bright-text);
-                border: 1px solid #5a5a5a;
+                border: 1px solid {theme.colors['border']};
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 12px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #0e639c;
-            }
-            QPushButton {
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {theme.colors['border_focus']};
+            }}
+            QPushButton {{
                 background-color: palette(link);
                 color: palette(bright-text);
                 border: none;
@@ -409,65 +411,65 @@ class SettingsDialog(QDialog):
                 padding: 8px 16px;
                 font-size: 12px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: palette(highlight);
-            }
-            QPushButton:pressed {
+            }}
+            QPushButton:pressed {{
                 background-color: palette(highlight);
-            }
-            QListWidget {
+            }}
+            QListWidget {{
                 background-color: palette(base);
                 color: palette(window-text);
-                border: 1px solid #3d3d3d;
+                border: 1px solid {theme.colors['border']};
                 border-radius: 4px;
                 padding: 5px;
                 font-size: 12px;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 8px;
                 border-radius: 3px;
-            }
-            QListWidget::item:selected {
+            }}
+            QListWidget::item:selected {{
                 background-color: palette(highlight);
                 color: palette(bright-text);
-            }
-            QListWidget::item:hover {
-                background-color: #2a2d2e;
-            }
-            QTabWidget::pane {
-                border: 1px solid #3d3d3d;
+            }}
+            QListWidget::item:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+            QTabWidget::pane {{
+                border: 1px solid {theme.colors['border']};
                 background-color: palette(base);
-                border-top: 2px solid #0e639c;
-            }
-            QTabBar::tab {
+                border-top: 2px solid {theme.colors['primary']};
+            }}
+            QTabBar::tab {{
                 background-color: palette(button);
                 color: palette(window-text);
-                border: 1px solid #3d3d3d;
+                border: 1px solid {theme.colors['border']};
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 4px;
                 border-top-right-radius: 4px;
-            }
-            QTabBar::tab:selected {
+            }}
+            QTabBar::tab:selected {{
                 background-color: palette(base);
                 color: palette(bright-text);
-                border-bottom: 2px solid #0e639c;
-            }
-            QTabBar::tab:hover:!selected {
+                border-bottom: 2px solid {theme.colors['primary']};
+            }}
+            QTabBar::tab:hover:!selected {{
                 background-color: palette(text);
-            }
-            QGroupBox {
+            }}
+            QGroupBox {{
                 color: palette(window-text);
-                border: 1px solid #3d3d3d;
+                border: 1px solid {theme.colors['border']};
                 border-radius: 5px;
                 margin-top: 10px;
                 font-weight: bold;
                 padding-top: 10px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-            }
+            }}
         """)

@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
+from ui.theme import get_current_theme
 from core.git_manager import GitManager
 from core.settings_manager import SettingsManager
 from core.account_manager import AccountManager
@@ -220,80 +221,81 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Cuentas actualizadas", 3000)
                 
     def apply_styles(self):
-        self.setStyleSheet("""
-            QMainWindow {
+        theme = get_current_theme()
+        self.setStyleSheet(f"""
+            QMainWindow {{
                 background-color: palette(window);
-            }
-            QTabWidget::pane {
-                border: 1px solid #3d3d3d;
+            }}
+            QTabWidget::pane {{
+                border: 1px solid {theme.colors['border']};
                 background-color: palette(base);
-                border-top: 2px solid #0e639c;
-            }
-            QTabBar {
+                border-top: 2px solid {theme.colors['primary']};
+            }}
+            QTabBar {{
                 background-color: palette(button);
-            }
-            QTabBar::tab {
+            }}
+            QTabBar::tab {{
                 background-color: palette(button);
                 color: palette(window-text);
-                border: 1px solid #3d3d3d;
+                border: 1px solid {theme.colors['border']};
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 4px;
                 border-top-right-radius: 4px;
                 min-width: 120px;
-            }
-            QTabBar::tab:selected {
+            }}
+            QTabBar::tab:selected {{
                 background-color: palette(base);
                 color: palette(bright-text);
-                border-bottom: 2px solid #0e639c;
-            }
-            QTabBar::tab:hover:!selected {
+                border-bottom: 2px solid {theme.colors['primary']};
+            }}
+            QTabBar::tab:hover:!selected {{
                 background-color: palette(text);
-            }
-            QTabBar::close-button {
+            }}
+            QTabBar::close-button {{
                 image: url(none);
                 subcontrol-position: right;
                 margin-right: 4px;
-            }
-            QTabBar::close-button:hover {
-                background-color: #e81123;
+            }}
+            QTabBar::close-button:hover {{
+                background-color: {theme.colors['danger']};
                 border-radius: 2px;
-            }
-            QStatusBar {
-                background-color: #007acc;
+            }}
+            QStatusBar {{
+                background-color: {theme.colors['primary']};
                 color: palette(bright-text);
                 font-weight: bold;
-            }
-            QMenuBar {
+            }}
+            QMenuBar {{
                 background-color: palette(button);
                 color: palette(window-text);
                 padding: 4px;
-            }
-            QMenuBar::item {
+            }}
+            QMenuBar::item {{
                 background-color: transparent;
                 padding: 8px 12px;
                 border-radius: 4px;
-            }
-            QMenuBar::item:selected {
+            }}
+            QMenuBar::item:selected {{
                 background-color: palette(text);
-            }
-            QMenu {
+            }}
+            QMenu {{
                 background-color: palette(button);
                 color: palette(window-text);
-                border: 1px solid #3d3d3d;
+                border: 1px solid {theme.colors['border']};
                 padding: 5px;
-            }
-            QMenu::item {
+            }}
+            QMenu::item {{
                 padding: 8px 30px 8px 20px;
                 border-radius: 4px;
-            }
-            QMenu::item:selected {
+            }}
+            QMenu::item:selected {{
                 background-color: palette(highlight);
                 color: palette(bright-text);
-            }
-            QMenu::separator {
+            }}
+            QMenu::separator {{
                 height: 1px;
                 background-color: palette(text);
                 margin: 5px 0px;
-            }
+            }}
         """)

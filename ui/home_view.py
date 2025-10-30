@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QFont
 from ui.icon_manager import IconManager
+from ui.theme import get_current_theme
 import os
 
 class HomeView(QWidget):
@@ -21,27 +22,28 @@ class HomeView(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
+        theme = get_current_theme()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
-            QScrollArea {
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
                 border: none;
                 background-color: palette(window);
-            }
-            QScrollBar:vertical {
+            }}
+            QScrollBar:vertical {{
                 background-color: palette(window);
                 width: 12px;
                 border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
+            }}
+            QScrollBar::handle:vertical {{
                 background-color: palette(text);
                 border-radius: 6px;
                 min-height: 30px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #4d4d4d;
-            }
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
         """)
         
         scroll_widget = QWidget()
@@ -247,26 +249,27 @@ class HomeView(QWidget):
         header_layout.addStretch()
         layout.addLayout(header_layout)
         
+        theme = get_current_theme()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setMinimumHeight(200)
-        scroll.setStyleSheet("""
-            QScrollArea {
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
                 border: none;
                 background-color: transparent;
-            }
-            QScrollBar:vertical {
+            }}
+            QScrollBar:vertical {{
                 background-color: palette(window);
                 width: 10px;
                 border-radius: 5px;
-            }
-            QScrollBar::handle:vertical {
+            }}
+            QScrollBar::handle:vertical {{
                 background-color: palette(text);
                 border-radius: 5px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #4d4d4d;
-            }
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
         """)
         
         scroll_widget = QWidget()
