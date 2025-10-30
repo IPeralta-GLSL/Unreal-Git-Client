@@ -67,3 +67,92 @@ class SettingsManager:
     def get_current_timestamp(self):
         from datetime import datetime
         return datetime.now().isoformat()
+    
+    def add_github_account(self, username, token, email=""):
+        settings = self.load_settings()
+        accounts = settings.get('github_accounts', [])
+        
+        account = {
+            'username': username,
+            'token': token,
+            'email': email,
+            'added': self.get_current_timestamp()
+        }
+        
+        accounts = [a for a in accounts if a['username'] != username]
+        accounts.append(account)
+        
+        settings['github_accounts'] = accounts
+        self.save_settings(settings)
+    
+    def add_gitlab_account(self, username, token, email="", server_url="https://gitlab.com"):
+        settings = self.load_settings()
+        accounts = settings.get('gitlab_accounts', [])
+        
+        account = {
+            'username': username,
+            'token': token,
+            'email': email,
+            'server_url': server_url,
+            'added': self.get_current_timestamp()
+        }
+        
+        accounts = [a for a in accounts if not (a['username'] == username and a['server_url'] == server_url)]
+        accounts.append(account)
+        
+        settings['gitlab_accounts'] = accounts
+        self.save_settings(settings)
+    
+    def get_github_accounts(self):
+        settings = self.load_settings()
+        return settings.get('github_accounts', [])
+    
+    def get_gitlab_accounts(self):
+        settings = self.load_settings()
+        return settings.get('gitlab_accounts', [])
+    
+    def remove_github_account(self, username):
+        settings = self.load_settings()
+        accounts = settings.get('github_accounts', [])
+        accounts = [a for a in accounts if a['username'] != username]
+        settings['github_accounts'] = accounts
+        self.save_settings(settings)
+    
+    def remove_gitlab_account(self, username, server_url):
+        settings = self.load_settings()
+        accounts = settings.get('gitlab_accounts', [])
+        accounts = [a for a in accounts if not (a['username'] == username and a['server_url'] == server_url)]
+        settings['gitlab_accounts'] = accounts
+        self.save_settings(settings)
+    
+    def update_github_account(self, username, token=None, email=None):
+        settings = self.load_settings()
+        accounts = settings.get('github_accounts', [])
+        
+        for account in accounts:
+            if account['username'] == username:
+                if token is not None:
+                    account['token'] = token
+                if email is not None:
+                    account['email'] = email
+                account['updated'] = self.get_current_timestamp()
+                break
+        
+        settings['github_accounts'] = accounts
+        self.save_settings(settings)
+    
+    def update_gitlab_account(self, username, server_url, token=None, email=None):
+        settings = self.load_settings()
+        accounts = settings.get('gitlab_accounts', [])
+        
+        for account in accounts:
+            if account['username'] == username and account['server_url'] == server_url:
+                if token is not None:
+                    account['token'] = token
+                if email is not None:
+                    account['email'] = email
+                account['updated'] = self.get_current_timestamp()
+                break
+        
+        settings['gitlab_accounts'] = accounts
+        self.save_settings(settings)

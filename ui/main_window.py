@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
-                             QFileDialog, QMessageBox, QLabel)
+                             QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
+from ui.settings_view import SettingsDialog
 from ui.icon_manager import IconManager
 from core.git_manager import GitManager
 from core.settings_manager import SettingsManager
@@ -24,10 +25,40 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1400, 900)
         self.setMinimumSize(1000, 600)
         
+        self.setup_menubar()
         self.setup_statusbar()
         self.setup_central_widget()
         
         self.apply_styles()
+        
+    def setup_menubar(self):
+        menubar = self.menuBar()
+        
+        file_menu = menubar.addMenu("Archivo")
+        
+        open_action = QAction("Abrir Repositorio", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_repository)
+        file_menu.addAction(open_action)
+        
+        clone_action = QAction("Clonar Repositorio", self)
+        clone_action.setShortcut("Ctrl+Shift+C")
+        clone_action.triggered.connect(self.clone_repository)
+        file_menu.addAction(clone_action)
+        
+        file_menu.addSeparator()
+        
+        exit_action = QAction("Salir", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+        
+        edit_menu = menubar.addMenu("Editar")
+        
+        settings_action = QAction("Ajustes", self)
+        settings_action.setShortcut("Ctrl+,")
+        settings_action.triggered.connect(self.open_settings)
+        edit_menu.addAction(settings_action)
         
     def setup_toolbar(self):
         pass
@@ -163,6 +194,10 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage(f"Repositorio: {tab.repo_path}")
             else:
                 self.status_bar.showMessage("Listo")
+    
+    def open_settings(self):
+        dialog = SettingsDialog(self.settings_manager, self)
+        dialog.exec()
                 
     def apply_styles(self):
         self.setStyleSheet("""
@@ -208,5 +243,37 @@ class MainWindow(QMainWindow):
                 background-color: #007acc;
                 color: white;
                 font-weight: bold;
+            }
+            QMenuBar {
+                background-color: #2d2d2d;
+                color: #cccccc;
+                padding: 4px;
+            }
+            QMenuBar::item {
+                background-color: transparent;
+                padding: 8px 12px;
+                border-radius: 4px;
+            }
+            QMenuBar::item:selected {
+                background-color: #3d3d3d;
+            }
+            QMenu {
+                background-color: #2d2d2d;
+                color: #cccccc;
+                border: 1px solid #3d3d3d;
+                padding: 5px;
+            }
+            QMenu::item {
+                padding: 8px 30px 8px 20px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #094771;
+                color: white;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #3d3d3d;
+                margin: 5px 0px;
             }
         """)
