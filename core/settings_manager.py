@@ -11,7 +11,7 @@ class SettingsManager:
     def ensure_config_exists(self):
         self.config_dir.mkdir(exist_ok=True)
         if not self.config_file.exists():
-            self.save_settings({'recent_repos': []})
+            self.save_settings({'recent_repos': [], 'language': 'es'})
     
     def load_settings(self):
         try:
@@ -155,4 +155,13 @@ class SettingsManager:
                 break
         
         settings['gitlab_accounts'] = accounts
+        self.save_settings(settings)
+    
+    def get_language(self):
+        settings = self.load_settings()
+        return settings.get('language', 'es')
+    
+    def set_language(self, language_code):
+        settings = self.load_settings()
+        settings['language'] = language_code
         self.save_settings(settings)

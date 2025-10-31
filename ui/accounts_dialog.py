@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QListWidget, QListWidgetItem, QMessageBox,
                              QInputDialog, QLineEdit, QTabWidget, QWidget,
-                             QTextEdit, QGroupBox, QFrame, QApplication)
+                             QTextEdit, QGroupBox, QFrame, QApplication, QComboBox, QFormLayout)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap, QPainter, QPainterPath
 from PyQt6.QtSvg import QSvgRenderer
+from core.translations import tr, get_translation_manager, set_language
 import webbrowser
 import requests
 import secrets
@@ -12,11 +13,16 @@ import os
 
 class AccountsDialog(QDialog):
     accounts_changed = pyqtSignal()
+    language_changed = pyqtSignal(str)
     
     def __init__(self, account_manager, plugin_manager=None, parent=None):
         super().__init__(parent)
         self.account_manager = account_manager
         self.plugin_manager = plugin_manager
+        
+        from core.settings_manager import SettingsManager
+        self.settings_manager = SettingsManager()
+        
         self.setWindowTitle("⚙️ Ajustes")
         self.setModal(True)
         self.setMinimumSize(800, 600)
@@ -32,6 +38,7 @@ class AccountsDialog(QDialog):
         tabs = QTabWidget()
         # Los estilos de tabs vienen del tema global
         
+        tabs.addTab(self.create_general_section(), "⚙️ General")
         tabs.addTab(self.create_accounts_section(), "� Cuentas")
         if self.plugin_manager:
             tabs.addTab(self.create_plugins_section(), "� Plugins")
@@ -51,6 +58,54 @@ class AccountsDialog(QDialog):
         layout.addLayout(button_layout)
         
         # Los estilos vienen del tema global
+    
+    def create_general_section(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        header = QLabel("Configuración General")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
+        layout.addWidget(header)
+        
+        language_group = QGroupBox("🌐 Idioma / Language")
+        language_layout = QFormLayout()
+        
+        self.language_combo = QComboBox()
+        self.language_combo.addItem("🇪🇸 Español", "es")
+        self.language_combo.addItem("🇬🇧 English", "en")
+        
+        current_lang = self.settings_manager.get_language()
+        index = self.language_combo.findData(current_lang)
+        if index >= 0:
+            self.language_combo.setCurrentIndex(index)
+            
+        self.language_combo.currentIndexChanged.connect(self.on_language_changed)
+        
+        language_layout.addRow("Idioma / Language:", self.language_combo)
+        
+        lang_note = QLabel("ℹ️ El cambio de idioma se aplicará al reiniciar la aplicación.\n💡 Language changes will take effect after restarting the application.")
+        lang_note.setWordWrap(True)
+        lang_note.setStyleSheet("color: palette(mid); font-size: 11px; padding: 5px; margin-top: 10px;")
+        language_layout.addRow("", lang_note)
+        
+        language_group.setLayout(language_layout)
+        layout.addWidget(language_group)
+        
+        layout.addStretch()
+        
+        return widget
+    
+    def on_language_changed(self, index):
+        language_code = self.language_combo.itemData(index)
+        self.settings_manager.set_language(language_code)
+        set_language(language_code)
+        self.language_changed.emit(language_code)
+        
+        QMessageBox.information(
+            self,
+            "Éxito / Success",
+            "Idioma cambiado. Reinicia la aplicación para ver los cambios.\nLanguage changed. Restart the application to see the changes."
+        )
     
     def create_accounts_section(self):
         widget = QWidget()

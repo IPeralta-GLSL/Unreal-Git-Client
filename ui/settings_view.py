@@ -1,15 +1,17 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QLineEdit, QListWidget, QListWidgetItem,
                              QTabWidget, QWidget, QMessageBox, QGroupBox,
-                             QFormLayout, QScrollArea)
-from PyQt6.QtCore import Qt
+                             QFormLayout, QScrollArea, QComboBox)
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
-from core.translations import tr
+from core.translations import tr, get_translation_manager, set_language
 
 
 class SettingsDialog(QDialog):
+    language_changed = pyqtSignal(str)
+    
     def __init__(self, settings_manager, parent=None):
         super().__init__(parent)
         self.settings_manager = settings_manager
@@ -24,6 +26,7 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         
         self.tab_widget = QTabWidget()
+        self.tab_widget.addTab(self.create_general_tab(), "⚙️ " + tr('general'))
         self.tab_widget.addTab(self.create_github_tab(), "GitHub")
         self.tab_widget.addTab(self.create_gitlab_tab(), "GitLab")
         
@@ -39,6 +42,54 @@ class SettingsDialog(QDialog):
         layout.addLayout(button_layout)
         
         self.apply_styles()
+        
+    def create_general_tab(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        header = QLabel(tr('general_settings'))
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
+        layout.addWidget(header)
+        
+        language_group = QGroupBox(tr('language_settings'))
+        language_layout = QFormLayout()
+        
+        self.language_combo = QComboBox()
+        self.language_combo.addItem("🇪🇸 Español", "es")
+        self.language_combo.addItem("🇬🇧 English", "en")
+        
+        current_lang = self.settings_manager.get_language()
+        index = self.language_combo.findData(current_lang)
+        if index >= 0:
+            self.language_combo.setCurrentIndex(index)
+            
+        self.language_combo.currentIndexChanged.connect(self.on_language_changed)
+        
+        language_layout.addRow(f"{tr('language')}:", self.language_combo)
+        
+        lang_note = QLabel(tr('language_change_note'))
+        lang_note.setWordWrap(True)
+        lang_note.setStyleSheet("color: palette(mid); font-size: 11px; padding: 5px;")
+        language_layout.addRow("", lang_note)
+        
+        language_group.setLayout(language_layout)
+        layout.addWidget(language_group)
+        
+        layout.addStretch()
+        
+        return widget
+    
+    def on_language_changed(self, index):
+        language_code = self.language_combo.itemData(index)
+        self.settings_manager.set_language(language_code)
+        set_language(language_code)
+        self.language_changed.emit(language_code)
+        
+        QMessageBox.information(
+            self,
+            tr('success'),
+            tr('language_changed_restart')
+        )
         
     def create_github_tab(self):
         widget = QWidget()

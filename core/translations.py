@@ -119,6 +119,15 @@ class TranslationManager:
                 'no_email': 'Sin email',
                 'no_message': 'Sin mensaje',
                 'unknown': 'Desconocido',
+                
+                'general': 'General',
+                'general_settings': 'Configuración General',
+                'language': 'Idioma',
+                'language_settings': 'Idioma / Language',
+                'language_change_note': 'El cambio de idioma se aplicará en el siguiente inicio de la aplicación.',
+                'language_changed_restart': 'Idioma cambiado. Reinicia la aplicación para ver los cambios.',
+                'configuration': 'Configuración',
+                'configuration_accounts': 'Configuración y cuentas',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -234,6 +243,15 @@ class TranslationManager:
                 'no_email': 'No email',
                 'no_message': 'No message',
                 'unknown': 'Unknown',
+                
+                'general': 'General',
+                'general_settings': 'General Settings',
+                'language': 'Language',
+                'language_settings': 'Language / Idioma',
+                'language_change_note': 'Language changes will take effect on the next application start.',
+                'language_changed_restart': 'Language changed. Restart the application to see the changes.',
+                'configuration': 'Configuration',
+                'configuration_accounts': 'Configuration and accounts',
             }
         }
         
