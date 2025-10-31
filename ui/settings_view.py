@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
+from core.translations import tr
 
 
 class SettingsDialog(QDialog):
@@ -16,7 +17,7 @@ class SettingsDialog(QDialog):
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle("Ajustes")
+        self.setWindowTitle(tr('settings'))
         self.setMinimumSize(800, 600)
         self.setModal(True)
         
@@ -31,7 +32,7 @@ class SettingsDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        close_btn = QPushButton("Cerrar")
+        close_btn = QPushButton(tr('close'))
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
         
@@ -43,27 +44,27 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        header = QLabel("Administrar Cuentas de GitHub")
+        header = QLabel(tr('github_accounts'))
         header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
         layout.addWidget(header)
         
-        form_group = QGroupBox("Agregar/Editar Cuenta")
+        form_group = QGroupBox(tr('add_edit_account'))
         form_layout = QFormLayout()
         
         self.github_username_input = QLineEdit()
-        self.github_username_input.setPlaceholderText("Nombre de usuario")
-        form_layout.addRow("Usuario:", self.github_username_input)
+        self.github_username_input.setPlaceholderText(tr('username'))
+        form_layout.addRow(f"{tr('username')}:", self.github_username_input)
         
         self.github_email_input = QLineEdit()
-        self.github_email_input.setPlaceholderText("email@example.com (opcional)")
-        form_layout.addRow("Email:", self.github_email_input)
+        self.github_email_input.setPlaceholderText(f"email@example.com ({tr('optional')})")
+        form_layout.addRow(f"{tr('email')}:", self.github_email_input)
         
         self.github_token_input = QLineEdit()
-        self.github_token_input.setPlaceholderText("Personal Access Token")
+        self.github_token_input.setPlaceholderText(tr('token'))
         self.github_token_input.setEchoMode(QLineEdit.EchoMode.Password)
-        form_layout.addRow("Token:", self.github_token_input)
+        form_layout.addRow(f"{tr('token')}:", self.github_token_input)
         
-        show_token_btn = QPushButton("Mostrar")
+        show_token_btn = QPushButton(tr('show'))
         show_token_btn.setMaximumWidth(80)
         show_token_btn.clicked.connect(lambda: self.toggle_token_visibility(self.github_token_input, show_token_btn))
         token_layout = QHBoxLayout()
@@ -75,22 +76,22 @@ class SettingsDialog(QDialog):
         layout.addWidget(form_group)
         
         button_layout = QHBoxLayout()
-        add_btn = QPushButton("Agregar Cuenta")
+        add_btn = QPushButton(tr('add_account'))
         add_btn.clicked.connect(self.add_github_account)
         button_layout.addWidget(add_btn)
         
-        update_btn = QPushButton("Actualizar Cuenta")
+        update_btn = QPushButton(tr('update_account'))
         update_btn.clicked.connect(self.update_github_account)
         button_layout.addWidget(update_btn)
         
-        clear_btn = QPushButton("Limpiar Campos")
+        clear_btn = QPushButton(tr('clear_fields'))
         clear_btn.clicked.connect(self.clear_github_fields)
         button_layout.addWidget(clear_btn)
         button_layout.addStretch()
         
         layout.addLayout(button_layout)
         
-        accounts_group = QGroupBox("Cuentas Guardadas")
+        accounts_group = QGroupBox(tr('saved_accounts'))
         accounts_layout = QVBoxLayout()
         
         self.github_list = QListWidget()
@@ -98,7 +99,7 @@ class SettingsDialog(QDialog):
         accounts_layout.addWidget(self.github_list)
         
         list_button_layout = QHBoxLayout()
-        delete_btn = QPushButton("Eliminar Cuenta")
+        delete_btn = QPushButton(tr('delete_account'))
         delete_btn.clicked.connect(self.delete_github_account)
         list_button_layout.addWidget(delete_btn)
         list_button_layout.addStretch()
@@ -115,32 +116,32 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        header = QLabel("Administrar Cuentas de GitLab")
+        header = QLabel(tr('gitlab_accounts'))
         header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
         layout.addWidget(header)
         
-        form_group = QGroupBox("Agregar/Editar Cuenta")
+        form_group = QGroupBox(tr('add_edit_account'))
         form_layout = QFormLayout()
         
         self.gitlab_username_input = QLineEdit()
-        self.gitlab_username_input.setPlaceholderText("Nombre de usuario")
-        form_layout.addRow("Usuario:", self.gitlab_username_input)
+        self.gitlab_username_input.setPlaceholderText(tr('username'))
+        form_layout.addRow(f"{tr('username')}:", self.gitlab_username_input)
         
         self.gitlab_email_input = QLineEdit()
-        self.gitlab_email_input.setPlaceholderText("email@example.com (opcional)")
-        form_layout.addRow("Email:", self.gitlab_email_input)
+        self.gitlab_email_input.setPlaceholderText(f"email@example.com ({tr('optional')})")
+        form_layout.addRow(f"{tr('email')}:", self.gitlab_email_input)
         
         self.gitlab_server_input = QLineEdit()
         self.gitlab_server_input.setPlaceholderText("https://gitlab.com")
         self.gitlab_server_input.setText("https://gitlab.com")
-        form_layout.addRow("Servidor:", self.gitlab_server_input)
+        form_layout.addRow(f"{tr('server')}:", self.gitlab_server_input)
         
         self.gitlab_token_input = QLineEdit()
-        self.gitlab_token_input.setPlaceholderText("Personal Access Token")
+        self.gitlab_token_input.setPlaceholderText(tr('token'))
         self.gitlab_token_input.setEchoMode(QLineEdit.EchoMode.Password)
-        form_layout.addRow("Token:", self.gitlab_token_input)
+        form_layout.addRow(f"{tr('token')}:", self.gitlab_token_input)
         
-        show_token_btn = QPushButton("Mostrar")
+        show_token_btn = QPushButton(tr('show'))
         show_token_btn.setMaximumWidth(80)
         show_token_btn.clicked.connect(lambda: self.toggle_token_visibility(self.gitlab_token_input, show_token_btn))
         token_layout = QHBoxLayout()
@@ -152,22 +153,22 @@ class SettingsDialog(QDialog):
         layout.addWidget(form_group)
         
         button_layout = QHBoxLayout()
-        add_btn = QPushButton("Agregar Cuenta")
+        add_btn = QPushButton(tr('add_account'))
         add_btn.clicked.connect(self.add_gitlab_account)
         button_layout.addWidget(add_btn)
         
-        update_btn = QPushButton("Actualizar Cuenta")
+        update_btn = QPushButton(tr('update_account'))
         update_btn.clicked.connect(self.update_gitlab_account)
         button_layout.addWidget(update_btn)
         
-        clear_btn = QPushButton("Limpiar Campos")
+        clear_btn = QPushButton(tr('clear_fields'))
         clear_btn.clicked.connect(self.clear_gitlab_fields)
         button_layout.addWidget(clear_btn)
         button_layout.addStretch()
         
         layout.addLayout(button_layout)
         
-        accounts_group = QGroupBox("Cuentas Guardadas")
+        accounts_group = QGroupBox(tr('saved_accounts'))
         accounts_layout = QVBoxLayout()
         
         self.gitlab_list = QListWidget()
@@ -175,7 +176,7 @@ class SettingsDialog(QDialog):
         accounts_layout.addWidget(self.gitlab_list)
         
         list_button_layout = QHBoxLayout()
-        delete_btn = QPushButton("Eliminar Cuenta")
+        delete_btn = QPushButton(tr('delete_account'))
         delete_btn.clicked.connect(self.delete_gitlab_account)
         list_button_layout.addWidget(delete_btn)
         list_button_layout.addStretch()
@@ -191,10 +192,10 @@ class SettingsDialog(QDialog):
     def toggle_token_visibility(self, token_input, button):
         if token_input.echoMode() == QLineEdit.EchoMode.Password:
             token_input.setEchoMode(QLineEdit.EchoMode.Normal)
-            button.setText("Ocultar")
+            button.setText(tr('hide'))
         else:
             token_input.setEchoMode(QLineEdit.EchoMode.Password)
-            button.setText("Mostrar")
+            button.setText(tr('show'))
             
     def add_github_account(self):
         username = self.github_username_input.text().strip()
@@ -202,13 +203,13 @@ class SettingsDialog(QDialog):
         email = self.github_email_input.text().strip()
         
         if not username or not token:
-            QMessageBox.warning(self, "Campos requeridos", "Usuario y Token son obligatorios")
+            QMessageBox.warning(self, tr('required_fields'), tr('username_token_required'))
             return
             
         self.settings_manager.add_github_account(username, token, email)
         self.load_github_accounts()
         self.clear_github_fields()
-        QMessageBox.information(self, "Éxito", f"Cuenta de GitHub '{username}' agregada correctamente")
+        QMessageBox.information(self, tr('success'), f"{tr('github_account_added')} '{username}'")
         
     def add_gitlab_account(self):
         username = self.gitlab_username_input.text().strip()
@@ -217,13 +218,13 @@ class SettingsDialog(QDialog):
         server = self.gitlab_server_input.text().strip()
         
         if not username or not token or not server:
-            QMessageBox.warning(self, "Campos requeridos", "Usuario, Token y Servidor son obligatorios")
+            QMessageBox.warning(self, tr('required_fields'), tr('username_token_server_required'))
             return
             
         self.settings_manager.add_gitlab_account(username, token, email, server)
         self.load_gitlab_accounts()
         self.clear_gitlab_fields()
-        QMessageBox.information(self, "Éxito", f"Cuenta de GitLab '{username}' agregada correctamente")
+        QMessageBox.information(self, tr('success'), f"{tr('gitlab_account_added')} '{username}'")
         
     def update_github_account(self):
         username = self.github_username_input.text().strip()
@@ -231,14 +232,14 @@ class SettingsDialog(QDialog):
         email = self.github_email_input.text().strip()
         
         if not username:
-            QMessageBox.warning(self, "Campo requerido", "Usuario es obligatorio")
+            QMessageBox.warning(self, tr('required_fields'), tr('username_required'))
             return
             
         accounts = self.settings_manager.get_github_accounts()
         exists = any(acc['username'] == username for acc in accounts)
         
         if not exists:
-            QMessageBox.warning(self, "Cuenta no encontrada", f"No existe una cuenta con el usuario '{username}'")
+            QMessageBox.warning(self, tr('account_not_found'), f"{tr('account_not_found_msg')} '{username}'")
             return
             
         self.settings_manager.update_github_account(
@@ -247,7 +248,7 @@ class SettingsDialog(QDialog):
             email if email else None
         )
         self.load_github_accounts()
-        QMessageBox.information(self, "Éxito", f"Cuenta de GitHub '{username}' actualizada correctamente")
+        QMessageBox.information(self, tr('success'), f"{tr('github_account_updated')} '{username}'")
         
     def update_gitlab_account(self):
         username = self.gitlab_username_input.text().strip()
@@ -256,14 +257,14 @@ class SettingsDialog(QDialog):
         server = self.gitlab_server_input.text().strip()
         
         if not username or not server:
-            QMessageBox.warning(self, "Campos requeridos", "Usuario y Servidor son obligatorios")
+            QMessageBox.warning(self, tr('required_fields'), tr('username_server_required'))
             return
             
         accounts = self.settings_manager.get_gitlab_accounts()
         exists = any(acc['username'] == username and acc['server_url'] == server for acc in accounts)
         
         if not exists:
-            QMessageBox.warning(self, "Cuenta no encontrada", f"No existe una cuenta con el usuario '{username}' en {server}")
+            QMessageBox.warning(self, tr('account_not_found'), f"{tr('account_not_found_msg')} '{username}' en {server}")
             return
             
         self.settings_manager.update_gitlab_account(
@@ -273,20 +274,20 @@ class SettingsDialog(QDialog):
             email if email else None
         )
         self.load_gitlab_accounts()
-        QMessageBox.information(self, "Éxito", f"Cuenta de GitLab '{username}' actualizada correctamente")
+        QMessageBox.information(self, tr('success'), f"{tr('gitlab_account_updated')} '{username}'")
         
     def delete_github_account(self):
         current_item = self.github_list.currentItem()
         if not current_item:
-            QMessageBox.warning(self, "Sin selección", "Selecciona una cuenta para eliminar")
+            QMessageBox.warning(self, tr('no_selection'), tr('select_account_to_delete'))
             return
             
         username = current_item.data(Qt.ItemDataRole.UserRole)
         
         reply = QMessageBox.question(
             self, 
-            "Confirmar eliminación",
-            f"¿Estás seguro de eliminar la cuenta '{username}'?",
+            tr('confirm_delete'),
+            f"{tr('confirm_delete_account')} '{username}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -294,12 +295,12 @@ class SettingsDialog(QDialog):
             self.settings_manager.remove_github_account(username)
             self.load_github_accounts()
             self.clear_github_fields()
-            QMessageBox.information(self, "Éxito", f"Cuenta '{username}' eliminada correctamente")
+            QMessageBox.information(self, tr('success'), f"{tr('account_deleted')} '{username}'")
             
     def delete_gitlab_account(self):
         current_item = self.gitlab_list.currentItem()
         if not current_item:
-            QMessageBox.warning(self, "Sin selección", "Selecciona una cuenta para eliminar")
+            QMessageBox.warning(self, tr('no_selection'), tr('select_account_to_delete'))
             return
             
         data = current_item.data(Qt.ItemDataRole.UserRole)
@@ -308,8 +309,8 @@ class SettingsDialog(QDialog):
         
         reply = QMessageBox.question(
             self, 
-            "Confirmar eliminación",
-            f"¿Estás seguro de eliminar la cuenta '{username}' en {server}?",
+            tr('confirm_delete'),
+            f"{tr('confirm_delete_account')} '{username}' en {server}?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -317,7 +318,7 @@ class SettingsDialog(QDialog):
             self.settings_manager.remove_gitlab_account(username, server)
             self.load_gitlab_accounts()
             self.clear_gitlab_fields()
-            QMessageBox.information(self, "Éxito", f"Cuenta '{username}' eliminada correctamente")
+            QMessageBox.information(self, tr('success'), f"{tr('account_deleted')} '{username}'")
             
     def on_github_account_selected(self, item):
         username = item.data(Qt.ItemDataRole.UserRole)
@@ -348,7 +349,7 @@ class SettingsDialog(QDialog):
         
         for account in accounts:
             username = account['username']
-            email = account.get('email', 'Sin email')
+            email = account.get('email', tr('no_email'))
             item_text = f"{username} ({email})"
             
             item = QListWidgetItem(item_text)
@@ -361,7 +362,7 @@ class SettingsDialog(QDialog):
         
         for account in accounts:
             username = account['username']
-            email = account.get('email', 'Sin email')
+            email = account.get('email', tr('no_email'))
             server = account['server_url']
             item_text = f"{username} ({email}) - {server}"
             

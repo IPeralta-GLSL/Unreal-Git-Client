@@ -9,6 +9,7 @@ from ui.theme import get_current_theme
 from core.git_manager import GitManager
 from core.settings_manager import SettingsManager
 from core.account_manager import AccountManager
+from core.translations import tr
 import os
 
 class MainWindow(QMainWindow):
@@ -22,7 +23,7 @@ class MainWindow(QMainWindow):
         self.setup_shortcuts()
         
     def init_ui(self):
-        self.setWindowTitle("Git Client")
+        self.setWindowTitle(tr('app_name'))
         self.setGeometry(100, 100, 1400, 900)
         self.setMinimumSize(1000, 600)
         
@@ -60,7 +61,7 @@ class MainWindow(QMainWindow):
         self.new_tab_button = QPushButton(self.tab_widget)
         self.new_tab_button.setIcon(icon_manager.get_icon("file-plus", size=18))
         self.new_tab_button.setFixedSize(32, 32)
-        self.new_tab_button.setToolTip("Nueva pestaña (Ctrl+T)")
+        self.new_tab_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
         self.new_tab_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.new_tab_button.clicked.connect(self.add_empty_tab)
         self.new_tab_button.setStyleSheet(f"""
@@ -83,7 +84,7 @@ class MainWindow(QMainWindow):
         self.settings_button = QPushButton(central_widget)
         self.settings_button.setIcon(icon_manager.get_icon("gear-six", size=22))
         self.settings_button.setFixedSize(44, 44)
-        self.settings_button.setToolTip("Configuración y cuentas")
+        self.settings_button.setToolTip(tr('settings'))
         self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_button.clicked.connect(self.open_settings)
         self.settings_button.setStyleSheet(f"""
@@ -138,7 +139,7 @@ class MainWindow(QMainWindow):
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Listo")
+        self.status_bar.showMessage(tr('ready'))
         
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -162,7 +163,7 @@ class MainWindow(QMainWindow):
     
     def add_empty_tab(self):
         repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
-        index = self.tab_widget.addTab(repo_tab, "🏠 Inicio")
+        index = self.tab_widget.addTab(repo_tab, f"🏠 {tr('home')}")
         self.tab_widget.setCurrentIndex(index)
         # Reposicionar el botón después de agregar la pestaña
         QTimer.singleShot(0, self.update_new_tab_button_position)
@@ -170,7 +171,7 @@ class MainWindow(QMainWindow):
     def open_repository(self):
         folder = QFileDialog.getExistingDirectory(
             self, 
-            "Seleccionar Repositorio Git",
+            tr('select_repository'),
             os.path.expanduser("~")
         )
         
@@ -182,12 +183,12 @@ class MainWindow(QMainWindow):
                     repo_name = os.path.basename(folder)
                     current_index = self.tab_widget.currentIndex()
                     self.tab_widget.setTabText(current_index, f"📁 {repo_name}")
-                    self.status_bar.showMessage(f"Repositorio cargado: {folder}")
+                    self.status_bar.showMessage(f"{tr('repository_loaded')}: {folder}")
             else:
                 QMessageBox.warning(
                     self, 
-                    "No es un repositorio Git",
-                    f"La carpeta seleccionada no contiene un repositorio Git.\n\n{folder}"
+                    tr('not_git_repository'),
+                    f"{tr('not_git_repository_msg')}\n\n{folder}"
                 )
                 
     def clone_repository(self):
@@ -227,9 +228,9 @@ class MainWindow(QMainWindow):
         if index >= 0:
             tab = self.tab_widget.widget(index)
             if isinstance(tab, RepositoryTab) and tab.repo_path:
-                self.status_bar.showMessage(f"Repositorio: {tab.repo_path}")
+                self.status_bar.showMessage(f"{tr('repository')}: {tab.repo_path}")
             else:
-                self.status_bar.showMessage("Listo")
+                self.status_bar.showMessage(tr('ready'))
     
     def open_settings(self):
         from ui.accounts_dialog import AccountsDialog
