@@ -25,7 +25,6 @@ class CommitGraphWidget(QWidget):
         self.left_margin = 20
         self.graph_width = 200
         self.avatar_size = 32
-        self.setMinimumHeight(400)
         self.selected_commit = None
         self.avatars = {}
         
@@ -33,6 +32,11 @@ class CommitGraphWidget(QWidget):
         self.commits = commits
         self.branch_colors = {}
         self.calculate_positions()
+        
+        height = max(400, len(self.commits) * self.row_height + 60)
+        self.setMinimumHeight(height)
+        self.setMaximumHeight(height)
+        
         self.update()
     
     def set_avatar(self, email, pixmap):
@@ -210,8 +214,9 @@ class CommitGraphWidget(QWidget):
     def sizeHint(self):
         from PyQt6.QtCore import QSize
         height = max(400, len(self.commits) * self.row_height + 60)
-        return QSize(800, height)
+        return QSize(self.width(), height)
     
     def minimumSizeHint(self):
         from PyQt6.QtCore import QSize
-        return QSize(600, 400)
+        height = max(400, len(self.commits) * self.row_height + 60)
+        return QSize(600, height)
