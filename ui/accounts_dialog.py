@@ -23,7 +23,7 @@ class AccountsDialog(QDialog):
         from core.settings_manager import SettingsManager
         self.settings_manager = SettingsManager()
         
-        self.setWindowTitle("⚙️ Ajustes")
+        self.setWindowTitle("⚙️ " + tr('settings'))
         self.setModal(True)
         self.setMinimumSize(800, 600)
         self.init_ui()
@@ -31,24 +31,24 @@ class AccountsDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout(self)
         
-        title = QLabel("⚙️ Ajustes")
+        title = QLabel("⚙️ " + tr("settings"))
         title.setProperty("class", "title")
         layout.addWidget(title)
         
         tabs = QTabWidget()
         
-        tabs.addTab(self.create_general_section(), "⚙️ General")
-        tabs.addTab(self.create_accounts_section(), "� Cuentas")
+        tabs.addTab(self.create_general_section(), "⚙️ " + tr("general"))
+        tabs.addTab(self.create_accounts_section(), "👤 " + tr("accounts"))
         if self.plugin_manager:
-            tabs.addTab(self.create_plugins_section(), "� Plugins")
-        tabs.addTab(self.create_appearance_section(), "🎨 Apariencia")
+            tabs.addTab(self.create_plugins_section(), "🔌 " + tr("plugins"))
+        tabs.addTab(self.create_appearance_section(), "🎨 " + tr("appearance"))
         
         layout.addWidget(tabs)
         
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        close_btn = QPushButton("Cerrar")
+        close_btn = QPushButton(tr("close"))
         close_btn.setMinimumWidth(100)
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
@@ -60,11 +60,11 @@ class AccountsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        header = QLabel("Configuración General")
+        header = QLabel(tr("general_config"))
         header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
         layout.addWidget(header)
         
-        language_group = QGroupBox("🌐 Idioma / Language")
+        language_group = QGroupBox("🌐 " + tr("language"))
         language_layout = QFormLayout()
         
         self.language_combo = QComboBox()
@@ -78,9 +78,9 @@ class AccountsDialog(QDialog):
             
         self.language_combo.currentIndexChanged.connect(self.on_language_changed)
         
-        language_layout.addRow("Idioma / Language:", self.language_combo)
+        language_layout.addRow(tr("language") + ":", self.language_combo)
         
-        lang_note = QLabel("ℹ️ El cambio de idioma se aplicará al reiniciar la aplicación.\n💡 Language changes will take effect after restarting the application.")
+        lang_note = QLabel(tr("language_change_note"))
         lang_note.setWordWrap(True)
         lang_note.setStyleSheet("color: palette(mid); font-size: 11px; padding: 5px; margin-top: 10px;")
         language_layout.addRow("", lang_note)
