@@ -128,6 +128,17 @@ class TranslationManager:
                 'language_changed_restart': 'Idioma cambiado. Reinicia la aplicación para ver los cambios.',
                 'configuration': 'Configuración',
                 'configuration_accounts': 'Configuración y cuentas',
+                
+                'clone': 'Clonar',
+                'clone_repository': 'Clonar Repositorio',
+                'clone_git_repository': 'Clonar Repositorio Git',
+                'clone_description': 'Descarga una copia de un repositorio remoto a tu computadora',
+                'repository_url': 'URL del Repositorio',
+                'destination_folder': 'Carpeta de Destino',
+                'browse': 'Explorar',
+                'cancel': 'Cancelar',
+                'clone_helper': 'El repositorio se clonará en una nueva carpeta dentro de la ubicación seleccionada',
+                'select_folder': 'Seleccionar Carpeta',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -252,6 +263,17 @@ class TranslationManager:
                 'language_changed_restart': 'Language changed. Restart the application to see the changes.',
                 'configuration': 'Configuration',
                 'configuration_accounts': 'Configuration and accounts',
+                
+                'clone': 'Clone',
+                'clone_repository': 'Clone Repository',
+                'clone_git_repository': 'Clone Git Repository',
+                'clone_description': 'Download a copy of a remote repository to your computer',
+                'repository_url': 'Repository URL',
+                'destination_folder': 'Destination Folder',
+                'browse': 'Browse',
+                'cancel': 'Cancel',
+                'clone_helper': 'The repository will be cloned into a new folder within the selected location',
+                'select_folder': 'Select Folder',
             }
         }
         

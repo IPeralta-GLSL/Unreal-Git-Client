@@ -101,11 +101,7 @@ class AccountsDialog(QDialog):
         set_language(language_code)
         self.language_changed.emit(language_code)
         
-        QMessageBox.information(
-            self,
-            "Éxito / Success",
-            "Idioma cambiado. Reinicia la aplicación para ver los cambios.\nLanguage changed. Restart the application to see the changes."
-        )
+        self.retranslate_ui()
     
     def create_accounts_section(self):
         widget = QWidget()
@@ -1601,3 +1597,14 @@ class AccountsDialog(QDialog):
                 """)
         
         # No mostramos mensaje, el cambio es visual e inmediato
+    
+    def retranslate_ui(self):
+        """Actualiza todas las traducciones de la UI cuando cambia el idioma"""
+        self.setWindowTitle(tr('configuration'))
+        
+        if hasattr(self, 'parent') and self.parent():
+            main_window = self.parent()
+            if hasattr(main_window, 'update_translations'):
+                main_window.update_translations()
+        
+        QApplication.processEvents()

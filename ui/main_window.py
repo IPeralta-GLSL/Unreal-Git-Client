@@ -236,7 +236,20 @@ class MainWindow(QMainWindow):
         from ui.accounts_dialog import AccountsDialog
         dialog = AccountsDialog(self.account_manager, self.plugin_manager, self)
         dialog.accounts_changed.connect(self.on_accounts_changed)
+        dialog.language_changed.connect(self.on_language_changed)
         dialog.exec()
+    
+    def on_language_changed(self, language_code):
+        self.update_translations()
+        for i in range(self.tab_widget.count()):
+            tab = self.tab_widget.widget(i)
+            if hasattr(tab, 'retranslate_ui'):
+                tab.retranslate_ui()
+    
+    def update_translations(self):
+        self.status_bar.showMessage(tr('ready'))
+        self.settings_button.setToolTip(tr('settings'))
+        self.new_tab_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
     
     def on_accounts_changed(self):
         self.status_bar.showMessage("Cuentas actualizadas", 3000)
