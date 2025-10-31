@@ -26,33 +26,10 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1400, 900)
         self.setMinimumSize(1000, 600)
         
-        self.setup_menubar()
         self.setup_statusbar()
         self.setup_central_widget()
         
         self.apply_styles()
-        
-    def setup_menubar(self):
-        menubar = self.menuBar()
-        
-        file_menu = menubar.addMenu("Archivo")
-        
-        open_action = QAction("Abrir Repositorio", self)
-        open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(self.open_repository)
-        file_menu.addAction(open_action)
-        
-        clone_action = QAction("Clonar Repositorio", self)
-        clone_action.setShortcut("Ctrl+Shift+C")
-        clone_action.triggered.connect(self.clone_repository)
-        file_menu.addAction(clone_action)
-        
-        file_menu.addSeparator()
-        
-        exit_action = QAction("Salir", self)
-        exit_action.setShortcut("Ctrl+Q")
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
         
     def setup_toolbar(self):
         from ui.icon_manager import IconManager
@@ -145,6 +122,18 @@ class MainWindow(QMainWindow):
         
         prev_tab_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
         prev_tab_shortcut.activated.connect(self.prev_tab)
+        
+        open_shortcut = QShortcut(QKeySequence("Ctrl+O"), self)
+        open_shortcut.activated.connect(self.open_repository)
+        
+        clone_shortcut = QShortcut(QKeySequence("Ctrl+Shift+C"), self)
+        clone_shortcut.activated.connect(self.clone_repository)
+        
+        settings_shortcut = QShortcut(QKeySequence("Ctrl+,"), self)
+        settings_shortcut.activated.connect(self.open_settings)
+        
+        quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
+        quit_shortcut.activated.connect(self.close)
         
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
@@ -296,37 +285,5 @@ class MainWindow(QMainWindow):
                 background-color: {theme.colors['primary']};
                 color: palette(bright-text);
                 font-weight: bold;
-            }}
-            QMenuBar {{
-                background-color: palette(button);
-                color: palette(window-text);
-                padding: 4px;
-            }}
-            QMenuBar::item {{
-                background-color: transparent;
-                padding: 8px 12px;
-                border-radius: 4px;
-            }}
-            QMenuBar::item:selected {{
-                background-color: palette(text);
-            }}
-            QMenu {{
-                background-color: palette(button);
-                color: palette(window-text);
-                border: 1px solid {theme.colors['border']};
-                padding: 5px;
-            }}
-            QMenu::item {{
-                padding: 8px 30px 8px 20px;
-                border-radius: 4px;
-            }}
-            QMenu::item:selected {{
-                background-color: palette(highlight);
-                color: palette(bright-text);
-            }}
-            QMenu::separator {{
-                height: 1px;
-                background-color: palette(text);
-                margin: 5px 0px;
             }}
         """)
