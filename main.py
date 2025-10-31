@@ -11,7 +11,6 @@ def main():
     app.setApplicationName("Git Client")
     app.setOrganizationName("GitClient")
     
-    # Aplicar tema universal basado en la configuración guardada
     theme = Theme(theme_manager.get_theme_name())
     theme.apply_to_app(app)
     
