@@ -36,7 +36,6 @@ class AccountsDialog(QDialog):
         layout.addWidget(title)
         
         tabs = QTabWidget()
-        # Los estilos de tabs vienen del tema global
         
         tabs.addTab(self.create_general_section(), "⚙️ General")
         tabs.addTab(self.create_accounts_section(), "� Cuentas")
@@ -52,13 +51,11 @@ class AccountsDialog(QDialog):
         close_btn = QPushButton("Cerrar")
         close_btn.setMinimumWidth(100)
         close_btn.clicked.connect(self.accept)
-        # El estilo viene del tema global
         button_layout.addWidget(close_btn)
         
         layout.addLayout(button_layout)
         
-        # Los estilos vienen del tema global
-    
+
     def create_general_section(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -1406,12 +1403,10 @@ class AccountsDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        # Título
         title = QLabel("🎨 Personalización de Apariencia")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(link); margin-bottom: 10px;")
         layout.addWidget(title)
         
-        # Sección de tema
         theme_group = QGroupBox("Tema de color")
         theme_group.setStyleSheet("""
             QGroupBox {
@@ -1434,10 +1429,8 @@ class AccountsDialog(QDialog):
         info_label.setStyleSheet("color: palette(text); font-size: 12px; margin: 5px 0;")
         theme_layout.addWidget(info_label)
         
-        # Obtener tema actual
         current_theme = theme_manager.get_theme_name()
         
-        # Temas disponibles
         themes_container = QWidget()
         themes_layout = QVBoxLayout(themes_container)
         themes_layout.setSpacing(10)
@@ -1451,7 +1444,6 @@ class AccountsDialog(QDialog):
             theme_h_layout.setContentsMargins(15, 10, 15, 10)
             theme_h_layout.setSpacing(15)
             
-            # Icono del tema
             icon_label = QLabel()
             icon_label.setFixedSize(48, 48)
             
@@ -1469,7 +1461,6 @@ class AccountsDialog(QDialog):
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             theme_h_layout.addWidget(icon_label)
             
-            # Información del tema
             info_v_layout = QVBoxLayout()
             info_v_layout.setSpacing(4)
             
@@ -1484,7 +1475,6 @@ class AccountsDialog(QDialog):
             
             theme_h_layout.addLayout(info_v_layout, 1)
             
-            # Botón para seleccionar
             select_btn = QPushButton("Seleccionado" if theme_name == current_theme else "Seleccionar")
             select_btn.setFixedWidth(120)
             select_btn.setEnabled(theme_name != current_theme)
@@ -1517,7 +1507,6 @@ class AccountsDialog(QDialog):
             self.theme_buttons.append((theme_name, select_btn))
             theme_h_layout.addWidget(select_btn)
             
-            # Estilo del contenedor del tema
             theme_widget.setStyleSheet("""
                 QWidget {
                     background-color: palette(button);
@@ -1532,7 +1521,6 @@ class AccountsDialog(QDialog):
         theme_group.setLayout(theme_layout)
         layout.addWidget(theme_group)
         
-        # Información adicional
         restart_info = QLabel("✨ Los cambios de tema se aplican inmediatamente sin necesidad de reiniciar")
         restart_info.setStyleSheet("""
             background-color: palette(highlight);
@@ -1555,18 +1543,15 @@ class AccountsDialog(QDialog):
         
         theme_manager.set_theme(theme_name)
         
-        # Aplicar el nuevo tema inmediatamente a la aplicación
         app = QApplication.instance()
         new_theme = Theme(theme_name)
         new_theme.apply_to_app(app)
         
-        # Forzar actualización de todos los widgets
         for widget in app.allWidgets():
             widget.style().unpolish(widget)
             widget.style().polish(widget)
             widget.update()
         
-        # Actualizar botones
         for t_name, btn in self.theme_buttons:
             if t_name == theme_name:
                 btn.setText("Seleccionado")
@@ -1596,11 +1581,14 @@ class AccountsDialog(QDialog):
                     }
                 """)
         
-        # No mostramos mensaje, el cambio es visual e inmediato
     
     def retranslate_ui(self):
         """Actualiza todas las traducciones de la UI cuando cambia el idioma"""
-        self.setWindowTitle(tr('configuration'))
+        self.setWindowTitle("⚙️ " + tr('settings'))
+        
+        self.close()
+        self.__init__(self.account_manager, self.plugin_manager, self.parent())
+        self.show()
         
         if hasattr(self, 'parent') and self.parent():
             main_window = self.parent()
