@@ -118,7 +118,7 @@ class CloneDialog(QDialog):
         self.url_label.setText(tr('repository_url') + ":")
         self.path_label.setText(tr('destination_folder') + ":")
         self.browse_btn.setText("  " + tr('browse'))
-        self.helper_text.setText("ℹ️ " + tr('clone_helper'))
+        self.helper_text.setText(tr('clone_helper'))
         self.cancel_btn.setText(tr('cancel'))
         self.clone_btn.setText("  " + tr('clone_repository'))
     

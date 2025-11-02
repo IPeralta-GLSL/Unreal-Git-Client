@@ -505,7 +505,7 @@ class CommitActionsDialog(QDialog):
             self,
             "Confirmar Reset",
             f"¿Hacer reset {mode_names[mode]} al commit {self.commit_hash[:7]}?\n\n" +
-            ("⚠️ ADVERTENCIA: Perderás todos los cambios no guardados!" if mode == 'hard' else ""),
+            ("ADVERTENCIA: Perderás todos los cambios no guardados!" if mode == 'hard' else ""),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         

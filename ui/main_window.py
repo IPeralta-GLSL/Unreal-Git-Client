@@ -182,7 +182,8 @@ class MainWindow(QMainWindow):
                     current_tab.load_repository(folder)
                     repo_name = os.path.basename(folder)
                     current_index = self.tab_widget.currentIndex()
-                    self.tab_widget.setTabText(current_index, f"📁 {repo_name}")
+                    self.tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder-open"))
+                    self.tab_widget.setTabText(current_index, repo_name)
                     self.status_bar.showMessage(f"{tr('repository_loaded')}: {folder}")
             else:
                 QMessageBox.warning(

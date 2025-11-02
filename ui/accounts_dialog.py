@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap, QPainter, QPainterPath
 from PyQt6.QtSvg import QSvgRenderer
 from core.translations import tr, get_translation_manager, set_language
+from ui.icon_manager import IconManager
 import webbrowser
 import requests
 import secrets
@@ -19,11 +20,13 @@ class AccountsDialog(QDialog):
         super().__init__(parent)
         self.account_manager = account_manager
         self.plugin_manager = plugin_manager
+        self.icon_manager = IconManager()
         
         from core.settings_manager import SettingsManager
         self.settings_manager = SettingsManager()
         
-        self.setWindowTitle("⚙️ " + tr('settings'))
+        self.setWindowTitle(tr('settings'))
+        self.setWindowIcon(self.icon_manager.get_icon("gear-six"))
         self.setModal(True)
         self.setMinimumSize(800, 600)
         self.init_ui()
@@ -31,17 +34,24 @@ class AccountsDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout(self)
         
-        self.title_label = QLabel("⚙️ " + tr("settings"))
+        self.title_label = QLabel(tr("settings"))
         self.title_label.setProperty("class", "title")
         layout.addWidget(self.title_label)
         
         self.tabs = QTabWidget()
         
-        self.tabs.addTab(self.create_general_section(), "⚙️ " + tr("general"))
-        self.tabs.addTab(self.create_accounts_section(), "👤 " + tr("accounts"))
+        general_tab = self.create_general_section()
+        self.tabs.addTab(general_tab, self.icon_manager.get_icon("gear-six"), tr("general"))
+        
+        accounts_tab = self.create_accounts_section()
+        self.tabs.addTab(accounts_tab, self.icon_manager.get_icon("user"), tr("accounts"))
+        
         if self.plugin_manager:
-            self.tabs.addTab(self.create_plugins_section(), "🔌 " + tr("plugins"))
-        self.tabs.addTab(self.create_appearance_section(), "🎨 " + tr("appearance"))
+            plugins_tab = self.create_plugins_section()
+            self.tabs.addTab(plugins_tab, self.icon_manager.get_icon("plugs-connected"), tr("plugins"))
+        
+        appearance_tab = self.create_appearance_section()
+        self.tabs.addTab(appearance_tab, self.icon_manager.get_icon("globe"), tr("appearance"))
         
         layout.addWidget(self.tabs)
         
@@ -169,11 +179,13 @@ class AccountsDialog(QDialog):
         
         btn_layout = QHBoxLayout()
         
-        refresh_btn = QPushButton("🔄 Actualizar")
+        refresh_btn = QPushButton("Actualizar")
+        refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise"))
         refresh_btn.clicked.connect(self.load_accounts)
         btn_layout.addWidget(refresh_btn)
         
-        remove_btn = QPushButton("🗑️ Eliminar")
+        remove_btn = QPushButton("Eliminar")
+        remove_btn.setIcon(self.icon_manager.get_icon("trash"))
         remove_btn.clicked.connect(self.remove_selected_account)
         btn_layout.addWidget(remove_btn)
         
@@ -218,7 +230,7 @@ class AccountsDialog(QDialog):
             github_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(github_icon)
         
-        info_box = QGroupBox("ℹ️ Conectar con GitHub")
+        info_box = QGroupBox("Conectar con GitHub")
         info_box.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -362,7 +374,7 @@ class AccountsDialog(QDialog):
             gitlab_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(gitlab_icon)
         
-        info_box = QGroupBox("ℹ️ Conectar con GitLab")
+        info_box = QGroupBox("Conectar con GitLab")
         info_box.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -590,7 +602,7 @@ class AccountsDialog(QDialog):
         """)
         layout.addWidget(save_btn)
         
-        current_group = QGroupBox("⚙️ Configuración Actual")
+        current_group = QGroupBox("Configuración Actual")
         current_group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -673,13 +685,13 @@ class AccountsDialog(QDialog):
                     
                     avatar_label.setPixmap(rounded_pixmap)
                 except:
-                    avatar_label.setText("👤")
+                    avatar_label.setPixmap(self.icon_manager.get_pixmap("user", size=24))
                     avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    avatar_label.setStyleSheet("border-radius: 22px; background-color: palette(button); font-size: 20px;")
+                    avatar_label.setStyleSheet("border-radius: 22px; background-color: palette(button);")
             else:
-                avatar_label.setText("�")
+                avatar_label.setPixmap(self.icon_manager.get_pixmap("user", size=24))
                 avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                avatar_label.setStyleSheet("border-radius: 20px; background-color: palette(button); font-size: 20px;")
+                avatar_label.setStyleSheet("border-radius: 20px; background-color: palette(button);")
             
             avatar_container = QWidget()
             avatar_container.setFixedWidth(44)
@@ -853,7 +865,7 @@ class AccountsDialog(QDialog):
         
         if not flow_data:
             self.gitlab_status_label.setText(
-                "⚠️ GitLab aún no soporta Device Flow públicamente.\n\n"
+                "GitLab aún no soporta Device Flow públicamente.\n\n"
                 "Por favor, usa un Personal Access Token en el método alternativo abajo."
             )
             return
@@ -1251,7 +1263,8 @@ class AccountsDialog(QDialog):
         
         btn_layout = QHBoxLayout()
         
-        refresh_btn = QPushButton("🔄 Actualizar")
+        refresh_btn = QPushButton("Actualizar")
+        refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise"))
         refresh_btn.clicked.connect(self.load_plugins)
         btn_layout.addWidget(refresh_btn)
         
@@ -1319,9 +1332,8 @@ class AccountsDialog(QDialog):
                 painter.end()
                 icon_label.setPixmap(pixmap)
             else:
-                icon_label.setText("🔌")
+                icon_label.setPixmap(self.icon_manager.get_pixmap("plugs-connected", size=24))
                 icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                icon_label.setStyleSheet("font-size: 24px;")
             
             icon_layout.addWidget(icon_label)
             icon_layout.addStretch()
@@ -1403,7 +1415,7 @@ class AccountsDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        title = QLabel("🎨 Personalización de Apariencia")
+        title = QLabel("Personalización de Apariencia")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(link); margin-bottom: 10px;")
         layout.addWidget(title)
         
@@ -1444,22 +1456,12 @@ class AccountsDialog(QDialog):
             theme_h_layout.setContentsMargins(15, 10, 15, 10)
             theme_h_layout.setSpacing(15)
             
-            icon_label = QLabel()
-            icon_label.setFixedSize(48, 48)
-            
             if theme_name == "Dark":
-                icon_label.setText("🌙")
-                icon_label.setStyleSheet("font-size: 32px;")
                 theme_title = "Oscuro"
                 theme_desc = "Tema oscuro ideal para trabajar de noche o en ambientes con poca luz"
             else:  # Light
-                icon_label.setText("☀️")
-                icon_label.setStyleSheet("font-size: 32px;")
                 theme_title = "Claro"
                 theme_desc = "Tema claro y brillante para trabajar durante el día"
-            
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            theme_h_layout.addWidget(icon_label)
             
             info_v_layout = QVBoxLayout()
             info_v_layout.setSpacing(4)
@@ -1521,7 +1523,7 @@ class AccountsDialog(QDialog):
         theme_group.setLayout(theme_layout)
         layout.addWidget(theme_group)
         
-        restart_info = QLabel("✨ Los cambios de tema se aplican inmediatamente sin necesidad de reiniciar")
+        restart_info = QLabel("Los cambios de tema se aplican inmediatamente sin necesidad de reiniciar")
         restart_info.setStyleSheet("""
             background-color: palette(highlight);
             color: palette(bright-text);
@@ -1583,22 +1585,27 @@ class AccountsDialog(QDialog):
         
     
     def retranslate_ui(self):
-        self.setWindowTitle("⚙️ " + tr('settings'))
+        self.setWindowTitle(tr('settings'))
+        self.setWindowIcon(self.icon_manager.get_icon("gear-six"))
         
         if hasattr(self, 'title_label'):
-            self.title_label.setText("⚙️ " + tr("settings"))
+            self.title_label.setText(tr("settings"))
         
         if hasattr(self, 'tabs'):
             current_index = self.tabs.currentIndex()
             tab_count = 0
-            self.tabs.setTabText(tab_count, "⚙️ " + tr("general"))
+            self.tabs.setTabText(tab_count, tr("general"))
+            self.tabs.setTabIcon(tab_count, self.icon_manager.get_icon("gear-six"))
             tab_count += 1
-            self.tabs.setTabText(tab_count, "👤 " + tr("accounts"))
+            self.tabs.setTabText(tab_count, tr("accounts"))
+            self.tabs.setTabIcon(tab_count, self.icon_manager.get_icon("user"))
             tab_count += 1
             if self.plugin_manager:
-                self.tabs.setTabText(tab_count, "🔌 " + tr("plugins"))
+                self.tabs.setTabText(tab_count, tr("plugins"))
+                self.tabs.setTabIcon(tab_count, self.icon_manager.get_icon("plugs-connected"))
                 tab_count += 1
-            self.tabs.setTabText(tab_count, "🎨 " + tr("appearance"))
+            self.tabs.setTabText(tab_count, tr("appearance"))
+            self.tabs.setTabIcon(tab_count, self.icon_manager.get_icon("globe"))
         
         if hasattr(self, 'close_button'):
             self.close_button.setText(tr('close'))
