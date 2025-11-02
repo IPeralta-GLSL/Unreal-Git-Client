@@ -1611,10 +1611,7 @@ class AccountsDialog(QDialog):
             if parent_widget and hasattr(parent_widget, 'tab_widget'):
                 for i in range(parent_widget.tab_widget.count()):
                     tab = parent_widget.tab_widget.widget(i)
-                    if hasattr(tab, 'home_view'):
-                        if hasattr(tab.home_view, 'init_ui'):
-                            tab.home_view.init_ui()
-                        if hasattr(tab.home_view, 'refresh_recent_repos'):
-                            tab.home_view.refresh_recent_repos()
+                    if hasattr(tab, 'home_view') and hasattr(tab.home_view, 'update_translations'):
+                        tab.home_view.update_translations()
                     if hasattr(tab, 'update_translations'):
                         tab.update_translations()
