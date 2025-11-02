@@ -68,14 +68,14 @@ class Plugin:
             {
                 'id': 'open_project_folder',
                 'name': 'Abrir carpeta del proyecto',
-                'icon': '📁',
+                'icon': 'folder-open',
                 'callback': self.open_project_folder,
                 'requires_unreal': True
             },
             {
                 'id': 'show_engine_info',
                 'name': 'Información del Engine',
-                'icon': 'ℹ️',
+                'icon': 'info',
                 'callback': self.show_engine_info,
                 'requires_unreal': True
             }

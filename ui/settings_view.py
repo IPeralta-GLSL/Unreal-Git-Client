@@ -26,9 +26,9 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         
         self.tab_widget = QTabWidget()
-        self.tab_widget.addTab(self.create_general_tab(), "⚙️ " + tr('general'))
-        self.tab_widget.addTab(self.create_github_tab(), "GitHub")
-        self.tab_widget.addTab(self.create_gitlab_tab(), "GitLab")
+        self.tab_widget.addTab(self.create_general_tab(), self.icon_manager.get_icon("gear-six"), tr('general'))
+        self.tab_widget.addTab(self.create_github_tab(), self.icon_manager.get_icon("github-logo"), "GitHub")
+        self.tab_widget.addTab(self.create_gitlab_tab(), self.icon_manager.get_icon("gitlab-logo"), "GitLab")
         
         layout.addWidget(self.tab_widget)
         
@@ -55,8 +55,8 @@ class SettingsDialog(QDialog):
         language_layout = QFormLayout()
         
         self.language_combo = QComboBox()
-        self.language_combo.addItem("🇪🇸 Español", "es")
-        self.language_combo.addItem("🇬🇧 English", "en")
+        self.language_combo.addItem("Español", "es")
+        self.language_combo.addItem("English", "en")
         
         current_lang = self.settings_manager.get_language()
         index = self.language_combo.findData(current_lang)

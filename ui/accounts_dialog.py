@@ -74,12 +74,12 @@ class AccountsDialog(QDialog):
         header.setStyleSheet("font-size: 16px; font-weight: bold; color: palette(link); padding: 10px;")
         layout.addWidget(header)
         
-        language_group = QGroupBox("🌐 " + tr("language"))
+        language_group = QGroupBox(tr("language"))
         language_layout = QFormLayout()
         
         self.language_combo = QComboBox()
-        self.language_combo.addItem("🇪🇸 Español", "es")
-        self.language_combo.addItem("🇬🇧 English", "en")
+        self.language_combo.addItem("Español", "es")
+        self.language_combo.addItem("English", "en")
         
         current_lang = self.settings_manager.get_language()
         index = self.language_combo.findData(current_lang)
@@ -139,9 +139,9 @@ class AccountsDialog(QDialog):
         """)
         
         section_tabs.addTab(self.create_accounts_tab(), "📋 Mis Cuentas")
-        section_tabs.addTab(self.create_github_tab(), "🐙 GitHub")
-        section_tabs.addTab(self.create_gitlab_tab(), "🦊 GitLab")
-        section_tabs.addTab(self.create_git_tab(), "📝 Git Local")
+        section_tabs.addTab(self.create_github_tab(), self.icon_manager.get_icon("github-logo"), "GitHub")
+        section_tabs.addTab(self.create_gitlab_tab(), self.icon_manager.get_icon("gitlab-logo"), "GitLab")
+        section_tabs.addTab(self.create_git_tab(), self.icon_manager.get_icon("git-commit"), "Git Local")
         
         layout.addWidget(section_tabs)
         
@@ -511,7 +511,8 @@ class AccountsDialog(QDialog):
         
         layout.addLayout(form_layout)
         
-        connect_btn = QPushButton("🔗 Conectar con GitLab")
+        connect_btn = QPushButton("Conectar con GitLab")
+        connect_btn.setIcon(self.icon_manager.get_icon("link"))
         connect_btn.setMinimumHeight(40)
         connect_btn.clicked.connect(self.connect_gitlab)
         connect_btn.setStyleSheet("""
@@ -585,7 +586,8 @@ class AccountsDialog(QDialog):
         
         layout.addLayout(form_layout)
         
-        save_btn = QPushButton("💾 Guardar Configuración Global")
+        save_btn = QPushButton("Guardar Configuración Global")
+        save_btn.setIcon(self.icon_manager.get_icon("check"))
         save_btn.setMinimumHeight(40)
         save_btn.clicked.connect(self.save_git_config)
         save_btn.setStyleSheet("""
@@ -706,15 +708,9 @@ class AccountsDialog(QDialog):
             info_layout = QVBoxLayout()
             info_layout.setSpacing(4)
             
-            platform_icons = {
-                'github': '🐙',
-                'gitlab': '🦊',
-                'git': '📝'
-            }
-            icon = platform_icons.get(platform, '📝')
-            status = '✅' if account.get('active', True) else '⭕'
+            status = 'Activo' if account.get('active', True) else 'Inactivo'
             
-            name_label = QLabel(f"{icon} {status} <b>{platform.upper()}</b>: {username}")
+            name_label = QLabel(f"<b>{platform.upper()}</b>: {username} ({status})")
             name_label.setStyleSheet("font-size: 14px;")
             info_layout.addWidget(name_label)
             
@@ -841,8 +837,8 @@ class AccountsDialog(QDialog):
                 self.account_manager.add_account('GitHub', username, result, email)
                 
                 self.github_status_label.setText(
-                    f"✅ <b>Conectado exitosamente como:</b> {username}<br>"
-                    f"📧 Email: {email or 'No disponible'}"
+                    f"<b>Conectado exitosamente como:</b> {username}<br>"
+                    f"Email: {email or 'No disponible'}"
                 )
                 
                 self.load_accounts()
@@ -917,8 +913,8 @@ class AccountsDialog(QDialog):
                 self.account_manager.add_account('GitLab', username, result, email)
                 
                 self.gitlab_status_label.setText(
-                    f"✅ <b>Conectado exitosamente como:</b> {username}<br>"
-                    f"📧 Email: {email or 'No disponible'}"
+                    f"<b>Conectado exitosamente como:</b> {username}<br>"
+                    f"Email: {email or 'No disponible'}"
                 )
                 
                 self.load_accounts()
@@ -1343,8 +1339,8 @@ class AccountsDialog(QDialog):
             info_layout = QVBoxLayout()
             info_layout.setSpacing(4)
             
-            status_emoji = "✅" if is_enabled else "⭕"
-            name_label = QLabel(f"{status_emoji} <b>{plugin['name']}</b>")
+            status_text = "Activo" if is_enabled else "Inactivo"
+            name_label = QLabel(f"<b>{plugin['name']}</b> ({status_text})")
             name_label.setStyleSheet("font-size: 14px;")
             info_layout.addWidget(name_label)
             

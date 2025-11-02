@@ -115,7 +115,7 @@ class AccountManager:
                         <html>
                         <head><title>Autenticación exitosa</title></head>
                         <body style="font-family: Arial; text-align: center; padding: 50px; background: #1e1e1e; color: #fff;">
-                            <h1>✅ Autenticación exitosa</h1>
+                            <h1>Autenticación exitosa</h1>
                             <p>Puedes cerrar esta ventana y volver a la aplicación.</p>
                             <script>setTimeout(() => window.close(), 3000);</script>
                         </body>
