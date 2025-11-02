@@ -328,8 +328,8 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        changes_header = self.create_section_header(tr('changes_title'), tr('changes_subtitle'), "file-text")
-        layout.addWidget(changes_header)
+        self.changes_header = self.create_section_header(tr('changes_title'), tr('changes_subtitle'), "file-text")
+        layout.addWidget(self.changes_header)
         
         changes_container = QWidget()
         changes_container.setStyleSheet("background-color: palette(window); padding: 10px;")
@@ -389,8 +389,8 @@ class RepositoryTab(QWidget):
         changes_layout.addLayout(btn_layout)
         layout.addWidget(changes_container)
         
-        commit_header = self.create_section_header(tr('commit_title'), tr('commit_subtitle'), "git-commit")
-        layout.addWidget(commit_header)
+        self.commit_header = self.create_section_header(tr('commit_title'), tr('commit_subtitle'), "git-commit")
+        layout.addWidget(self.commit_header)
         
         commit_container = QWidget()
         commit_container.setStyleSheet("background-color: palette(window); padding: 10px;")
@@ -441,8 +441,8 @@ class RepositoryTab(QWidget):
         
         layout.addWidget(commit_container)
         
-        lfs_header = self.create_section_header(tr('lfs_title'), tr('lfs_subtitle'), "files")
-        layout.addWidget(lfs_header)
+        self.lfs_header = self.create_section_header(tr('lfs_title'), tr('lfs_subtitle'), "files")
+        layout.addWidget(self.lfs_header)
         
         lfs_container = QWidget()
         lfs_container.setStyleSheet("background-color: palette(window); padding: 10px;")
@@ -535,6 +535,9 @@ class RepositoryTab(QWidget):
         
         layout.addLayout(text_layout)
         
+        header.title_label = title_label
+        header.desc_label = desc_label
+        
         return header
     
     def create_middle_panel(self):
@@ -546,8 +549,8 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        history_header = self.create_section_header(tr('history_title'), tr('history_subtitle'), "git-commit")
-        layout.addWidget(history_header)
+        self.history_header = self.create_section_header(tr('history_title'), tr('history_subtitle'), "git-commit")
+        layout.addWidget(self.history_header)
         
         history_container = QWidget()
         history_container.setStyleSheet("background-color: palette(window); padding: 10px;")
@@ -599,8 +602,8 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        info_header = self.create_section_header(tr('info_title'), tr('info_subtitle'), "folder")
-        layout.addWidget(info_header)
+        self.info_header = self.create_section_header(tr('info_title'), tr('info_subtitle'), "folder")
+        layout.addWidget(self.info_header)
         
         info_container = QWidget()
         info_container.setStyleSheet("background-color: palette(base); padding: 15px;")
@@ -618,10 +621,10 @@ class RepositoryTab(QWidget):
         info_group_layout = QVBoxLayout(info_group)
         info_group_layout.setContentsMargins(0, 0, 0, 0)
         info_group_layout.setSpacing(0)
-        info_group_layout.addWidget(info_header)
+        info_group_layout.addWidget(self.info_header)
         info_group_layout.addWidget(info_container)
         
-        diff_header = self.create_section_header(tr('diff_title'), tr('diff_subtitle'), "git-diff")
+        self.diff_header = self.create_section_header(tr('diff_title'), tr('diff_subtitle'), "git-diff")
         
         diff_container = QWidget()
         diff_container.setStyleSheet("background-color: palette(window); padding: 10px;")
@@ -653,7 +656,7 @@ class RepositoryTab(QWidget):
         diff_group_layout = QVBoxLayout(diff_group)
         diff_group_layout.setContentsMargins(0, 0, 0, 0)
         diff_group_layout.setSpacing(0)
-        diff_group_layout.addWidget(diff_header)
+        diff_group_layout.addWidget(self.diff_header)
         diff_group_layout.addWidget(diff_container)
         
         right_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -739,7 +742,7 @@ class RepositoryTab(QWidget):
         
         for file_path, state in status.items():
             if state in ["M", "A", "D"]:
-                state_text = {"M": "Modificado", "A": "Agregado", "D": "Eliminado"}.get(state, state)
+                state_text = {"M": tr('modified'), "A": tr('added'), "D": tr('deleted')}.get(state, state)
                 state_color = {"M": "#dcdcaa", "A": "#4ec9b0", "D": "#f48771"}.get(state, "#cccccc")
                 
                 item = QListWidgetItem(f"  {file_path}")
@@ -754,7 +757,7 @@ class RepositoryTab(QWidget):
             else:
                 item = QListWidgetItem(f"  {file_path}")
                 item.setIcon(self.icon_manager.get_icon("file", size=16))
-                item.setToolTip(f"Sin seguimiento: {file_path}")
+                item.setToolTip(f"{tr('untracked')}: {file_path}")
                 item.setForeground(QColor("#858585"))
             
             font = QFont("Consolas", 11)
@@ -1580,6 +1583,26 @@ class RepositoryTab(QWidget):
     def update_translations(self):
         if hasattr(self, 'branch_title'):
             self.branch_title.setText(tr('current_branch_label'))
+        
+        if hasattr(self, 'changes_header'):
+            self.changes_header.title_label.setText(tr('changes_title'))
+            self.changes_header.desc_label.setText(tr('changes_subtitle'))
+        if hasattr(self, 'commit_header'):
+            self.commit_header.title_label.setText(tr('commit_title'))
+            self.commit_header.desc_label.setText(tr('commit_subtitle'))
+        if hasattr(self, 'lfs_header'):
+            self.lfs_header.title_label.setText(tr('lfs_title'))
+            self.lfs_header.desc_label.setText(tr('lfs_subtitle'))
+        if hasattr(self, 'history_header'):
+            self.history_header.title_label.setText(tr('history_title'))
+            self.history_header.desc_label.setText(tr('history_subtitle'))
+        if hasattr(self, 'info_header'):
+            self.info_header.title_label.setText(tr('info_title'))
+            self.info_header.desc_label.setText(tr('info_subtitle'))
+        if hasattr(self, 'diff_header'):
+            self.diff_header.title_label.setText(tr('diff_title'))
+            self.diff_header.desc_label.setText(tr('diff_subtitle'))
+        
         if hasattr(self, 'open_folder_btn'):
             self.open_folder_btn.setText(f" {tr('folder_button')}")
             self.open_folder_btn.setToolTip(tr('folder_tooltip'))
@@ -1628,6 +1651,6 @@ class RepositoryTab(QWidget):
             self.diff_view.setPlaceholderText(tr('select_file_diff'))
         
         if self.repo_path:
+            self.refresh_status()
             self.check_lfs_status()
             self.update_repo_info()
-            self.refresh_status()

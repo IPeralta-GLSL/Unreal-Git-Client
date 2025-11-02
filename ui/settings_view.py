@@ -81,9 +81,16 @@ class SettingsDialog(QDialog):
     
     def on_language_changed(self, index):
         language_code = self.language_combo.itemData(index)
+        if not language_code:
+            return
+        
+        from PyQt6.QtWidgets import QApplication
+        
         self.settings_manager.set_language(language_code)
         set_language(language_code)
+        
         self.language_changed.emit(language_code)
+        QApplication.processEvents()
         
         QMessageBox.information(
             self,

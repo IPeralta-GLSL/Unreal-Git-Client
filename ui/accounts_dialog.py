@@ -31,27 +31,27 @@ class AccountsDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout(self)
         
-        title = QLabel("⚙️ " + tr("settings"))
-        title.setProperty("class", "title")
-        layout.addWidget(title)
+        self.title_label = QLabel("⚙️ " + tr("settings"))
+        self.title_label.setProperty("class", "title")
+        layout.addWidget(self.title_label)
         
-        tabs = QTabWidget()
+        self.tabs = QTabWidget()
         
-        tabs.addTab(self.create_general_section(), "⚙️ " + tr("general"))
-        tabs.addTab(self.create_accounts_section(), "👤 " + tr("accounts"))
+        self.tabs.addTab(self.create_general_section(), "⚙️ " + tr("general"))
+        self.tabs.addTab(self.create_accounts_section(), "👤 " + tr("accounts"))
         if self.plugin_manager:
-            tabs.addTab(self.create_plugins_section(), "🔌 " + tr("plugins"))
-        tabs.addTab(self.create_appearance_section(), "🎨 " + tr("appearance"))
+            self.tabs.addTab(self.create_plugins_section(), "🔌 " + tr("plugins"))
+        self.tabs.addTab(self.create_appearance_section(), "🎨 " + tr("appearance"))
         
-        layout.addWidget(tabs)
+        layout.addWidget(self.tabs)
         
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        close_btn = QPushButton(tr("close"))
-        close_btn.setMinimumWidth(100)
-        close_btn.clicked.connect(self.accept)
-        button_layout.addWidget(close_btn)
+        self.close_button = QPushButton(tr("close"))
+        self.close_button.setMinimumWidth(100)
+        self.close_button.clicked.connect(self.accept)
+        button_layout.addWidget(self.close_button)
         
         layout.addLayout(button_layout)
         
@@ -1583,16 +1583,35 @@ class AccountsDialog(QDialog):
         
     
     def retranslate_ui(self):
-        """Actualiza todas las traducciones de la UI cuando cambia el idioma"""
         self.setWindowTitle("⚙️ " + tr('settings'))
         
-        self.close()
-        self.__init__(self.account_manager, self.plugin_manager, self.parent())
-        self.show()
+        if hasattr(self, 'title_label'):
+            self.title_label.setText("⚙️ " + tr("settings"))
         
-        if hasattr(self, 'parent') and self.parent():
-            main_window = self.parent()
-            if hasattr(main_window, 'update_translations'):
-                main_window.update_translations()
+        if hasattr(self, 'tabs'):
+            current_index = self.tabs.currentIndex()
+            tab_count = 0
+            self.tabs.setTabText(tab_count, "⚙️ " + tr("general"))
+            tab_count += 1
+            self.tabs.setTabText(tab_count, "👤 " + tr("accounts"))
+            tab_count += 1
+            if self.plugin_manager:
+                self.tabs.setTabText(tab_count, "🔌 " + tr("plugins"))
+                tab_count += 1
+            self.tabs.setTabText(tab_count, "🎨 " + tr("appearance"))
         
-        QApplication.processEvents()
+        if hasattr(self, 'close_button'):
+            self.close_button.setText(tr('close'))
+        
+        if hasattr(self, 'parent') and callable(self.parent):
+            parent_widget = self.parent()
+            if parent_widget and hasattr(parent_widget, 'update_translations'):
+                parent_widget.update_translations()
+            
+            if parent_widget and hasattr(parent_widget, 'tab_widget'):
+                for i in range(parent_widget.tab_widget.count()):
+                    tab = parent_widget.tab_widget.widget(i)
+                    if hasattr(tab, 'update_translations'):
+                        tab.update_translations()
+                    if hasattr(tab, 'home_view') and hasattr(tab.home_view, 'init_ui'):
+                        tab.home_view.init_ui()
