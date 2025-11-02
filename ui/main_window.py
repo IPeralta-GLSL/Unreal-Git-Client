@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
-                             QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu)
-from PyQt6.QtCore import Qt, QSize, QTimer
+                             QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame)
+from PyQt6.QtCore import Qt, QSize, QTimer, QPoint
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
@@ -19,6 +19,7 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
         self.account_manager = AccountManager()
         self.plugin_manager = plugin_manager
+        self.drag_position = QPoint()
         self.init_ui()
         self.setup_shortcuts()
         
@@ -26,6 +27,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(tr('app_name'))
         self.setGeometry(100, 100, 1400, 900)
         self.setMinimumSize(1000, 600)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         
         self.setup_statusbar()
         self.setup_central_widget()
@@ -45,6 +47,10 @@ class MainWindow(QMainWindow):
         
         layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
         
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabsClosable(True)
@@ -135,6 +141,109 @@ class MainWindow(QMainWindow):
         
         quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
         quit_shortcut.activated.connect(self.close)
+    
+    def create_title_bar(self):
+        from ui.icon_manager import IconManager
+        icon_manager = IconManager()
+        theme = get_current_theme()
+        
+        title_bar = QFrame()
+        title_bar.setFixedHeight(40)
+        title_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+            }}
+        """)
+        
+        layout = QHBoxLayout(title_bar)
+        layout.setContentsMargins(10, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        app_icon = QLabel()
+        app_icon.setPixmap(icon_manager.get_pixmap("git-branch", size=20))
+        layout.addWidget(app_icon)
+        
+        title_label = QLabel(f"  {tr('app_name')}")
+        title_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 14px;")
+        layout.addWidget(title_label)
+        
+        layout.addStretch()
+        
+        min_button = QPushButton()
+        min_button.setIcon(icon_manager.get_icon("file-minus", size=16))
+        min_button.setFixedSize(46, 40)
+        min_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        min_button.clicked.connect(self.showMinimized)
+        min_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+        """)
+        layout.addWidget(min_button)
+        
+        self.max_button = QPushButton()
+        self.max_button.setIcon(icon_manager.get_icon("file-plus", size=16))
+        self.max_button.setFixedSize(46, 40)
+        self.max_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.max_button.clicked.connect(self.toggle_maximize)
+        self.max_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+        """)
+        layout.addWidget(self.max_button)
+        
+        close_button = QPushButton()
+        close_button.setIcon(icon_manager.get_icon("x-square", size=16))
+        close_button.setFixedSize(46, 40)
+        close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_button.clicked.connect(self.close)
+        close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: #e81123;
+            }}
+        """)
+        layout.addWidget(close_button)
+        
+        title_bar.mousePressEvent = self.title_bar_mouse_press
+        title_bar.mouseMoveEvent = self.title_bar_mouse_move
+        title_bar.mouseDoubleClickEvent = self.title_bar_double_click
+        
+        return title_bar
+    
+    def title_bar_mouse_press(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+    
+    def title_bar_mouse_move(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and not self.isMaximized():
+            self.move(event.globalPosition().toPoint() - self.drag_position)
+    
+    def title_bar_double_click(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle_maximize()
+    
+    def toggle_maximize(self):
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
         
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
