@@ -4,6 +4,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QFont
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
+from core.translations import tr
 import os
 
 class HomeView(QWidget):
@@ -59,7 +60,7 @@ class HomeView(QWidget):
         header_layout.setSpacing(15)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        title = QLabel("Git Client")
+        title = QLabel(tr('git_client'))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setWordWrap(True)
         title.setStyleSheet("""
@@ -82,8 +83,8 @@ class HomeView(QWidget):
         theme = get_current_theme()
         
         open_btn = self.create_action_button(
-            " Abrir Repositorio",
-            "Abre un repositorio Git existente",
+            f" {tr('open_repository_btn')}",
+            tr('open_repository_desc'),
             theme.colors['primary'],
             "folder-open"
         )
@@ -91,8 +92,8 @@ class HomeView(QWidget):
         buttons_layout.addWidget(open_btn)
         
         clone_btn = self.create_action_button(
-            "↓ Clonar Repositorio",
-            "Descarga un repositorio remoto",
+            f"↓ {tr('clone_repository_btn')}",
+            tr('clone_repository_desc'),
             theme.colors['primary']
         )
         clone_btn.clicked.connect(self.clone_repo_requested.emit)
@@ -117,7 +118,7 @@ class HomeView(QWidget):
         if recent_section:
             left_layout.addWidget(recent_section)
         else:
-            placeholder = QLabel("No hay repositorios recientes")
+            placeholder = QLabel(tr('no_recent_repos'))
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             placeholder.setStyleSheet("color: palette(text); font-size: 14px; padding: 40px;")
             left_layout.addWidget(placeholder)
@@ -147,18 +148,18 @@ class HomeView(QWidget):
         tips_icon.setPixmap(self.icon_manager.get_pixmap("lightbulb", size=20))
         tips_title_layout.addWidget(tips_icon)
         
-        tips_title = QLabel(" Consejos Rápidos")
+        tips_title = QLabel(f" {tr('quick_tips')}")
         tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link);")
         tips_title_layout.addWidget(tips_title)
         tips_title_layout.addStretch()
         tips_layout.addLayout(tips_title_layout)
         
         tips = [
-            ("plus-circle", "Ctrl+T para nueva pestaña, Ctrl+W para cerrar"),
-            ("file-code", "Git LFS es esencial para proyectos de Unreal Engine"),
-            ("git-commit", "Escribe mensajes de commit descriptivos y claros"),
-            ("git-diff", "Usa Pull antes de Push para evitar conflictos"),
-            ("git-branch", "Crea ramas para nuevas características"),
+            ("plus-circle", tr('tip_new_tab')),
+            ("file-code", tr('tip_git_lfs')),
+            ("git-commit", tr('tip_commit_messages')),
+            ("git-diff", tr('tip_pull_before_push')),
+            ("git-branch", tr('tip_create_branches')),
         ]
         
         for icon_name, tip in tips:
@@ -196,13 +197,13 @@ class HomeView(QWidget):
         footer_layout.setSpacing(5)
         footer_layout.setContentsMargins(0, 20, 0, 0)
         
-        shortcuts_label = QLabel("Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar")
+        shortcuts_label = QLabel(tr('shortcuts_text'))
         shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         shortcuts_label.setWordWrap(True)
         shortcuts_label.setStyleSheet("color: palette(text); font-size: 11px;")
         footer_layout.addWidget(shortcuts_label)
         
-        version_label = QLabel("v1.0.0 • Soporte para Git LFS y Unreal Engine")
+        version_label = QLabel(tr('version_text'))
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_label.setWordWrap(True)
         version_label.setStyleSheet("font-size: 10px; color: palette(text);")
@@ -245,7 +246,7 @@ class HomeView(QWidget):
         header_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=20))
         header_layout.addWidget(header_icon)
         
-        header = QLabel(" Repositorios Recientes")
+        header = QLabel(f" {tr('recent_repositories')}")
         header.setStyleSheet("color: palette(bright-text); font-size: 15px; font-weight: bold;")
         header_layout.addWidget(header)
         header_layout.addStretch()
