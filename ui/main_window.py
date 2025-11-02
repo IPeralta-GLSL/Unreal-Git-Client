@@ -247,8 +247,8 @@ class MainWindow(QMainWindow):
                 tab.update_translations()
             elif hasattr(tab, 'retranslate_ui'):
                 tab.retranslate_ui()
-            if hasattr(tab, 'home_view') and hasattr(tab.home_view, 'init_ui'):
-                tab.home_view.init_ui()
+            if hasattr(tab, 'home_view') and hasattr(tab.home_view, 'update_translations'):
+                tab.home_view.update_translations()
     
     def update_translations(self):
         self.status_bar.showMessage(tr('ready'))

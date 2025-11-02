@@ -60,16 +60,16 @@ class HomeView(QWidget):
         header_layout.setSpacing(15)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        title = QLabel(tr('git_client'))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setWordWrap(True)
-        title.setStyleSheet("""
+        self.title = QLabel(tr('git_client'))
+        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title.setWordWrap(True)
+        self.title.setStyleSheet("""
             font-size: 32px;
             font-weight: bold;
             color: palette(bright-text);
             margin: 5px;
         """)
-        header_layout.addWidget(title)
+        header_layout.addWidget(self.title)
         
         layout.addWidget(header_container)
         
@@ -82,22 +82,22 @@ class HomeView(QWidget):
         
         theme = get_current_theme()
         
-        open_btn = self.create_action_button(
+        self.open_btn = self.create_action_button(
             f" {tr('open_repository_btn')}",
             tr('open_repository_desc'),
             theme.colors['primary'],
             "folder-open"
         )
-        open_btn.clicked.connect(self.open_repo_requested.emit)
-        buttons_layout.addWidget(open_btn)
+        self.open_btn.clicked.connect(self.open_repo_requested.emit)
+        buttons_layout.addWidget(self.open_btn)
         
-        clone_btn = self.create_action_button(
+        self.clone_btn = self.create_action_button(
             f"↓ {tr('clone_repository_btn')}",
             tr('clone_repository_desc'),
             theme.colors['primary']
         )
-        clone_btn.clicked.connect(self.clone_repo_requested.emit)
-        buttons_layout.addWidget(clone_btn)
+        self.clone_btn.clicked.connect(self.clone_repo_requested.emit)
+        buttons_layout.addWidget(self.clone_btn)
         
         layout.addWidget(buttons_container)
         
@@ -148,21 +148,22 @@ class HomeView(QWidget):
         tips_icon.setPixmap(self.icon_manager.get_pixmap("lightbulb", size=20))
         tips_title_layout.addWidget(tips_icon)
         
-        tips_title = QLabel(f" {tr('quick_tips')}")
-        tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link);")
-        tips_title_layout.addWidget(tips_title)
+        self.tips_title = QLabel(f" {tr('quick_tips')}")
+        self.tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link);")
+        tips_title_layout.addWidget(self.tips_title)
         tips_title_layout.addStretch()
         tips_layout.addLayout(tips_title_layout)
         
-        tips = [
-            ("plus-circle", tr('tip_new_tab')),
-            ("file-code", tr('tip_git_lfs')),
-            ("git-commit", tr('tip_commit_messages')),
-            ("git-diff", tr('tip_pull_before_push')),
-            ("git-branch", tr('tip_create_branches')),
+        tips_data = [
+            ("plus-circle", 'tip_new_tab'),
+            ("file-code", 'tip_git_lfs'),
+            ("git-commit", 'tip_commit_messages'),
+            ("git-diff", 'tip_pull_before_push'),
+            ("git-branch", 'tip_create_branches'),
         ]
         
-        for icon_name, tip in tips:
+        self.tip_labels = []
+        for icon_name, tip_key in tips_data:
             tip_container = QWidget()
             tip_layout = QHBoxLayout(tip_container)
             tip_layout.setContentsMargins(0, 0, 0, 0)
@@ -174,11 +175,12 @@ class HomeView(QWidget):
             icon_label.setFixedWidth(30)
             tip_layout.addWidget(icon_label)
             
-            tip_label = QLabel(tip)
+            tip_label = QLabel(tr(tip_key))
             tip_label.setWordWrap(True)
             tip_label.setStyleSheet("font-size: 12px; color: palette(window-text);")
             tip_layout.addWidget(tip_label, stretch=1)
             
+            self.tip_labels.append((tip_label, tip_key))
             tips_layout.addWidget(tip_container)
         
         right_layout.addWidget(tips_container)
@@ -197,17 +199,17 @@ class HomeView(QWidget):
         footer_layout.setSpacing(5)
         footer_layout.setContentsMargins(0, 20, 0, 0)
         
-        shortcuts_label = QLabel(tr('shortcuts_text'))
-        shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        shortcuts_label.setWordWrap(True)
-        shortcuts_label.setStyleSheet("color: palette(text); font-size: 11px;")
-        footer_layout.addWidget(shortcuts_label)
+        self.shortcuts_label = QLabel(tr('shortcuts_text'))
+        self.shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.shortcuts_label.setWordWrap(True)
+        self.shortcuts_label.setStyleSheet("color: palette(text); font-size: 11px;")
+        footer_layout.addWidget(self.shortcuts_label)
         
-        version_label = QLabel(tr('version_text'))
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        version_label.setWordWrap(True)
-        version_label.setStyleSheet("font-size: 10px; color: palette(text);")
-        footer_layout.addWidget(version_label)
+        self.version_label = QLabel(tr('version_text'))
+        self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.version_label.setWordWrap(True)
+        self.version_label.setStyleSheet("font-size: 10px; color: palette(text);")
+        footer_layout.addWidget(self.version_label)
         
         layout.addWidget(footer)
         
@@ -385,6 +387,9 @@ class HomeView(QWidget):
         """)
         layout.addWidget(btn_desc)
         
+        button.text_label = btn_text
+        button.desc_label = btn_desc
+        
         return button
     
     def lighten_color(self, color):
@@ -400,3 +405,28 @@ class HomeView(QWidget):
             "#16825d": "#136d4d"
         }
         return color_map.get(color, color)
+    
+    def update_translations(self):
+        if hasattr(self, 'title'):
+            self.title.setText(tr('git_client'))
+        
+        if hasattr(self, 'open_btn'):
+            self.open_btn.text_label.setText(f" {tr('open_repository_btn')}")
+            self.open_btn.desc_label.setText(tr('open_repository_desc'))
+        
+        if hasattr(self, 'clone_btn'):
+            self.clone_btn.text_label.setText(f"↓ {tr('clone_repository_btn')}")
+            self.clone_btn.desc_label.setText(tr('clone_repository_desc'))
+        
+        if hasattr(self, 'tips_title'):
+            self.tips_title.setText(f" {tr('quick_tips')}")
+        
+        if hasattr(self, 'tip_labels'):
+            for tip_label, tip_key in self.tip_labels:
+                tip_label.setText(tr(tip_key))
+        
+        if hasattr(self, 'shortcuts_label'):
+            self.shortcuts_label.setText(tr('shortcuts_text'))
+        
+        if hasattr(self, 'version_label'):
+            self.version_label.setText(tr('version_text'))
