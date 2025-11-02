@@ -243,8 +243,12 @@ class MainWindow(QMainWindow):
         self.update_translations()
         for i in range(self.tab_widget.count()):
             tab = self.tab_widget.widget(i)
-            if hasattr(tab, 'retranslate_ui'):
+            if hasattr(tab, 'update_translations'):
+                tab.update_translations()
+            elif hasattr(tab, 'retranslate_ui'):
                 tab.retranslate_ui()
+            if hasattr(tab, 'home_view') and hasattr(tab.home_view, 'init_ui'):
+                tab.home_view.init_ui()
     
     def update_translations(self):
         self.status_bar.showMessage(tr('ready'))

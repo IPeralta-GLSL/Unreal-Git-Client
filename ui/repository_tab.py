@@ -10,6 +10,7 @@ from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
 from ui.theme import get_current_theme
+from core.translations import tr
 import os
 import sys
 import hashlib
@@ -41,6 +42,61 @@ class RepositoryTab(QWidget):
         self.network_manager.finished.connect(self.on_avatar_downloaded)
         self.icon_manager = IconManager()
         self.init_ui()
+    
+    def update_translations(self):
+        if hasattr(self, 'branch_title'):
+            self.branch_title.setText(tr('current_branch_label'))
+        if hasattr(self, 'open_folder_btn'):
+            self.open_folder_btn.setText(f" {tr('folder_button')}")
+            self.open_folder_btn.setToolTip(tr('folder_tooltip'))
+        if hasattr(self, 'open_terminal_btn'):
+            self.open_terminal_btn.setText(f" {tr('terminal_button')}")
+            self.open_terminal_btn.setToolTip(tr('terminal_tooltip'))
+        if hasattr(self, 'open_unreal_btn'):
+            self.open_unreal_btn.setText(f" {tr('unreal_button')}")
+            self.open_unreal_btn.setToolTip(tr('unreal_tooltip'))
+        if hasattr(self, 'pull_btn'):
+            self.pull_btn.setText(f" {tr('pull')}")
+            self.pull_btn.setToolTip(tr('pull_tooltip'))
+        if hasattr(self, 'push_btn'):
+            self.push_btn.setText(f" {tr('push')}")
+            self.push_btn.setToolTip(tr('push_tooltip'))
+        if hasattr(self, 'fetch_btn'):
+            self.fetch_btn.setText(f" {tr('fetch')}")
+            self.fetch_btn.setToolTip(tr('fetch_tooltip'))
+        if hasattr(self, 'refresh_btn'):
+            self.refresh_btn.setText(f" {tr('refresh')}")
+            self.refresh_btn.setToolTip(tr('refresh_tooltip'))
+        if hasattr(self, 'stage_all_btn'):
+            self.stage_all_btn.setText(f" {tr('add_all')}")
+            self.stage_all_btn.setToolTip(tr('add_all_tooltip'))
+        if hasattr(self, 'stage_btn'):
+            self.stage_btn.setText(f" {tr('add')}")
+            self.stage_btn.setToolTip(tr('add_tooltip'))
+        if hasattr(self, 'unstage_btn'):
+            self.unstage_btn.setText(f" {tr('remove')}")
+            self.unstage_btn.setToolTip(tr('remove_tooltip'))
+        if hasattr(self, 'commit_message'):
+            self.commit_message.setPlaceholderText(tr('commit_placeholder'))
+        if hasattr(self, 'commit_btn'):
+            self.commit_btn.setText(f" {tr('commit_and_save')}")
+            self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))
+        if hasattr(self, 'lfs_install_btn'):
+            self.lfs_install_btn.setText(f" {tr('install')}")
+            self.lfs_install_btn.setToolTip(tr('install_tooltip'))
+        if hasattr(self, 'lfs_track_btn'):
+            self.lfs_track_btn.setText(f" {tr('config_unreal')}")
+            self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
+        if hasattr(self, 'lfs_pull_btn'):
+            self.lfs_pull_btn.setText(f" {tr('download_lfs_files')}")
+            self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
+        if hasattr(self, 'diff_view'):
+            self.diff_view.setPlaceholderText(tr('select_file_diff'))
+        
+        self.check_lfs_status()
+        if self.repo_path:
+            self.update_repo_info()
+            self.refresh_status()
         
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -106,10 +162,10 @@ class RepositoryTab(QWidget):
         branch_layout.setContentsMargins(0, 0, 0, 0)
         branch_layout.setSpacing(3)
         
-        branch_title = QLabel("RAMA ACTUAL (clic para cambiar)")
-        branch_title.setStyleSheet(f"color: {theme.colors['primary']}; font-size: {theme.fonts['size_xs']}px; font-weight: {theme.fonts['weight_bold']};")
-        branch_title.setMaximumHeight(14)
-        branch_layout.addWidget(branch_title)
+        self.branch_title = QLabel(tr('current_branch_label'))
+        self.branch_title.setStyleSheet(f"color: {theme.colors['primary']}; font-size: {theme.fonts['size_xs']}px; font-weight: {theme.fonts['weight_bold']};")
+        self.branch_title.setMaximumHeight(14)
+        branch_layout.addWidget(self.branch_title)
         
         self.branch_button = QPushButton()
         self.branch_button.setText("main")
@@ -179,33 +235,33 @@ class RepositoryTab(QWidget):
             }}
         """
         
-        self.open_folder_btn = QPushButton(" Carpeta")
+        self.open_folder_btn = QPushButton(f" {tr('folder_button')}")
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         self.open_folder_btn.setMinimumSize(100, 36)
         self.open_folder_btn.setMaximumSize(130, 36)
         self.open_folder_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.open_folder_btn.setStyleSheet(button_style)
-        self.open_folder_btn.setToolTip("Abrir carpeta del proyecto")
+        self.open_folder_btn.setToolTip(tr('folder_tooltip'))
         self.open_folder_btn.clicked.connect(self.open_project_folder)
         layout.addWidget(self.open_folder_btn)
         
-        self.open_terminal_btn = QPushButton(" Terminal")
+        self.open_terminal_btn = QPushButton(f" {tr('terminal_button')}")
         self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=18))
         self.open_terminal_btn.setMinimumSize(100, 36)
         self.open_terminal_btn.setMaximumSize(130, 36)
         self.open_terminal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.open_terminal_btn.setStyleSheet(button_style)
-        self.open_terminal_btn.setToolTip("Abrir terminal en la carpeta del proyecto")
+        self.open_terminal_btn.setToolTip(tr('terminal_tooltip'))
         self.open_terminal_btn.clicked.connect(self.open_terminal)
         layout.addWidget(self.open_terminal_btn)
         
-        self.open_unreal_btn = QPushButton(" Unreal")
+        self.open_unreal_btn = QPushButton(f" {tr('unreal_button')}")
         self.open_unreal_btn.setIcon(self.icon_manager.get_icon("unreal-engine-svgrepo-com", size=18))
         self.open_unreal_btn.setMinimumSize(100, 36)
         self.open_unreal_btn.setMaximumSize(130, 36)
         self.open_unreal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.open_unreal_btn.setStyleSheet(button_style)
-        self.open_unreal_btn.setToolTip("Abrir proyecto con Unreal Engine")
+        self.open_unreal_btn.setToolTip(tr('unreal_tooltip'))
         self.open_unreal_btn.clicked.connect(self.open_with_unreal)
         layout.addWidget(self.open_unreal_btn)
         
@@ -219,43 +275,43 @@ class RepositoryTab(QWidget):
         
         layout.addSpacing(10)
         
-        self.pull_btn = QPushButton(" Pull")
+        self.pull_btn = QPushButton(f" {tr('pull')}")
         self.pull_btn.setIcon(self.icon_manager.get_icon("download", size=18))
         self.pull_btn.setMinimumSize(85, 36)
         self.pull_btn.setMaximumSize(110, 36)
         self.pull_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.pull_btn.setStyleSheet(button_style)
-        self.pull_btn.setToolTip("Descargar cambios del servidor")
+        self.pull_btn.setToolTip(tr('pull_tooltip'))
         self.pull_btn.clicked.connect(self.do_pull)
         layout.addWidget(self.pull_btn)
         
-        self.push_btn = QPushButton(" Push")
+        self.push_btn = QPushButton(f" {tr('push')}")
         self.push_btn.setIcon(self.icon_manager.get_icon("git-pull-request", size=18))
         self.push_btn.setMinimumSize(85, 36)
         self.push_btn.setMaximumSize(110, 36)
         self.push_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.push_btn.setStyleSheet(button_style)
-        self.push_btn.setToolTip("Subir tus cambios al servidor")
+        self.push_btn.setToolTip(tr('push_tooltip'))
         self.push_btn.clicked.connect(self.do_push)
         layout.addWidget(self.push_btn)
         
-        self.fetch_btn = QPushButton(" Fetch")
+        self.fetch_btn = QPushButton(f" {tr('fetch')}")
         self.fetch_btn.setIcon(self.icon_manager.get_icon("git-diff", size=18))
         self.fetch_btn.setMinimumSize(85, 36)
         self.fetch_btn.setMaximumSize(110, 36)
         self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.fetch_btn.setStyleSheet(button_style)
-        self.fetch_btn.setToolTip("Actualizar información sin descargar")
+        self.fetch_btn.setToolTip(tr('fetch_tooltip'))
         self.fetch_btn.clicked.connect(self.do_fetch)
         layout.addWidget(self.fetch_btn)
         
-        self.refresh_btn = QPushButton(" Refresh")
+        self.refresh_btn = QPushButton(f" {tr('refresh')}")
         self.refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
         self.refresh_btn.setMinimumSize(85, 36)
         self.refresh_btn.setMaximumSize(110, 36)
         self.refresh_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.refresh_btn.setStyleSheet(button_style)
-        self.refresh_btn.setToolTip("Actualizar estado del repositorio")
+        self.refresh_btn.setToolTip(tr('refresh_tooltip'))
         self.refresh_btn.clicked.connect(self.refresh_status)
         layout.addWidget(self.refresh_btn)
         
@@ -272,7 +328,7 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        changes_header = self.create_section_header("CAMBIOS", "Archivos modificados en tu repositorio", "file-text")
+        changes_header = self.create_section_header(tr('changes_title'), tr('changes_subtitle'), "file-text")
         layout.addWidget(changes_header)
         
         changes_container = QWidget()
@@ -312,28 +368,28 @@ class RepositoryTab(QWidget):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(5)
         
-        self.stage_all_btn = QPushButton(" Agregar Todo")
+        self.stage_all_btn = QPushButton(f" {tr('add_all')}")
         self.stage_all_btn.setIcon(self.icon_manager.get_icon("folder-plus", size=16))
-        self.stage_all_btn.setToolTip("Agregar todos los cambios")
+        self.stage_all_btn.setToolTip(tr('add_all_tooltip'))
         self.stage_all_btn.clicked.connect(self.stage_all)
         btn_layout.addWidget(self.stage_all_btn)
         
-        self.stage_btn = QPushButton(" Agregar")
+        self.stage_btn = QPushButton(f" {tr('add')}")
         self.stage_btn.setIcon(self.icon_manager.get_icon("file-plus", size=16))
-        self.stage_btn.setToolTip("Agregar archivo seleccionado")
+        self.stage_btn.setToolTip(tr('add_tooltip'))
         self.stage_btn.clicked.connect(self.stage_selected)
         btn_layout.addWidget(self.stage_btn)
         
-        self.unstage_btn = QPushButton(" Quitar")
+        self.unstage_btn = QPushButton(f" {tr('remove')}")
         self.unstage_btn.setIcon(self.icon_manager.get_icon("file-minus", size=16))
-        self.unstage_btn.setToolTip("Quitar archivo del staging")
+        self.unstage_btn.setToolTip(tr('remove_tooltip'))
         self.unstage_btn.clicked.connect(self.unstage_selected)
         btn_layout.addWidget(self.unstage_btn)
         
         changes_layout.addLayout(btn_layout)
         layout.addWidget(changes_container)
         
-        commit_header = self.create_section_header("COMMIT", "Guardar cambios con un mensaje descriptivo", "git-commit")
+        commit_header = self.create_section_header(tr('commit_title'), tr('commit_subtitle'), "git-commit")
         layout.addWidget(commit_header)
         
         commit_container = QWidget()
@@ -342,7 +398,7 @@ class RepositoryTab(QWidget):
         commit_layout.setContentsMargins(10, 10, 10, 10)
         
         self.commit_message = QTextEdit()
-        self.commit_message.setPlaceholderText("Describe tus cambios...")
+        self.commit_message.setPlaceholderText(tr('commit_placeholder'))
         self.commit_message.setMaximumHeight(100)
         self.commit_message.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.commit_message.setStyleSheet("""
@@ -360,7 +416,7 @@ class RepositoryTab(QWidget):
         """)
         commit_layout.addWidget(self.commit_message)
         
-        self.commit_btn = QPushButton(" Hacer Commit y Guardar")
+        self.commit_btn = QPushButton(f" {tr('commit_and_save')}")
         self.commit_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18))
         self.commit_btn.setMinimumHeight(40)
         self.commit_btn.setStyleSheet(f"""
@@ -379,13 +435,13 @@ class RepositoryTab(QWidget):
                 background-color: {theme.colors['success_pressed']};
             }}
         """)
-        self.commit_btn.setToolTip("Guardar todos los cambios preparados con este mensaje")
+        self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))
         self.commit_btn.clicked.connect(self.do_commit)
         commit_layout.addWidget(self.commit_btn)
         
         layout.addWidget(commit_container)
         
-        lfs_header = self.create_section_header("GIT LFS", "Manejo de archivos grandes de Unreal Engine", "files")
+        lfs_header = self.create_section_header(tr('lfs_title'), tr('lfs_subtitle'), "files")
         layout.addWidget(lfs_header)
         
         lfs_container = QWidget()
@@ -402,7 +458,7 @@ class RepositoryTab(QWidget):
         status_icon.setPixmap(self.icon_manager.get_pixmap("info", 16))
         status_layout.addWidget(status_icon)
         
-        self.lfs_status_label = QLabel("Estado: No inicializado")
+        self.lfs_status_label = QLabel(tr('lfs_status'))
         self.lfs_status_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
         status_layout.addWidget(self.lfs_status_label)
         status_layout.addStretch()
@@ -413,23 +469,23 @@ class RepositoryTab(QWidget):
         lfs_btn_layout = QHBoxLayout()
         lfs_btn_layout.setSpacing(5)
         
-        self.lfs_install_btn = QPushButton(" Instalar")
+        self.lfs_install_btn = QPushButton(f" {tr('install')}")
         self.lfs_install_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.lfs_install_btn.setToolTip("Instalar Git LFS en este repositorio")
+        self.lfs_install_btn.setToolTip(tr('install_tooltip'))
         self.lfs_install_btn.clicked.connect(self.install_lfs)
         lfs_btn_layout.addWidget(self.lfs_install_btn)
         
-        self.lfs_track_btn = QPushButton(" Config Unreal")
+        self.lfs_track_btn = QPushButton(f" {tr('config_unreal')}")
         self.lfs_track_btn.setIcon(self.icon_manager.get_icon("file-code", size=16))
-        self.lfs_track_btn.setToolTip("Configurar LFS para archivos de Unreal Engine")
+        self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
         self.lfs_track_btn.clicked.connect(self.track_unreal_files)
         lfs_btn_layout.addWidget(self.lfs_track_btn)
         
         lfs_layout.addLayout(lfs_btn_layout)
         
-        self.lfs_pull_btn = QPushButton(" Descargar Archivos LFS")
+        self.lfs_pull_btn = QPushButton(f" {tr('download_lfs_files')}")
         self.lfs_pull_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.lfs_pull_btn.setToolTip("Descargar archivos grandes rastreados por LFS")
+        self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
         self.lfs_pull_btn.clicked.connect(self.do_lfs_pull)
         lfs_layout.addWidget(self.lfs_pull_btn)
         
@@ -490,7 +546,7 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        history_header = self.create_section_header("HISTORIAL", "Gráfico de commits del repositorio", "git-commit")
+        history_header = self.create_section_header(tr('history_title'), tr('history_subtitle'), "git-commit")
         layout.addWidget(history_header)
         
         history_container = QWidget()
@@ -543,7 +599,7 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        info_header = self.create_section_header("INFORMACIÓN", "Detalles del repositorio actual", "folder")
+        info_header = self.create_section_header(tr('info_title'), tr('info_subtitle'), "folder")
         layout.addWidget(info_header)
         
         info_container = QWidget()
@@ -553,7 +609,7 @@ class RepositoryTab(QWidget):
         info_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         info_layout = QVBoxLayout(info_container)
         
-        self.repo_info = QLabel("No hay repositorio cargado")
+        self.repo_info = QLabel(tr('no_repo_loaded'))
         self.repo_info.setWordWrap(True)
         self.repo_info.setStyleSheet("color: palette(window-text); line-height: 1.6;")
         info_layout.addWidget(self.repo_info)
@@ -565,7 +621,7 @@ class RepositoryTab(QWidget):
         info_group_layout.addWidget(info_header)
         info_group_layout.addWidget(info_container)
         
-        diff_header = self.create_section_header("DIFERENCIAS", "Cambios en el archivo seleccionado", "git-diff")
+        diff_header = self.create_section_header(tr('diff_title'), tr('diff_subtitle'), "git-diff")
         
         diff_container = QWidget()
         diff_container.setStyleSheet("background-color: palette(window); padding: 10px;")
@@ -575,7 +631,7 @@ class RepositoryTab(QWidget):
         self.diff_view = QTextEdit()
         self.diff_view.setReadOnly(True)
         self.diff_view.setFont(QFont("Courier New", 10))
-        self.diff_view.setPlaceholderText("Selecciona un archivo para ver sus cambios...")
+        self.diff_view.setPlaceholderText(tr('select_file_diff'))
         self.diff_view.setStyleSheet("""
             QTextEdit {
                 background-color: palette(window);
@@ -672,7 +728,7 @@ class RepositoryTab(QWidget):
         self.changes_list.clear()
         
         if not status:
-            item = QListWidgetItem("  No hay cambios - Todo está actualizado")
+            item = QListWidgetItem(f"  {tr('no_changes')}")
             item.setIcon(self.icon_manager.get_icon("check", size=16))
             item.setForeground(QColor("#4ec9b0"))
             font = QFont("Segoe UI", 11)
@@ -719,9 +775,9 @@ class RepositoryTab(QWidget):
         success, message = self.git_manager.stage_all()
         if success:
             self.refresh_status()
-            QMessageBox.information(self, "Éxito", "Todos los archivos han sido agregados")
+            QMessageBox.information(self, tr('success'), tr('success_all_files_added'))
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
     
     def stage_selected(self):
         current_item = self.changes_list.currentItem()
@@ -731,7 +787,7 @@ class RepositoryTab(QWidget):
             if success:
                 self.refresh_status()
             else:
-                QMessageBox.warning(self, "Error", message)
+                QMessageBox.warning(self, tr('error'), message)
                 
     def unstage_selected(self):
         current_item = self.changes_list.currentItem()
@@ -741,46 +797,46 @@ class RepositoryTab(QWidget):
             if success:
                 self.refresh_status()
             else:
-                QMessageBox.warning(self, "Error", message)
+                QMessageBox.warning(self, tr('error'), message)
                 
     def do_commit(self):
         message = self.commit_message.toPlainText().strip()
         if not message:
-            QMessageBox.warning(self, "Error", "Debes escribir un mensaje para el commit")
+            QMessageBox.warning(self, tr('error'), tr('error_commit_message'))
             return
             
         success, result = self.git_manager.commit(message)
         if success:
-            QMessageBox.information(self, "Éxito", "Commit realizado correctamente")
+            QMessageBox.information(self, tr('success'), tr('success_commit'))
             self.commit_message.clear()
             self.refresh_status()
             self.load_history()
         else:
-            QMessageBox.warning(self, "Error", result)
+            QMessageBox.warning(self, tr('error'), result)
             
     def do_pull(self):
         success, message = self.git_manager.pull()
         if success:
-            QMessageBox.information(self, "Éxito", "Pull completado")
+            QMessageBox.information(self, tr('success'), tr('success_pull'))
             self.refresh_status()
             self.load_history()
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
             
     def do_push(self):
         success, message = self.git_manager.push()
         if success:
-            QMessageBox.information(self, "Éxito", "Push completado")
+            QMessageBox.information(self, tr('success'), tr('success_push'))
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
             
     def do_fetch(self):
         success, message = self.git_manager.fetch()
         if success:
-            QMessageBox.information(self, "Éxito", "Fetch completado")
+            QMessageBox.information(self, tr('success'), tr('success_fetch'))
             self.load_history()
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
             
     def update_repo_info(self):
         if not self.repo_path:
@@ -795,15 +851,15 @@ class RepositoryTab(QWidget):
                 uproject = unreal_plugin.get_uproject_file(self.repo_path)
                 if uproject:
                     project_name = os.path.basename(uproject).replace('.uproject', '')
-                    project_type = f"<b>Proyecto Unreal:</b> {project_name}<br>"
+                    project_type = f"<b>{tr('unreal_project')}:</b> {project_name}<br>"
                 else:
-                    project_type = "<b>Tipo:</b> Proyecto Unreal Engine<br>"
+                    project_type = f"<b>{tr('project_type')}:</b> {tr('unreal_engine_project')}<br>"
         
         info_text = f"""
-{project_type}<b>Ruta:</b> {self.repo_path}<br>
-<b>Rama actual:</b> {info.get('branch', 'N/A')}<br>
-<b>Remoto:</b> {info.get('remote', 'N/A')}<br>
-<b>Último commit:</b> {info.get('last_commit', 'N/A')}<br>
+{project_type}<b>{tr('path')}:</b> {self.repo_path}<br>
+<b>{tr('current_branch_info')}:</b> {info.get('branch', 'N/A')}<br>
+<b>{tr('remote')}:</b> {info.get('remote', 'N/A')}<br>
+<b>{tr('last_commit')}:</b> {info.get('last_commit', 'N/A')}<br>
         """
         self.repo_info.setText(info_text)
         
@@ -886,8 +942,8 @@ class RepositoryTab(QWidget):
     def create_branch_from_commit_quick(self, commit_hash):
         branch_name, ok = QInputDialog.getText(
             self,
-            "Crear Rama",
-            f"Nombre de la nueva rama desde commit {commit_hash[:7]}:",
+            tr('create_branch_from_commit'),
+            tr('create_branch_from_commit_text', hash=commit_hash[:7]),
             QLineEdit.EchoMode.Normal,
             ""
         )
@@ -897,48 +953,46 @@ class RepositoryTab(QWidget):
             if success:
                 QMessageBox.information(
                     self,
-                    "Éxito",
-                    f"Rama '{branch_name}' creada desde el commit {commit_hash[:7]}"
+                    tr('success'),
+                    tr('branch_created_from_commit', branch=branch_name, hash=commit_hash[:7])
                 )
                 self.refresh_status()
             else:
-                QMessageBox.warning(self, "Error", f"No se pudo crear la rama:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_create_branch')}:\n{message}")
     
     def reset_commit_quick(self, commit_hash, mode):
         mode_names = {
-            'soft': 'Soft (mantener cambios)',
-            'mixed': 'Mixed (descartar staging)',
-            'hard': 'Hard (descartar todo)'
+            'soft': tr('reset_soft'),
+            'mixed': tr('reset_mixed'),
+            'hard': tr('reset_hard')
         }
         
         warning = ""
         if mode == 'hard':
-            warning = "\n\n⚠ ADVERTENCIA: Perderás todos los cambios no guardados!"
+            warning = tr('reset_warning')
         
         reply = QMessageBox.question(
             self,
-            "Confirmar Reset",
-            f"¿Hacer reset {mode_names[mode]} al commit {commit_hash[:7]}?{warning}",
+            tr('confirm_reset'),
+            tr('reset_question', mode=mode_names[mode], hash=commit_hash[:7], warning=warning),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             success, message = self.git_manager.reset_to_commit(commit_hash, mode)
             if success:
-                QMessageBox.information(self, "Éxito", f"Reset {mode} completado")
+                QMessageBox.information(self, tr('success'), tr('success_reset', mode=mode))
                 self.refresh_status()
                 self.load_history()
                 self.update_repo_info()
             else:
-                QMessageBox.warning(self, "Error", f"Error en reset:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_reset')}:\n{message}")
     
     def checkout_commit_quick(self, commit_hash):
         reply = QMessageBox.question(
             self,
-            "Confirmar Checkout",
-            f"¿Ver el commit {commit_hash[:7]}?\n\n" +
-            "Estarás en modo 'detached HEAD'.\n" +
-            "Para guardar cambios, crea una nueva rama.",
+            tr('confirm_checkout'),
+            tr('checkout_question', hash=commit_hash[:7]),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -947,19 +1001,18 @@ class RepositoryTab(QWidget):
             if success:
                 QMessageBox.information(
                     self,
-                    "Éxito",
-                    f"Ahora estás viendo el commit {commit_hash[:7]}\n\n" +
-                    "Usa el menú de ramas para volver a una rama normal."
+                    tr('success'),
+                    tr('checkout_success', hash=commit_hash[:7])
                 )
                 self.refresh_status()
                 self.update_repo_info()
             else:
-                QMessageBox.warning(self, "Error", f"Error:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error')}:\n{message}")
     
     def copy_commit_hash(self, commit_hash):
         clipboard = QApplication.clipboard()
         clipboard.setText(commit_hash)
-        self.statusBar().showMessage(f"Hash copiado: {commit_hash[:7]}", 2000) if hasattr(self, 'statusBar') else None
+        self.statusBar().showMessage(tr('hash_copied', hash=commit_hash[:7]), 2000) if hasattr(self, 'statusBar') else None
     
     def show_branch_menu(self):
         branches = self.git_manager.get_all_branches()
@@ -988,7 +1041,7 @@ class RepositoryTab(QWidget):
             }
         """)
         
-        header = QAction("  Cambiar Rama", self)
+        header = QAction(f"  {tr('change_branch_menu')}", self)
         header.setIcon(self.icon_manager.get_icon("git-branch", size=16))
         header.setEnabled(False)
         menu.addAction(header)
@@ -1014,7 +1067,7 @@ class RepositoryTab(QWidget):
         
         if remote_branches:
             menu.addSeparator()
-            remote_header = QAction("  Ramas Remotas", self)
+            remote_header = QAction(f"  {tr('remote_branches')}", self)
             remote_header.setIcon(self.icon_manager.get_icon("share-network", size=16))
             remote_header.setEnabled(False)
             menu.addAction(remote_header)
@@ -1028,12 +1081,12 @@ class RepositoryTab(QWidget):
         
         menu.addSeparator()
         
-        new_branch_action = QAction("  Nueva Rama...", self)
+        new_branch_action = QAction(f"  {tr('new_branch_menu')}", self)
         new_branch_action.setIcon(self.icon_manager.get_icon("plus-circle", size=16))
         new_branch_action.triggered.connect(self.create_new_branch_quick)
         menu.addAction(new_branch_action)
         
-        manage_action = QAction("  Administrar Ramas...", self)
+        manage_action = QAction(f"  {tr('manage_branches')}", self)
         manage_action.setIcon(self.icon_manager.get_icon("gear-six", size=16))
         manage_action.triggered.connect(self.open_branch_manager)
         menu.addAction(manage_action)
@@ -1045,8 +1098,8 @@ class RepositoryTab(QWidget):
         
         reply = QMessageBox.question(
             self,
-            "Cambiar Rama",
-            f"¿Cambiar a la rama '{clean_name}'?",
+            tr('change_branch_dialog'),
+            tr('change_branch_question', branch=clean_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -1057,13 +1110,13 @@ class RepositoryTab(QWidget):
                 self.load_history()
                 self.update_repo_info()
             else:
-                QMessageBox.warning(self, "Error", f"No se pudo cambiar de rama:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_change_branch')}:\n{message}")
     
     def create_new_branch_quick(self):
         branch_name, ok = QInputDialog.getText(
             self,
-            "Nueva Rama",
-            "Nombre de la nueva rama:",
+            tr('new_branch_dialog'),
+            tr('new_branch_name'),
             QLineEdit.EchoMode.Normal,
             ""
         )
@@ -1073,8 +1126,8 @@ class RepositoryTab(QWidget):
             if success:
                 reply = QMessageBox.question(
                     self,
-                    "Rama Creada",
-                    f"Rama '{branch_name}' creada correctamente.\n\n¿Cambiar a esta rama ahora?",
+                    tr('branch_created'),
+                    tr('branch_created_question', branch=branch_name),
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
                 
@@ -1085,7 +1138,7 @@ class RepositoryTab(QWidget):
                 self.load_history()
                 self.update_repo_info()
             else:
-                QMessageBox.warning(self, "Error", f"No se pudo crear la rama:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_create_branch')}:\n{message}")
     
     def on_commit_double_clicked(self, item):
         commit_hash = item.data(Qt.ItemDataRole.UserRole)
@@ -1313,17 +1366,17 @@ class RepositoryTab(QWidget):
             return
             
         if self.git_manager.is_lfs_installed():
-            self.lfs_status_label.setText("Estado: LFS instalado")
+            self.lfs_status_label.setText(tr('lfs_installed'))
         else:
-            self.lfs_status_label.setText("Estado: LFS no instalado")
+            self.lfs_status_label.setText(tr('lfs_not_installed'))
             
     def install_lfs(self):
         success, message = self.git_manager.install_lfs()
         if success:
-            QMessageBox.information(self, "Éxito", "Git LFS instalado correctamente")
+            QMessageBox.information(self, tr('success'), tr('success_lfs_installed'))
             self.check_lfs_status()
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
             
     def track_unreal_files(self):
         if not self.plugin_manager:
@@ -1333,28 +1386,27 @@ class RepositoryTab(QWidget):
         if not unreal_plugin:
             QMessageBox.warning(
                 self,
-                "Plugin desactivado",
-                "El plugin de Unreal Engine está desactivado.\n\n"
-                "Actívalo desde Ajustes > Plugins para usar esta función."
+                tr('plugin_disabled'),
+                tr('unreal_plugin_disabled')
             )
             return
         
         success, message = unreal_plugin.track_unreal_files(self.repo_path)
         if success:
-            QMessageBox.information(self, "Éxito", message)
+            QMessageBox.information(self, tr('success'), message)
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
             
     def do_lfs_pull(self):
         success, message = self.git_manager.lfs_pull()
         if success:
-            QMessageBox.information(self, "Éxito", "LFS Pull completado")
+            QMessageBox.information(self, tr('success'), tr('success_lfs_pull'))
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
             
     def clone_repository(self, url, path):
-        self.progress_dialog = QProgressDialog("Clonando repositorio...", "Cancelar", 0, 0, self)
-        self.progress_dialog.setWindowTitle("Clonando")
+        self.progress_dialog = QProgressDialog(tr('cloning_repository'), tr('cancel'), 0, 0, self)
+        self.progress_dialog.setWindowTitle(tr('cloning'))
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
         self.progress_dialog.show()
         
@@ -1375,9 +1427,9 @@ class RepositoryTab(QWidget):
                 repo_name = os.path.basename(repo_path)
                 tab_widget.setTabText(index, repo_name)
                 
-            QMessageBox.information(self, "Éxito", f"Repositorio clonado en:\n{repo_path}")
+            QMessageBox.information(self, tr('success'), f"{tr('success_clone')}:\n{repo_path}")
         else:
-            QMessageBox.warning(self, "Error", f"Error al clonar:\n{message}")
+            QMessageBox.warning(self, tr('error'), f"{tr('error_clone')}:\n{message}")
             
     def apply_left_panel_styles(self):
         style = """
@@ -1507,21 +1559,75 @@ class RepositoryTab(QWidget):
         if not unreal_plugin:
             QMessageBox.warning(
                 self,
-                "Plugin desactivado",
-                "El plugin de Unreal Engine está desactivado.\n\n"
-                "Actívalo desde Ajustes > Plugins para usar esta función."
+                tr('plugin_disabled'),
+                tr('unreal_plugin_disabled')
             )
             return
         
         if not unreal_plugin.is_unreal_project(self.repo_path):
             QMessageBox.information(
                 self,
-                "No es un proyecto de Unreal",
-                "Este repositorio no parece ser un proyecto de Unreal Engine."
+                tr('not_unreal_project'),
+                tr('not_unreal_project_text')
             )
             return
         
         success, message = unreal_plugin.open_in_unreal(self.repo_path)
         
         if not success:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
+    
+    def update_translations(self):
+        if hasattr(self, 'branch_title'):
+            self.branch_title.setText(tr('current_branch_label'))
+        if hasattr(self, 'open_folder_btn'):
+            self.open_folder_btn.setText(f" {tr('folder_button')}")
+            self.open_folder_btn.setToolTip(tr('folder_tooltip'))
+        if hasattr(self, 'open_terminal_btn'):
+            self.open_terminal_btn.setText(f" {tr('terminal_button')}")
+            self.open_terminal_btn.setToolTip(tr('terminal_tooltip'))
+        if hasattr(self, 'open_unreal_btn'):
+            self.open_unreal_btn.setText(f" {tr('unreal_button')}")
+            self.open_unreal_btn.setToolTip(tr('unreal_tooltip'))
+        if hasattr(self, 'pull_btn'):
+            self.pull_btn.setText(f" {tr('pull')}")
+            self.pull_btn.setToolTip(tr('pull_tooltip'))
+        if hasattr(self, 'push_btn'):
+            self.push_btn.setText(f" {tr('push')}")
+            self.push_btn.setToolTip(tr('push_tooltip'))
+        if hasattr(self, 'fetch_btn'):
+            self.fetch_btn.setText(f" {tr('fetch')}")
+            self.fetch_btn.setToolTip(tr('fetch_tooltip'))
+        if hasattr(self, 'refresh_btn'):
+            self.refresh_btn.setText(f" {tr('refresh')}")
+            self.refresh_btn.setToolTip(tr('refresh_tooltip'))
+        if hasattr(self, 'stage_all_btn'):
+            self.stage_all_btn.setText(f" {tr('add_all')}")
+            self.stage_all_btn.setToolTip(tr('add_all_tooltip'))
+        if hasattr(self, 'stage_btn'):
+            self.stage_btn.setText(f" {tr('add')}")
+            self.stage_btn.setToolTip(tr('add_tooltip'))
+        if hasattr(self, 'unstage_btn'):
+            self.unstage_btn.setText(f" {tr('remove')}")
+            self.unstage_btn.setToolTip(tr('remove_tooltip'))
+        if hasattr(self, 'commit_message'):
+            self.commit_message.setPlaceholderText(tr('commit_placeholder'))
+        if hasattr(self, 'commit_btn'):
+            self.commit_btn.setText(f" {tr('commit_and_save')}")
+            self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))
+        if hasattr(self, 'lfs_install_btn'):
+            self.lfs_install_btn.setText(f" {tr('install')}")
+            self.lfs_install_btn.setToolTip(tr('install_tooltip'))
+        if hasattr(self, 'lfs_track_btn'):
+            self.lfs_track_btn.setText(f" {tr('config_unreal')}")
+            self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
+        if hasattr(self, 'lfs_pull_btn'):
+            self.lfs_pull_btn.setText(f" {tr('download_lfs_files')}")
+            self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
+        if hasattr(self, 'diff_view'):
+            self.diff_view.setPlaceholderText(tr('select_file_diff'))
+        
+        if self.repo_path:
+            self.check_lfs_status()
+            self.update_repo_info()
+            self.refresh_status()
