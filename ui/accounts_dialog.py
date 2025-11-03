@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QListWidget, QListWidgetItem, QMessageBox,
                              QInputDialog, QLineEdit, QTabWidget, QWidget,
                              QTextEdit, QGroupBox, QFrame, QApplication, QComboBox, QFormLayout)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPoint
 from PyQt6.QtGui import QFont, QPixmap, QPainter, QPainterPath
 from PyQt6.QtSvg import QSvgRenderer
 from core.translations import tr, get_translation_manager, set_language
@@ -21,6 +21,8 @@ class AccountsDialog(QDialog):
         self.account_manager = account_manager
         self.plugin_manager = plugin_manager
         self.icon_manager = IconManager()
+        self.drag_position = QPoint()
+        self.border_width = 5
         
         from core.settings_manager import SettingsManager
         self.settings_manager = SettingsManager()
@@ -29,14 +31,24 @@ class AccountsDialog(QDialog):
         self.setWindowIcon(self.icon_manager.get_icon("gear-six"))
         self.setModal(True)
         self.setMinimumSize(800, 600)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
         
     def init_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
+        
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
         
         self.title_label = QLabel(tr("settings"))
         self.title_label.setProperty("class", "title")
-        layout.addWidget(self.title_label)
+        content_layout.addWidget(self.title_label)
         
         self.tabs = QTabWidget()
         
@@ -53,7 +65,7 @@ class AccountsDialog(QDialog):
         appearance_tab = self.create_appearance_section()
         self.tabs.addTab(appearance_tab, self.icon_manager.get_icon("globe"), tr("appearance"))
         
-        layout.addWidget(self.tabs)
+        content_layout.addWidget(self.tabs)
         
         button_layout = QHBoxLayout()
         button_layout.addStretch()
@@ -63,7 +75,109 @@ class AccountsDialog(QDialog):
         self.close_button.clicked.connect(self.accept)
         button_layout.addWidget(self.close_button)
         
-        layout.addLayout(button_layout)
+        content_layout.addLayout(button_layout)
+        layout.addWidget(content_widget)
+    
+    def create_title_bar(self):
+        from ui.theme import get_current_theme
+        theme = get_current_theme()
+        
+        title_bar = QFrame()
+        title_bar.setFixedHeight(35)
+        title_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+            }}
+        """)
+        
+        layout = QHBoxLayout(title_bar)
+        layout.setContentsMargins(10, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        app_icon = QLabel()
+        app_icon.setPixmap(self.icon_manager.get_pixmap("gear-six", size=18))
+        layout.addWidget(app_icon)
+        
+        title_label = QLabel(f"  {tr('settings')}")
+        title_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px;")
+        layout.addWidget(title_label)
+        
+        layout.addStretch()
+        
+        close_button = QPushButton()
+        close_button.setIcon(self.icon_manager.get_icon("x-square", size=14))
+        close_button.setFixedSize(40, 35)
+        close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_button.clicked.connect(self.accept)
+        close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: #e81123;
+            }}
+        """)
+        layout.addWidget(close_button)
+        
+        title_bar.mousePressEvent = self.title_bar_mouse_press
+        
+        return title_bar
+    
+    def title_bar_mouse_press(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.windowHandle().startSystemMove()
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            pos = event.pos()
+            edges = self.get_window_edges(pos)
+            
+            if edges != Qt.Edge(0):
+                self.windowHandle().startSystemResize(edges)
+                return
+        
+        super().mousePressEvent(event)
+    
+    def get_window_edges(self, pos):
+        rect = self.rect()
+        edges = Qt.Edge(0)
+        
+        if pos.x() <= self.border_width:
+            edges |= Qt.Edge.LeftEdge
+        if pos.x() >= rect.width() - self.border_width:
+            edges |= Qt.Edge.RightEdge
+        if pos.y() <= self.border_width:
+            edges |= Qt.Edge.TopEdge
+        if pos.y() >= rect.height() - self.border_width:
+            edges |= Qt.Edge.BottomEdge
+        
+        return edges
+    
+    def mouseMoveEvent(self, event):
+        pos = event.pos()
+        edges = self.get_window_edges(pos)
+        self.update_cursor_for_edges(edges)
+        
+        super().mouseMoveEvent(event)
+    
+    def update_cursor_for_edges(self, edges):
+        if edges == Qt.Edge(0):
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        elif edges == (Qt.Edge.TopEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges == (Qt.Edge.TopEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges == Qt.Edge.TopEdge or edges == Qt.Edge.BottomEdge:
+            self.setCursor(Qt.CursorShape.SizeVerCursor)
+        elif edges == Qt.Edge.LeftEdge or edges == Qt.Edge.RightEdge:
+            self.setCursor(Qt.CursorShape.SizeHorCursor)
         
 
     def create_general_section(self):

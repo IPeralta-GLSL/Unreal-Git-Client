@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QListWidget, QPushButton, QLineEdit, QMessageBox,
                              QListWidgetItem, QComboBox, QRadioButton, QButtonGroup,
-                             QGroupBox, QTextEdit)
-from PyQt6.QtCore import Qt
+                             QGroupBox, QTextEdit, QWidget, QFrame)
+from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QFont, QColor
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
@@ -12,6 +12,9 @@ class BranchManagerDialog(QDialog):
         super().__init__(parent)
         self.git_manager = git_manager
         self.icon_manager = IconManager()
+        self.drag_position = QPoint()
+        self.border_width = 5
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
         self.load_branches()
         
@@ -21,23 +24,20 @@ class BranchManagerDialog(QDialog):
         self.setMinimumSize(700, 500)
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        title_layout = QHBoxLayout()
-        title_icon = QLabel()
-        title_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=24))
-        title_layout.addWidget(title_icon)
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
         
-        title = QLabel(" Administrador de Ramas")
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: palette(bright-text);")
-        title_layout.addWidget(title)
-        title_layout.addStretch()
-        layout.addLayout(title_layout)
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setSpacing(15)
+        content_layout.setContentsMargins(20, 20, 20, 20)
         
         current_branch_label = QLabel("Rama actual:")
         current_branch_label.setStyleSheet("color: palette(text); font-size: 12px;")
-        layout.addWidget(current_branch_label)
+        content_layout.addWidget(current_branch_label)
         
         self.current_branch = QLabel()
         self.current_branch.setStyleSheet("""
@@ -48,15 +48,15 @@ class BranchManagerDialog(QDialog):
             padding: 10px;
             border-radius: 4px;
         """)
-        layout.addWidget(self.current_branch)
+        content_layout.addWidget(self.current_branch)
         
         list_label = QLabel("Todas las Ramas:")
         list_label.setStyleSheet("color: palette(window-text); font-weight: bold; margin-top: 10px;")
-        layout.addWidget(list_label)
+        content_layout.addWidget(list_label)
         
         self.branches_list = QListWidget()
         self.branches_list.itemDoubleClicked.connect(self.switch_to_branch)
-        layout.addWidget(self.branches_list)
+        content_layout.addWidget(self.branches_list)
         
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
@@ -81,13 +81,113 @@ class BranchManagerDialog(QDialog):
         self.merge_btn.clicked.connect(self.merge_selected_branch)
         buttons_layout.addWidget(self.merge_btn)
         
-        layout.addLayout(buttons_layout)
+        content_layout.addLayout(buttons_layout)
         
         close_btn = QPushButton("Cerrar")
         close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
+        content_layout.addWidget(close_btn)
         
+        layout.addWidget(content_widget)
         self.apply_styles()
+    
+    def create_title_bar(self):
+        theme = get_current_theme()
+        
+        title_bar = QFrame()
+        title_bar.setFixedHeight(35)
+        title_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+            }}
+        """)
+        
+        title_layout = QHBoxLayout(title_bar)
+        title_layout.setContentsMargins(10, 0, 0, 0)
+        title_layout.setSpacing(0)
+        
+        title_icon = QLabel()
+        title_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=18))
+        title_layout.addWidget(title_icon)
+        
+        title = QLabel("  Administrador de Ramas")
+        title.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px;")
+        title_layout.addWidget(title)
+        title_layout.addStretch()
+        
+        close_button = QPushButton()
+        close_button.setIcon(self.icon_manager.get_icon("x-square", size=14))
+        close_button.setFixedSize(40, 35)
+        close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_button.clicked.connect(self.accept)
+        close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: #e81123;
+            }}
+        """)
+        title_layout.addWidget(close_button)
+        
+        title_bar.mousePressEvent = self.title_bar_mouse_press
+        
+        return title_bar
+    
+    def title_bar_mouse_press(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.windowHandle().startSystemMove()
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            pos = event.pos()
+            edges = self.get_window_edges(pos)
+            
+            if edges != Qt.Edge(0):
+                self.windowHandle().startSystemResize(edges)
+                return
+        
+        super().mousePressEvent(event)
+    
+    def get_window_edges(self, pos):
+        rect = self.rect()
+        edges = Qt.Edge(0)
+        
+        if pos.x() <= self.border_width:
+            edges |= Qt.Edge.LeftEdge
+        if pos.x() >= rect.width() - self.border_width:
+            edges |= Qt.Edge.RightEdge
+        if pos.y() <= self.border_width:
+            edges |= Qt.Edge.TopEdge
+        if pos.y() >= rect.height() - self.border_width:
+            edges |= Qt.Edge.BottomEdge
+        
+        return edges
+    
+    def mouseMoveEvent(self, event):
+        pos = event.pos()
+        edges = self.get_window_edges(pos)
+        self.update_cursor_for_edges(edges)
+        
+        super().mouseMoveEvent(event)
+    
+    def update_cursor_for_edges(self, edges):
+        if edges == Qt.Edge(0):
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        elif edges == (Qt.Edge.TopEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges == (Qt.Edge.TopEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges == Qt.Edge.TopEdge or edges == Qt.Edge.BottomEdge:
+            self.setCursor(Qt.CursorShape.SizeVerCursor)
+        elif edges == Qt.Edge.LeftEdge or edges == Qt.Edge.RightEdge:
+            self.setCursor(Qt.CursorShape.SizeHorCursor)
         
     def load_branches(self):
         current = self.git_manager.get_current_branch()
@@ -252,6 +352,9 @@ class CreateBranchDialog(QDialog):
     def __init__(self, git_manager, parent=None):
         super().__init__(parent)
         self.git_manager = git_manager
+        self.icon_manager = IconManager()
+        self.drag_position = QPoint()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
         
     def init_ui(self):
@@ -260,28 +363,24 @@ class CreateBranchDialog(QDialog):
         self.setMinimumWidth(500)
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        title_layout = QHBoxLayout()
-        icon_label = QLabel()
-        icon_label.setPixmap(self.icon_manager.get_pixmap("plus-circle", 24))
-        title_layout.addWidget(icon_label)
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
         
-        title_text = QLabel("Crear Nueva Rama")
-        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(bright-text);")
-        title_layout.addWidget(title_text)
-        title_layout.addStretch()
-        
-        layout.addLayout(title_layout)
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setSpacing(15)
+        content_layout.setContentsMargins(20, 20, 20, 20)
         
         name_label = QLabel("Nombre de la rama:")
         name_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
-        layout.addWidget(name_label)
+        content_layout.addWidget(name_label)
         
         self.branch_name_input = QLineEdit()
         self.branch_name_input.setPlaceholderText("feature/nueva-funcionalidad")
-        layout.addWidget(self.branch_name_input)
+        content_layout.addWidget(self.branch_name_input)
         
         source_group = QGroupBox("Crear desde:")
         source_layout = QVBoxLayout()
@@ -301,7 +400,7 @@ class CreateBranchDialog(QDialog):
         self.from_commit_radio.toggled.connect(self.commit_input.setEnabled)
         
         source_group.setLayout(source_layout)
-        layout.addWidget(source_group)
+        content_layout.addWidget(source_group)
         
         buttons_layout = QHBoxLayout()
         
@@ -315,9 +414,60 @@ class CreateBranchDialog(QDialog):
         create_btn.setDefault(True)
         buttons_layout.addWidget(create_btn)
         
-        layout.addLayout(buttons_layout)
+        content_layout.addLayout(buttons_layout)
+        layout.addWidget(content_widget)
         
         self.apply_styles()
+    
+    def create_title_bar(self):
+        theme = get_current_theme()
+        
+        title_bar = QFrame()
+        title_bar.setFixedHeight(35)
+        title_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+            }}
+        """)
+        
+        title_layout = QHBoxLayout(title_bar)
+        title_layout.setContentsMargins(10, 0, 0, 0)
+        title_layout.setSpacing(0)
+        
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("plus-circle", 18))
+        title_layout.addWidget(icon_label)
+        
+        title_text = QLabel("  Crear Nueva Rama")
+        title_text.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px;")
+        title_layout.addWidget(title_text)
+        title_layout.addStretch()
+        
+        close_button = QPushButton()
+        close_button.setIcon(self.icon_manager.get_icon("x-square", size=14))
+        close_button.setFixedSize(40, 35)
+        close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_button.clicked.connect(self.reject)
+        close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: #e81123;
+            }}
+        """)
+        title_layout.addWidget(close_button)
+        
+        title_bar.mousePressEvent = self.title_bar_mouse_press
+        
+        return title_bar
+    
+    def title_bar_mouse_press(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.windowHandle().startSystemMove()
         
     def create_branch(self):
         branch_name = self.branch_name_input.text().strip()
