@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
                              QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame)
-from PyQt6.QtCore import Qt, QSize, QTimer, QPoint
-from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut
+from PyQt6.QtCore import Qt, QSize, QTimer, QPoint, QRect
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut, QCursor
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
 from ui.theme import get_current_theme
@@ -11,6 +11,7 @@ from core.settings_manager import SettingsManager
 from core.account_manager import AccountManager
 from core.translations import tr
 import os
+import platform
 
 class MainWindow(QMainWindow):
     def __init__(self, plugin_manager=None):
@@ -20,6 +21,7 @@ class MainWindow(QMainWindow):
         self.account_manager = AccountManager()
         self.plugin_manager = plugin_manager
         self.drag_position = QPoint()
+        self.border_width = 5
         self.init_ui()
         self.setup_shortcuts()
         
@@ -27,7 +29,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(tr('app_name'))
         self.setGeometry(100, 100, 1400, 900)
         self.setMinimumSize(1000, 600)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowSystemMenuHint)
         
         self.setup_statusbar()
         self.setup_central_widget()
@@ -229,11 +231,10 @@ class MainWindow(QMainWindow):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self.windowHandle().startSystemMove()
     
     def title_bar_mouse_move(self, event):
-        if event.buttons() == Qt.MouseButton.LeftButton and not self.isMaximized():
-            self.move(event.globalPosition().toPoint() - self.drag_position)
+        pass
     
     def title_bar_double_click(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -244,6 +245,62 @@ class MainWindow(QMainWindow):
             self.showNormal()
         else:
             self.showMaximized()
+    
+    def nativeEvent(self, eventType, message):
+        result = super().nativeEvent(eventType, message)
+        return result
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and not self.isMaximized():
+            pos = event.pos()
+            edges = self.get_window_edges(pos)
+            
+            if edges != Qt.Edge(0):
+                self.windowHandle().startSystemResize(edges)
+                return
+        
+        super().mousePressEvent(event)
+    
+    def get_window_edges(self, pos):
+        rect = self.rect()
+        edges = Qt.Edge(0)
+        
+        if pos.x() <= self.border_width:
+            edges |= Qt.Edge.LeftEdge
+        if pos.x() >= rect.width() - self.border_width:
+            edges |= Qt.Edge.RightEdge
+        if pos.y() <= self.border_width:
+            edges |= Qt.Edge.TopEdge
+        if pos.y() >= rect.height() - self.border_width:
+            edges |= Qt.Edge.BottomEdge
+        
+        return edges
+    
+    def mouseMoveEvent(self, event):
+        if not self.isMaximized():
+            pos = event.pos()
+            edges = self.get_window_edges(pos)
+            self.update_cursor_for_edges(edges)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        
+        super().mouseMoveEvent(event)
+    
+    def update_cursor_for_edges(self, edges):
+        if edges == Qt.Edge(0):
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        elif edges == (Qt.Edge.TopEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges == (Qt.Edge.TopEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges == Qt.Edge.TopEdge or edges == Qt.Edge.BottomEdge:
+            self.setCursor(Qt.CursorShape.SizeVerCursor)
+        elif edges == Qt.Edge.LeftEdge or edges == Qt.Edge.RightEdge:
+            self.setCursor(Qt.CursorShape.SizeHorCursor)
         
     def setup_statusbar(self):
         self.status_bar = QStatusBar()
