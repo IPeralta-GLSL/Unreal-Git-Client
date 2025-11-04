@@ -13,12 +13,8 @@ class BranchManagerDialog(QDialog):
         super().__init__(parent)
         self.git_manager = git_manager
         self.icon_manager = IconManager()
-        
-        if platform.system() != "Windows":
-            self.drag_position = QPoint()
-            self.border_width = 5
-            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        
+        self.drag_position = QPoint()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
         self.load_branches()
         
@@ -28,22 +24,16 @@ class BranchManagerDialog(QDialog):
         self.setMinimumSize(700, 500)
         
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        if platform.system() != "Windows":
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(0)
-            
-            title_bar = self.create_title_bar()
-            layout.addWidget(title_bar)
-            
-            content_widget = QWidget()
-            content_layout = QVBoxLayout(content_widget)
-            content_layout.setSpacing(15)
-            content_layout.setContentsMargins(20, 20, 20, 20)
-        else:
-            content_layout = layout
-            content_layout.setSpacing(15)
-            content_layout.setContentsMargins(20, 20, 20, 20)
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
+        
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setSpacing(15)
+        content_layout.setContentsMargins(20, 20, 20, 20)
         
         current_branch_label = QLabel("Rama actual:")
         current_branch_label.setStyleSheet("color: palette(text); font-size: 12px;")
@@ -97,9 +87,7 @@ class BranchManagerDialog(QDialog):
         close_btn.clicked.connect(self.accept)
         content_layout.addWidget(close_btn)
         
-        if platform.system() != "Windows":
-            layout.addWidget(content_widget)
-        
+        layout.addWidget(content_widget)
         self.apply_styles()
     
     def create_title_bar(self):
@@ -150,13 +138,11 @@ class BranchManagerDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            if platform.system() != "Windows":
-                self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
     
     def mouseMoveEvent(self, event):
-        if platform.system() != "Windows":
-            if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
-                self.move(event.globalPosition().toPoint() - self.drag_position)
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
+            self.move(event.globalPosition().toPoint() - self.drag_position)
         super().mouseMoveEvent(event)
         
     def load_branches(self):
@@ -323,11 +309,8 @@ class CreateBranchDialog(QDialog):
         super().__init__(parent)
         self.git_manager = git_manager
         self.icon_manager = IconManager()
-        
-        if platform.system() != "Windows":
-            self.drag_position = QPoint()
-            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        
+        self.drag_position = QPoint()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
         
     def init_ui(self):
@@ -336,22 +319,16 @@ class CreateBranchDialog(QDialog):
         self.setMinimumWidth(500)
         
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        if platform.system() != "Windows":
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(0)
-            
-            title_bar = self.create_title_bar()
-            layout.addWidget(title_bar)
-            
-            content_widget = QWidget()
-            content_layout = QVBoxLayout(content_widget)
-            content_layout.setSpacing(15)
-            content_layout.setContentsMargins(20, 20, 20, 20)
-        else:
-            content_layout = layout
-            content_layout.setSpacing(15)
-            content_layout.setContentsMargins(20, 20, 20, 20)
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
+        
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setSpacing(15)
+        content_layout.setContentsMargins(20, 20, 20, 20)
         
         name_label = QLabel("Nombre de la rama:")
         name_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
@@ -394,9 +371,7 @@ class CreateBranchDialog(QDialog):
         buttons_layout.addWidget(create_btn)
         
         content_layout.addLayout(buttons_layout)
-        
-        if platform.system() != "Windows":
-            layout.addWidget(content_widget)
+        layout.addWidget(content_widget)
         
         self.apply_styles()
     
@@ -448,13 +423,11 @@ class CreateBranchDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            if platform.system() != "Windows":
-                self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
     
     def mouseMoveEvent(self, event):
-        if platform.system() != "Windows":
-            if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
-                self.move(event.globalPosition().toPoint() - self.drag_position)
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
+            self.move(event.globalPosition().toPoint() - self.drag_position)
         super().mouseMoveEvent(event)
         
     def create_branch(self):

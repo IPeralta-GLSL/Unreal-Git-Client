@@ -22,11 +22,8 @@ class AccountsDialog(QDialog):
         self.account_manager = account_manager
         self.plugin_manager = plugin_manager
         self.icon_manager = IconManager()
-        
-        if platform.system() != "Windows":
-            self.drag_position = QPoint()
-            self.border_width = 5
-            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.drag_position = QPoint()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         
         from core.settings_manager import SettingsManager
         self.settings_manager = SettingsManager()
@@ -39,20 +36,15 @@ class AccountsDialog(QDialog):
         
     def init_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        if platform.system() != "Windows":
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(0)
-            
-            title_bar = self.create_title_bar()
-            layout.addWidget(title_bar)
-            
-            content_widget = QWidget()
-            content_layout = QVBoxLayout(content_widget)
-            content_layout.setContentsMargins(10, 10, 10, 10)
-        else:
-            content_layout = layout
-            content_layout.setContentsMargins(10, 10, 10, 10)
+        title_bar = self.create_title_bar()
+        layout.addWidget(title_bar)
+        
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
         
         self.title_label = QLabel(tr("settings"))
         self.title_label.setProperty("class", "title")
@@ -84,9 +76,7 @@ class AccountsDialog(QDialog):
         button_layout.addWidget(self.close_button)
         
         content_layout.addLayout(button_layout)
-        
-        if platform.system() != "Windows":
-            layout.addWidget(content_widget)
+        layout.addWidget(content_widget)
     
     def create_title_bar(self):
         from ui.theme import get_current_theme
@@ -138,13 +128,11 @@ class AccountsDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            if platform.system() != "Windows":
-                self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
     
     def mouseMoveEvent(self, event):
-        if platform.system() != "Windows":
-            if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
-                self.move(event.globalPosition().toPoint() - self.drag_position)
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
+            self.move(event.globalPosition().toPoint() - self.drag_position)
         super().mouseMoveEvent(event)
         
 
