@@ -17,11 +17,17 @@ class BranchManagerDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
         self.load_branches()
+    
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.windowHandle():
+            self.windowHandle().startSystemMove
         
     def init_ui(self):
         self.setWindowTitle("Administrador de Ramas")
         self.setModal(True)
         self.setMinimumSize(700, 500)
+        self.setMouseTracking(True)
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -138,7 +144,8 @@ class BranchManagerDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.windowHandle().startSystemMove()
+            if self.windowHandle():
+                self.windowHandle().startSystemMove()
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -146,7 +153,8 @@ class BranchManagerDialog(QDialog):
             edges = self.get_window_edges(pos)
             
             if edges != Qt.Edge(0):
-                self.windowHandle().startSystemResize(edges)
+                if self.windowHandle():
+                    self.windowHandle().startSystemResize(edges)
                 return
         
         super().mousePressEvent(event)
@@ -356,11 +364,17 @@ class CreateBranchDialog(QDialog):
         self.drag_position = QPoint()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
+    
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.windowHandle():
+            self.windowHandle().startSystemMove
         
     def init_ui(self):
         self.setWindowTitle("Crear Nueva Rama")
         self.setModal(True)
         self.setMinimumWidth(500)
+        self.setMouseTracking(True)
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -467,7 +481,8 @@ class CreateBranchDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.windowHandle().startSystemMove()
+            if self.windowHandle():
+                self.windowHandle().startSystemMove()
         
     def create_branch(self):
         branch_name = self.branch_name_input.text().strip()

@@ -33,8 +33,14 @@ class AccountsDialog(QDialog):
         self.setMinimumSize(800, 600)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.init_ui()
+    
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.windowHandle():
+            self.windowHandle().startSystemMove
         
     def init_ui(self):
+        self.setMouseTracking(True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -128,7 +134,8 @@ class AccountsDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.windowHandle().startSystemMove()
+            if self.windowHandle():
+                self.windowHandle().startSystemMove()
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -136,7 +143,8 @@ class AccountsDialog(QDialog):
             edges = self.get_window_edges(pos)
             
             if edges != Qt.Edge(0):
-                self.windowHandle().startSystemResize(edges)
+                if self.windowHandle():
+                    self.windowHandle().startSystemResize(edges)
                 return
         
         super().mousePressEvent(event)

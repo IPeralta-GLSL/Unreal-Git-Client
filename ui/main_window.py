@@ -231,7 +231,8 @@ class MainWindow(QMainWindow):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.windowHandle().startSystemMove()
+            if self.windowHandle():
+                self.windowHandle().startSystemMove()
     
     def title_bar_mouse_move(self, event):
         pass
@@ -256,7 +257,8 @@ class MainWindow(QMainWindow):
             edges = self.get_window_edges(pos)
             
             if edges != Qt.Edge(0):
-                self.windowHandle().startSystemResize(edges)
+                if self.windowHandle():
+                    self.windowHandle().startSystemResize(edges)
                 return
         
         super().mousePressEvent(event)
