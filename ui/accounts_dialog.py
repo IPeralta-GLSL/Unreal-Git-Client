@@ -36,8 +36,6 @@ class AccountsDialog(QDialog):
     
     def showEvent(self, event):
         super().showEvent(event)
-        if self.windowHandle():
-            self.windowHandle().startSystemMove
         
     def init_ui(self):
         self.setMouseTracking(True)
@@ -134,58 +132,21 @@ class AccountsDialog(QDialog):
     
     def title_bar_mouse_press(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            if self.windowHandle():
-                self.windowHandle().startSystemMove()
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
     
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            pos = event.pos()
-            edges = self.get_window_edges(pos)
-            
-            if edges != Qt.Edge(0):
-                if self.windowHandle():
-                    self.windowHandle().startSystemResize(edges)
-                return
-        
         super().mousePressEvent(event)
     
     def get_window_edges(self, pos):
-        rect = self.rect()
-        edges = Qt.Edge(0)
-        
-        if pos.x() <= self.border_width:
-            edges |= Qt.Edge.LeftEdge
-        if pos.x() >= rect.width() - self.border_width:
-            edges |= Qt.Edge.RightEdge
-        if pos.y() <= self.border_width:
-            edges |= Qt.Edge.TopEdge
-        if pos.y() >= rect.height() - self.border_width:
-            edges |= Qt.Edge.BottomEdge
-        
-        return edges
+        return Qt.Edge(0)
     
     def mouseMoveEvent(self, event):
-        pos = event.pos()
-        edges = self.get_window_edges(pos)
-        self.update_cursor_for_edges(edges)
-        
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, 'drag_position'):
+            self.move(event.globalPosition().toPoint() - self.drag_position)
         super().mouseMoveEvent(event)
     
     def update_cursor_for_edges(self, edges):
-        if edges == Qt.Edge(0):
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-        elif edges == (Qt.Edge.TopEdge | Qt.Edge.LeftEdge):
-            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-        elif edges == (Qt.Edge.TopEdge | Qt.Edge.RightEdge):
-            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
-        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.LeftEdge):
-            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
-        elif edges == (Qt.Edge.BottomEdge | Qt.Edge.RightEdge):
-            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-        elif edges == Qt.Edge.TopEdge or edges == Qt.Edge.BottomEdge:
-            self.setCursor(Qt.CursorShape.SizeVerCursor)
-        elif edges == Qt.Edge.LeftEdge or edges == Qt.Edge.RightEdge:
-            self.setCursor(Qt.CursorShape.SizeHorCursor)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
         
 
     def create_general_section(self):
