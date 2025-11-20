@@ -13,6 +13,8 @@ from core.translations import tr
 import os
 import platform
 
+from ui.icon_manager import IconManager
+
 class MainWindow(QMainWindow):
     def __init__(self, plugin_manager=None):
         super().__init__()
@@ -20,6 +22,7 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
         self.account_manager = AccountManager()
         self.plugin_manager = plugin_manager
+        self.icon_manager = IconManager()
         self.drag_position = QPoint()
         self.border_width = 5
         self.init_ui()
@@ -166,8 +169,8 @@ class MainWindow(QMainWindow):
         app_icon.setPixmap(icon_manager.get_pixmap("git-branch", size=20))
         layout.addWidget(app_icon)
         
-        title_label = QLabel(f"  {tr('app_name')}")
-        title_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 14px;")
+        title_label = QLabel(tr('app_name'))
+        title_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 14px; margin-left: 5px;")
         layout.addWidget(title_label)
         
         layout.addStretch()
@@ -327,7 +330,7 @@ class MainWindow(QMainWindow):
     
     def add_empty_tab(self):
         repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
-        index = self.tab_widget.addTab(repo_tab, f"🏠 {tr('home')}")
+        index = self.tab_widget.addTab(repo_tab, self.icon_manager.get_icon("house-line"), tr('home'))
         self.tab_widget.setCurrentIndex(index)
         # Reposicionar el botón después de agregar la pestaña
         QTimer.singleShot(0, self.update_new_tab_button_position)

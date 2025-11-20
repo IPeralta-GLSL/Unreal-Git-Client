@@ -83,7 +83,7 @@ class HomeView(QWidget):
         theme = get_current_theme()
         
         self.open_btn = self.create_action_button(
-            f" {tr('open_repository_btn')}",
+            tr('open_repository_btn'),
             tr('open_repository_desc'),
             theme.colors['primary'],
             "folder-open"
@@ -92,9 +92,10 @@ class HomeView(QWidget):
         buttons_layout.addWidget(self.open_btn)
         
         self.clone_btn = self.create_action_button(
-            f"↓ {tr('clone_repository_btn')}",
+            tr('clone_repository_btn'),
             tr('clone_repository_desc'),
-            theme.colors['primary']
+            theme.colors['primary'],
+            "download"
         )
         self.clone_btn.clicked.connect(self.clone_repo_requested.emit)
         buttons_layout.addWidget(self.clone_btn)
@@ -149,8 +150,8 @@ class HomeView(QWidget):
         tips_icon.setPixmap(self.icon_manager.get_pixmap("lightbulb", size=20))
         tips_title_layout.addWidget(tips_icon)
         
-        self.tips_title = QLabel(f" {tr('quick_tips')}")
-        self.tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link);")
+        self.tips_title = QLabel(tr('quick_tips'))
+        self.tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link); margin-left: 5px;")
         tips_title_layout.addWidget(self.tips_title)
         tips_title_layout.addStretch()
         tips_layout.addLayout(tips_title_layout)
@@ -249,8 +250,8 @@ class HomeView(QWidget):
         header_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=20))
         header_layout.addWidget(header_icon)
         
-        self.recent_repos_header = QLabel(f" {tr('recent_repositories')}")
-        self.recent_repos_header.setStyleSheet("color: palette(bright-text); font-size: 15px; font-weight: bold;")
+        self.recent_repos_header = QLabel(tr('recent_repositories'))
+        self.recent_repos_header.setStyleSheet("color: palette(bright-text); font-size: 15px; font-weight: bold; margin-left: 5px;")
         header_layout.addWidget(self.recent_repos_header)
         header_layout.addStretch()
         layout.addLayout(header_layout)
@@ -412,21 +413,21 @@ class HomeView(QWidget):
             self.title.setText(tr('git_client'))
         
         if hasattr(self, 'open_btn'):
-            self.open_btn.text_label.setText(f" {tr('open_repository_btn')}")
+            self.open_btn.text_label.setText(tr('open_repository_btn'))
             self.open_btn.desc_label.setText(tr('open_repository_desc'))
         
         if hasattr(self, 'clone_btn'):
-            self.clone_btn.text_label.setText(f"↓ {tr('clone_repository_btn')}")
+            self.clone_btn.text_label.setText(tr('clone_repository_btn'))
             self.clone_btn.desc_label.setText(tr('clone_repository_desc'))
         
         if hasattr(self, 'recent_repos_header'):
-            self.recent_repos_header.setText(f" {tr('recent_repositories')}")
+            self.recent_repos_header.setText(tr('recent_repositories'))
         
         if hasattr(self, 'no_recent_placeholder') and self.no_recent_placeholder:
             self.no_recent_placeholder.setText(tr('no_recent_repos'))
         
         if hasattr(self, 'tips_title'):
-            self.tips_title.setText(f" {tr('quick_tips')}")
+            self.tips_title.setText(tr('quick_tips'))
         
         if hasattr(self, 'tip_labels'):
             for tip_label, tip_key in self.tip_labels:

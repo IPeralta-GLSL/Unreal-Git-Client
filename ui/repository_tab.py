@@ -182,6 +182,7 @@ class RepositoryTab(QWidget):
                 border-radius: {theme.borders['radius_md']}px;
                 padding: {theme.spacing['xs']}px {theme.spacing['md']}px;
                 text-align: left;
+                padding-left: 10px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['surface']};
@@ -235,7 +236,7 @@ class RepositoryTab(QWidget):
             }}
         """
         
-        self.open_folder_btn = QPushButton(f" {tr('folder_button')}")
+        self.open_folder_btn = QPushButton(tr('folder_button'))
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         self.open_folder_btn.setMinimumSize(100, 36)
         self.open_folder_btn.setMaximumSize(130, 36)
@@ -245,7 +246,7 @@ class RepositoryTab(QWidget):
         self.open_folder_btn.clicked.connect(self.open_project_folder)
         layout.addWidget(self.open_folder_btn)
         
-        self.open_terminal_btn = QPushButton(f" {tr('terminal_button')}")
+        self.open_terminal_btn = QPushButton(tr('terminal_button'))
         self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=18))
         self.open_terminal_btn.setMinimumSize(100, 36)
         self.open_terminal_btn.setMaximumSize(130, 36)
@@ -255,7 +256,7 @@ class RepositoryTab(QWidget):
         self.open_terminal_btn.clicked.connect(self.open_terminal)
         layout.addWidget(self.open_terminal_btn)
         
-        self.open_unreal_btn = QPushButton(f" {tr('unreal_button')}")
+        self.open_unreal_btn = QPushButton(tr('unreal_button'))
         self.open_unreal_btn.setIcon(self.icon_manager.get_icon("unreal-engine-svgrepo-com", size=18))
         self.open_unreal_btn.setMinimumSize(100, 36)
         self.open_unreal_btn.setMaximumSize(130, 36)
@@ -275,7 +276,7 @@ class RepositoryTab(QWidget):
         
         layout.addSpacing(10)
         
-        self.pull_btn = QPushButton(f" {tr('pull')}")
+        self.pull_btn = QPushButton(tr('pull'))
         self.pull_btn.setIcon(self.icon_manager.get_icon("download", size=18))
         self.pull_btn.setMinimumSize(85, 36)
         self.pull_btn.setMaximumSize(110, 36)
@@ -285,7 +286,7 @@ class RepositoryTab(QWidget):
         self.pull_btn.clicked.connect(self.do_pull)
         layout.addWidget(self.pull_btn)
         
-        self.push_btn = QPushButton(f" {tr('push')}")
+        self.push_btn = QPushButton(tr('push'))
         self.push_btn.setIcon(self.icon_manager.get_icon("git-pull-request", size=18))
         self.push_btn.setMinimumSize(85, 36)
         self.push_btn.setMaximumSize(110, 36)
@@ -295,7 +296,7 @@ class RepositoryTab(QWidget):
         self.push_btn.clicked.connect(self.do_push)
         layout.addWidget(self.push_btn)
         
-        self.fetch_btn = QPushButton(f" {tr('fetch')}")
+        self.fetch_btn = QPushButton(tr('fetch'))
         self.fetch_btn.setIcon(self.icon_manager.get_icon("git-diff", size=18))
         self.fetch_btn.setMinimumSize(85, 36)
         self.fetch_btn.setMaximumSize(110, 36)
@@ -305,7 +306,7 @@ class RepositoryTab(QWidget):
         self.fetch_btn.clicked.connect(self.do_fetch)
         layout.addWidget(self.fetch_btn)
         
-        self.refresh_btn = QPushButton(f" {tr('refresh')}")
+        self.refresh_btn = QPushButton(tr('refresh'))
         self.refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
         self.refresh_btn.setMinimumSize(85, 36)
         self.refresh_btn.setMaximumSize(110, 36)
@@ -368,19 +369,19 @@ class RepositoryTab(QWidget):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(5)
         
-        self.stage_all_btn = QPushButton(f" {tr('add_all')}")
+        self.stage_all_btn = QPushButton(tr('add_all'))
         self.stage_all_btn.setIcon(self.icon_manager.get_icon("folder-plus", size=16))
         self.stage_all_btn.setToolTip(tr('add_all_tooltip'))
         self.stage_all_btn.clicked.connect(self.stage_all)
         btn_layout.addWidget(self.stage_all_btn)
         
-        self.stage_btn = QPushButton(f" {tr('add')}")
+        self.stage_btn = QPushButton(tr('add'))
         self.stage_btn.setIcon(self.icon_manager.get_icon("file-plus", size=16))
         self.stage_btn.setToolTip(tr('add_tooltip'))
         self.stage_btn.clicked.connect(self.stage_selected)
         btn_layout.addWidget(self.stage_btn)
         
-        self.unstage_btn = QPushButton(f" {tr('remove')}")
+        self.unstage_btn = QPushButton(tr('remove'))
         self.unstage_btn.setIcon(self.icon_manager.get_icon("file-minus", size=16))
         self.unstage_btn.setToolTip(tr('remove_tooltip'))
         self.unstage_btn.clicked.connect(self.unstage_selected)
@@ -416,7 +417,7 @@ class RepositoryTab(QWidget):
         """)
         commit_layout.addWidget(self.commit_message)
         
-        self.commit_btn = QPushButton(f" {tr('commit_and_save')}")
+        self.commit_btn = QPushButton(tr('commit_and_save'))
         self.commit_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18))
         self.commit_btn.setMinimumHeight(40)
         self.commit_btn.setStyleSheet(f"""
@@ -427,6 +428,7 @@ class RepositoryTab(QWidget):
                 font-weight: bold;
                 border: none;
                 border-radius: 6px;
+                padding-left: 10px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['success_hover']};
@@ -469,13 +471,13 @@ class RepositoryTab(QWidget):
         lfs_btn_layout = QHBoxLayout()
         lfs_btn_layout.setSpacing(5)
         
-        self.lfs_install_btn = QPushButton(f" {tr('install')}")
+        self.lfs_install_btn = QPushButton(tr('install'))
         self.lfs_install_btn.setIcon(self.icon_manager.get_icon("download", size=16))
         self.lfs_install_btn.setToolTip(tr('install_tooltip'))
         self.lfs_install_btn.clicked.connect(self.install_lfs)
         lfs_btn_layout.addWidget(self.lfs_install_btn)
         
-        self.lfs_track_btn = QPushButton(f" {tr('config_unreal')}")
+        self.lfs_track_btn = QPushButton(tr('config_unreal'))
         self.lfs_track_btn.setIcon(self.icon_manager.get_icon("file-code", size=16))
         self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
         self.lfs_track_btn.clicked.connect(self.track_unreal_files)
@@ -483,7 +485,7 @@ class RepositoryTab(QWidget):
         
         lfs_layout.addLayout(lfs_btn_layout)
         
-        self.lfs_pull_btn = QPushButton(f" {tr('download_lfs_files')}")
+        self.lfs_pull_btn = QPushButton(tr('download_lfs_files'))
         self.lfs_pull_btn.setIcon(self.icon_manager.get_icon("download", size=16))
         self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
         self.lfs_pull_btn.clicked.connect(self.do_lfs_pull)
@@ -724,14 +726,14 @@ class RepositoryTab(QWidget):
             return
             
         branch = self.git_manager.get_current_branch()
-        self.branch_button.setText(f" {branch}")
+        self.branch_button.setText(branch)
         self.branch_button.setIcon(self.icon_manager.get_icon("git-branch", size=16))
         
         status = self.git_manager.get_status()
         self.changes_list.clear()
         
         if not status:
-            item = QListWidgetItem(f"  {tr('no_changes')}")
+            item = QListWidgetItem(tr('no_changes'))
             item.setIcon(self.icon_manager.get_icon("check", size=16))
             item.setForeground(QColor("#4ec9b0"))
             font = QFont("Segoe UI", 11)
@@ -745,7 +747,7 @@ class RepositoryTab(QWidget):
                 state_text = {"M": tr('modified'), "A": tr('added'), "D": tr('deleted')}.get(state, state)
                 state_color = {"M": "#dcdcaa", "A": "#4ec9b0", "D": "#f48771"}.get(state, "#cccccc")
                 
-                item = QListWidgetItem(f"  {file_path}")
+                item = QListWidgetItem(file_path)
                 if state == "M":
                     item.setIcon(self.icon_manager.get_icon("file-text", size=16))
                 elif state == "A":
@@ -755,7 +757,7 @@ class RepositoryTab(QWidget):
                 item.setToolTip(f"{state_text}: {file_path}")
                 item.setForeground(QColor(state_color))
             else:
-                item = QListWidgetItem(f"  {file_path}")
+                item = QListWidgetItem(file_path)
                 item.setIcon(self.icon_manager.get_icon("file", size=16))
                 item.setToolTip(f"{tr('untracked')}: {file_path}")
                 item.setForeground(QColor("#858585"))
@@ -1044,7 +1046,7 @@ class RepositoryTab(QWidget):
             }
         """)
         
-        header = QAction(f"  {tr('change_branch_menu')}", self)
+        header = QAction(tr('change_branch_menu'), self)
         header.setIcon(self.icon_manager.get_icon("git-branch", size=16))
         header.setEnabled(False)
         menu.addAction(header)
@@ -1055,7 +1057,7 @@ class RepositoryTab(QWidget):
         
         for branch in local_branches:
             name = branch['name']
-            action = QAction(f"  {name}", self)
+            action = QAction(name, self)
             if branch['is_current']:
                 action.setIcon(self.icon_manager.get_icon("check", size=16))
             else:
@@ -1070,26 +1072,26 @@ class RepositoryTab(QWidget):
         
         if remote_branches:
             menu.addSeparator()
-            remote_header = QAction(f"  {tr('remote_branches')}", self)
+            remote_header = QAction(tr('remote_branches'), self)
             remote_header.setIcon(self.icon_manager.get_icon("share-network", size=16))
             remote_header.setEnabled(False)
             menu.addAction(remote_header)
             
             for branch in remote_branches[:5]:
                 name = branch['name']
-                action = QAction(f"  {name}", self)
+                action = QAction(name, self)
                 action.setIcon(self.icon_manager.get_icon("share-network", size=16))
                 action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
                 menu.addAction(action)
         
         menu.addSeparator()
         
-        new_branch_action = QAction(f"  {tr('new_branch_menu')}", self)
+        new_branch_action = QAction(tr('new_branch_menu'), self)
         new_branch_action.setIcon(self.icon_manager.get_icon("plus-circle", size=16))
         new_branch_action.triggered.connect(self.create_new_branch_quick)
         menu.addAction(new_branch_action)
         
-        manage_action = QAction(f"  {tr('manage_branches')}", self)
+        manage_action = QAction(tr('manage_branches'), self)
         manage_action.setIcon(self.icon_manager.get_icon("gear-six", size=16))
         manage_action.triggered.connect(self.open_branch_manager)
         menu.addAction(manage_action)
@@ -1149,8 +1151,9 @@ class RepositoryTab(QWidget):
             return
         
         from ui.branch_manager import CommitActionsDialog
-        commit_text = item.text().split('\n')[0].replace('🔹 ', '').split(' - ', 1)
-        commit_msg = commit_text[1] if len(commit_text) > 1 else "Sin mensaje"
+        # Clean up commit text if needed, but rely on hash
+        commit_text = item.text()
+        commit_msg = commit_text
         
         dialog = CommitActionsDialog(self.git_manager, commit_hash, commit_msg, self)
         if dialog.exec():
