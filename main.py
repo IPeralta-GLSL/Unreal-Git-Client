@@ -50,11 +50,16 @@ def main():
         print("Main window created successfully")
         
         print("Showing window...")
+        sys.stdout.flush()
         window.show()
         print("Window shown successfully")
+        sys.stdout.flush()
         
         print("Starting event loop...")
+        sys.stdout.flush()
         sys.exit(app.exec())
+    except SystemExit:
+        pass
     except Exception as e:
         print("\n" + "="*60)
         print(f"FATAL ERROR: {e}")

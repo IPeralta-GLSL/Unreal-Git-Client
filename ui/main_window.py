@@ -247,10 +247,6 @@ class MainWindow(QMainWindow):
         else:
             self.showMaximized()
     
-    def nativeEvent(self, eventType, message):
-        result = super().nativeEvent(eventType, message)
-        return result
-    
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and not self.isMaximized():
             pos = event.pos()
