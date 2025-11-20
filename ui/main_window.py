@@ -92,34 +92,6 @@ class MainWindow(QMainWindow):
             }}
         """)
         
-        self.settings_button = QPushButton(central_widget)
-        self.settings_button.setIcon(icon_manager.get_icon("gear-six", size=22))
-        self.settings_button.setFixedSize(44, 44)
-        self.settings_button.setToolTip(tr('settings'))
-        self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.settings_button.clicked.connect(self.open_settings)
-        self.settings_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {theme.colors['surface']};
-                color: {theme.colors['primary']};
-                border: 2px solid {theme.colors['border']};
-                border-radius: 8px;
-                padding: 8px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['surface_hover']};
-                border: 2px solid {theme.colors['primary']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['surface_selected']};
-                border: 2px solid {theme.colors['primary']};
-            }}
-        """)
-        self.settings_button.raise_()
-        tab_bar_height = self.tab_widget.tabBar().height()
-        button_y = (tab_bar_height - 44) // 2
-        self.settings_button.move(self.width() - 64, button_y if button_y > 0 else 5)
-        
         self.add_empty_tab()
         
     def setup_shortcuts(self):
@@ -174,6 +146,24 @@ class MainWindow(QMainWindow):
         layout.addWidget(title_label)
         
         layout.addStretch()
+        
+        self.settings_button = QPushButton()
+        self.settings_button.setIcon(icon_manager.get_icon("gear-six", size=18))
+        self.settings_button.setFixedSize(46, 40)
+        self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.settings_button.setToolTip(tr('settings'))
+        self.settings_button.clicked.connect(self.open_settings)
+        self.settings_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+        """)
+        layout.addWidget(self.settings_button)
         
         min_button = QPushButton()
         min_button.setIcon(icon_manager.get_icon("file-minus", size=16))
@@ -310,11 +300,6 @@ class MainWindow(QMainWindow):
         
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if hasattr(self, 'settings_button') and hasattr(self, 'tab_widget'):
-            tab_bar_height = self.tab_widget.tabBar().height()
-            button_y = (tab_bar_height - 44) // 2
-            self.settings_button.move(self.width() - 64, button_y if button_y > 0 else 5)
-            self.settings_button.raise_()
     
     def update_new_tab_button_position(self):
         """Reposiciona el botón de nueva pestaña al final de las pestañas"""
