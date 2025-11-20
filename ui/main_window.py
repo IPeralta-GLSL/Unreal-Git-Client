@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.settings_button)
         
         min_button = QPushButton()
-        min_button.setIcon(icon_manager.get_icon("file-minus", size=16))
+        min_button.setIcon(icon_manager.get_icon("window-minimize-symbolic-svgrepo-com", size=16))
         min_button.setFixedSize(46, 40)
         min_button.setCursor(Qt.CursorShape.PointingHandCursor)
         min_button.clicked.connect(self.showMinimized)
@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(min_button)
         
         self.max_button = QPushButton()
-        self.max_button.setIcon(icon_manager.get_icon("file-plus", size=16))
+        self.max_button.setIcon(icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
         self.max_button.setFixedSize(46, 40)
         self.max_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.max_button.clicked.connect(self.toggle_maximize)
