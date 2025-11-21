@@ -870,19 +870,8 @@ class RepositoryTab(QWidget):
             
         info = self.git_manager.get_repository_info()
         
-        project_type = ""
-        if self.plugin_manager:
-            unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
-            if unreal_plugin and unreal_plugin.is_unreal_project(self.repo_path):
-                uproject = unreal_plugin.get_uproject_file(self.repo_path)
-                if uproject:
-                    project_name = os.path.basename(uproject).replace('.uproject', '')
-                    project_type = f"<b>{tr('unreal_project')}:</b> {project_name}<br>"
-                else:
-                    project_type = f"<b>{tr('project_type')}:</b> {tr('unreal_engine_project')}<br>"
-        
         info_text = f"""
-{project_type}<b>{tr('path')}:</b> {self.repo_path}<br>
+<b>{tr('path')}:</b> {self.repo_path}<br>
 <b>{tr('current_branch_info')}:</b> {info.get('branch', 'N/A')}<br>
 <b>{tr('remote')}:</b> {info.get('remote', 'N/A')}<br>
 <b>{tr('last_commit')}:</b> {info.get('last_commit', 'N/A')}<br>
@@ -1279,6 +1268,9 @@ class RepositoryTab(QWidget):
         indicators = self.plugin_manager.get_repository_indicators(self.repo_path)
         
         for indicator in indicators:
+            if indicator.get('plugin_name') == 'unreal_engine':
+                continue
+
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -1322,12 +1314,14 @@ class RepositoryTab(QWidget):
             self.plugin_indicators_layout.addWidget(container)
         
         unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
-        is_unreal_enabled = unreal_plugin is not None
+        is_unreal_project = False
+        if unreal_plugin and self.repo_path:
+            is_unreal_project = unreal_plugin.is_unreal_project(self.repo_path)
         
         if hasattr(self, 'open_unreal_btn'):
-            self.open_unreal_btn.setVisible(is_unreal_enabled)
+            self.open_unreal_btn.setVisible(is_unreal_project)
         if hasattr(self, 'lfs_track_btn'):
-            self.lfs_track_btn.setVisible(is_unreal_enabled)
+            self.lfs_track_btn.setVisible(is_unreal_project)
     
     def show_plugin_actions(self):
         if not self.plugin_manager or not self.repo_path:
