@@ -232,19 +232,18 @@ class GitManager:
         success, message = self.run_command("git lfs install")
         return success, message
         
-    def track_unreal_files(self):
+    def lfs_track_files(self, patterns):
         if not self.repo_path:
             return False, "No hay repositorio cargado"
             
-        extensions = [
-            "*.uasset", "*.umap", "*.ubulk", "*.upk",
-            "*.uproject", "*.uplugin"
-        ]
-        
-        for ext in extensions:
-            success, message = self.run_command(f"git lfs track \"{ext}\"")
+        if isinstance(patterns, str):
+            patterns = [patterns]
+            
+        for pattern in patterns:
+            # Escape quotes if necessary, though simple patterns usually don't need it
+            success, message = self.run_command(f"git lfs track \"{pattern}\"")
             if not success:
-                return False, f"Error al trackear {ext}: {message}"
+                return False, f"Error al trackear {pattern}: {message}"
                 
         success, message = self.run_command("git add .gitattributes")
         if not success:
@@ -257,6 +256,49 @@ class GitManager:
             return False, "No hay repositorio cargado"
             
         return self.run_command("git lfs pull")
+
+    def get_lfs_tracked_patterns(self):
+        if not self.repo_path:
+            return []
+        
+        success, output = self.run_command("git lfs track")
+        if not success:
+            return []
+            
+        patterns = []
+        for line in output.split('\n'):
+            if line.strip() and "Listing tracked patterns" not in line:
+                parts = line.strip().split()
+                if parts:
+                    patterns.append(parts[0])
+        return patterns
+
+    def get_lfs_locks(self):
+        if not self.repo_path:
+            return []
+            
+        success, output = self.run_command("git lfs locks --json")
+        if not success:
+            return []
+            
+        import json
+        try:
+            locks = json.loads(output)
+            return locks
+        except:
+            return []
+
+    def lfs_lock_file(self, file_path):
+        return self.run_command(f"git lfs lock \"{file_path}\"")
+
+    def lfs_unlock_file(self, file_path, force=False):
+        cmd = f"git lfs unlock \"{file_path}\""
+        if force:
+            cmd += " --force"
+        return self.run_command(cmd)
+
+    def lfs_prune(self):
+        return self.run_command("git lfs prune")
     
     def is_unreal_project(self):
         if not self.repo_path:
@@ -282,3 +324,24 @@ class GitManager:
             return os.path.basename(uproject_files[0]).replace('.uproject', '')
         
         return None
+
+    def get_lfs_storage_usage(self):
+        if not self.repo_path:
+            return 0
+            
+        lfs_dir = os.path.join(self.repo_path, '.git', 'lfs', 'objects')
+        total_size = 0
+        if os.path.exists(lfs_dir):
+            for dirpath, dirnames, filenames in os.walk(lfs_dir):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    if not os.path.islink(fp):
+                        total_size += os.path.getsize(fp)
+        return total_size
+
+    def format_size(self, size_bytes):
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.2f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.2f} PB"

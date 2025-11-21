@@ -2,7 +2,8 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QListWidget, QTextEdit, QPushButton, QLabel,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
-                             QSizePolicy, QMenu, QInputDialog, QApplication)
+                             QSizePolicy, QMenu, QInputDialog, QApplication, QDialog,
+                             QTableWidget, QTableWidgetItem, QHeaderView)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl
 from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
@@ -453,43 +454,63 @@ class RepositoryTab(QWidget):
         
         status_widget = QWidget()
         status_widget.setStyleSheet("background-color: palette(button); border-radius: 4px; padding: 8px;")
-        status_layout = QHBoxLayout(status_widget)
+        status_layout = QVBoxLayout(status_widget)
         status_layout.setContentsMargins(10, 8, 10, 8)
         
+        status_row = QHBoxLayout()
         status_icon = QLabel()
         status_icon.setPixmap(self.icon_manager.get_pixmap("info", 16))
-        status_layout.addWidget(status_icon)
+        status_row.addWidget(status_icon)
         
         self.lfs_status_label = QLabel(tr('lfs_status'))
         self.lfs_status_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
-        status_layout.addWidget(self.lfs_status_label)
-        status_layout.addStretch()
+        status_row.addWidget(self.lfs_status_label)
+        status_row.addStretch()
+        status_layout.addLayout(status_row)
+        
+        self.lfs_tracked_label = QLabel("")
+        self.lfs_tracked_label.setStyleSheet("color: palette(text); font-size: 11px; margin-top: 4px;")
+        self.lfs_tracked_label.setWordWrap(True)
+        status_layout.addWidget(self.lfs_tracked_label)
         
         lfs_layout.addWidget(status_widget)
         lfs_layout.addSpacing(10)
         
-        lfs_btn_layout = QHBoxLayout()
-        lfs_btn_layout.setSpacing(5)
+        actions_layout = QVBoxLayout()
+        actions_layout.setSpacing(5)
         
+        row1 = QHBoxLayout()
         self.lfs_install_btn = QPushButton(tr('install'))
         self.lfs_install_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.lfs_install_btn.setToolTip(tr('install_tooltip'))
         self.lfs_install_btn.clicked.connect(self.install_lfs)
-        lfs_btn_layout.addWidget(self.lfs_install_btn)
+        row1.addWidget(self.lfs_install_btn)
         
-        self.lfs_track_btn = QPushButton(tr('config_unreal'))
+        self.lfs_track_btn = QPushButton(tr('lfs_tracking'))
         self.lfs_track_btn.setIcon(self.icon_manager.get_icon("file-code", size=16))
-        self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
-        self.lfs_track_btn.clicked.connect(self.track_unreal_files)
-        lfs_btn_layout.addWidget(self.lfs_track_btn)
+        self.lfs_track_btn.clicked.connect(self.show_lfs_tracking)
+        row1.addWidget(self.lfs_track_btn)
+        actions_layout.addLayout(row1)
         
-        lfs_layout.addLayout(lfs_btn_layout)
-        
+        row2 = QHBoxLayout()
         self.lfs_pull_btn = QPushButton(tr('download_lfs_files'))
         self.lfs_pull_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
         self.lfs_pull_btn.clicked.connect(self.do_lfs_pull)
-        lfs_layout.addWidget(self.lfs_pull_btn)
+        row2.addWidget(self.lfs_pull_btn)
+        
+        self.lfs_locks_btn = QPushButton(tr('lfs_locks'))
+        self.lfs_locks_btn.setIcon(self.icon_manager.get_icon("lock", size=16))
+        self.lfs_locks_btn.clicked.connect(self.show_lfs_locks)
+        row2.addWidget(self.lfs_locks_btn)
+        actions_layout.addLayout(row2)
+
+        row3 = QHBoxLayout()
+        self.lfs_prune_btn = QPushButton(tr('lfs_prune'))
+        self.lfs_prune_btn.setIcon(self.icon_manager.get_icon("trash", size=16))
+        self.lfs_prune_btn.clicked.connect(self.do_lfs_prune)
+        row3.addWidget(self.lfs_prune_btn)
+        actions_layout.addLayout(row3)
+        
+        lfs_layout.addLayout(actions_layout)
         
         layout.addWidget(lfs_container)
         
@@ -959,7 +980,7 @@ class RepositoryTab(QWidget):
                 QMessageBox.information(
                     self,
                     tr('success'),
-                    tr('branch_created_from_commit', branch=branch_name, hash=commit_hash[:7])
+                    tr('branch_created_from_commit', branch=branch_hash[:7])
                 )
                 self.refresh_status()
             else:
@@ -1373,8 +1394,20 @@ class RepositoryTab(QWidget):
             
         if self.git_manager.is_lfs_installed():
             self.lfs_status_label.setText(tr('lfs_installed'))
+            
+            patterns = self.git_manager.get_lfs_tracked_patterns()
+            size_bytes = self.git_manager.get_lfs_storage_usage()
+            size_str = self.git_manager.format_size(size_bytes)
+            
+            if patterns:
+                count = len(patterns)
+                self.lfs_tracked_label.setText(f"{tr('lfs_tracking_patterns', count=count)} • {tr('lfs_size')}: {size_str}")
+                self.lfs_tracked_label.setToolTip("\n".join(patterns))
+            else:
+                self.lfs_tracked_label.setText(f"{tr('lfs_no_files_tracked')} • {tr('lfs_size')}: {size_str}")
         else:
             self.lfs_status_label.setText(tr('lfs_not_installed'))
+            self.lfs_tracked_label.setText("")
             
     def install_lfs(self):
         success, message = self.git_manager.install_lfs()
@@ -1384,24 +1417,10 @@ class RepositoryTab(QWidget):
         else:
             QMessageBox.warning(self, tr('error'), message)
             
-    def track_unreal_files(self):
-        if not self.plugin_manager:
-            return
-        
-        unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
-        if not unreal_plugin:
-            QMessageBox.warning(
-                self,
-                tr('plugin_disabled'),
-                tr('unreal_plugin_disabled')
-            )
-            return
-        
-        success, message = unreal_plugin.track_unreal_files(self.repo_path)
-        if success:
-            QMessageBox.information(self, tr('success'), message)
-        else:
-            QMessageBox.warning(self, tr('error'), message)
+    def show_lfs_tracking(self):
+        dialog = LFSTrackingDialog(self.git_manager, self)
+        dialog.exec()
+        self.check_lfs_status()
             
     def do_lfs_pull(self):
         success, message = self.git_manager.lfs_pull()
@@ -1409,6 +1428,17 @@ class RepositoryTab(QWidget):
             QMessageBox.information(self, tr('success'), tr('success_lfs_pull'))
         else:
             QMessageBox.warning(self, tr('error'), message)
+
+    def show_lfs_locks(self):
+        dialog = LFSLocksDialog(self.git_manager, self)
+        dialog.exec()
+
+    def do_lfs_prune(self):
+        success, message = self.git_manager.lfs_prune()
+        if success:
+            QMessageBox.information(self, tr('success'), tr('lfs_prune_success'))
+        else:
+            QMessageBox.warning(self, tr('error'), tr('lfs_prune_error', message=message))
             
     def clone_repository(self, url, path):
         self.progress_dialog = QProgressDialog(tr('cloning_repository'), tr('cancel'), 0, 0, self)
@@ -1657,3 +1687,152 @@ class RepositoryTab(QWidget):
             self.refresh_status()
             self.check_lfs_status()
             self.update_repo_info()
+    
+class LFSLocksDialog(QDialog):
+    def __init__(self, git_manager, parent=None):
+        super().__init__(parent)
+        self.git_manager = git_manager
+        self.setWindowTitle(tr('lfs_locks_title'))
+        self.setMinimumSize(600, 400)
+        self.init_ui()
+        self.load_locks()
+
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels([
+            tr('lfs_lock_path'), 
+            tr('lfs_lock_owner'), 
+            tr('lfs_lock_id'), 
+            tr('lfs_lock_date')
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(self.table)
+        
+        btn_layout = QHBoxLayout()
+        
+        self.unlock_btn = QPushButton(tr('lfs_unlock_selected'))
+        self.unlock_btn.clicked.connect(self.unlock_selected)
+        btn_layout.addWidget(self.unlock_btn)
+        
+        self.refresh_btn = QPushButton(tr('refresh'))
+        self.refresh_btn.clicked.connect(self.load_locks)
+        btn_layout.addWidget(self.refresh_btn)
+        
+        self.close_btn = QPushButton(tr('close'))
+        self.close_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(self.close_btn)
+        
+        layout.addLayout(btn_layout)
+
+    def load_locks(self):
+        self.table.setRowCount(0)
+        locks = self.git_manager.get_lfs_locks()
+        
+        for lock in locks:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            
+            self.table.setItem(row, 0, QTableWidgetItem(lock.get('path', '')))
+            
+            owner = lock.get('owner', {})
+            owner_name = owner.get('name', tr('unknown'))
+            self.table.setItem(row, 1, QTableWidgetItem(owner_name))
+            
+            self.table.setItem(row, 2, QTableWidgetItem(lock.get('id', '')))
+            self.table.setItem(row, 3, QTableWidgetItem(lock.get('locked_at', '')))
+            
+            self.table.item(row, 0).setData(Qt.ItemDataRole.UserRole, lock)
+
+    def unlock_selected(self):
+        selected_items = self.table.selectedItems()
+        if not selected_items:
+            return
+            
+        rows = set(item.row() for item in selected_items)
+        
+        for row in rows:
+            item = self.table.item(row, 0)
+            lock = item.data(Qt.ItemDataRole.UserRole)
+            path = lock.get('path')
+            
+            if path:
+                success, msg = self.git_manager.lfs_unlock_file(path, force=True)
+                if not success:
+                    QMessageBox.warning(self, tr('error'), f"{tr('error')}: {msg}")
+        
+        self.load_locks()
+
+class LFSTrackingDialog(QDialog):
+    def __init__(self, git_manager, parent=None):
+        super().__init__(parent)
+        self.git_manager = git_manager
+        self.setWindowTitle(tr('lfs_tracking_title'))
+        self.setMinimumSize(500, 400)
+        self.init_ui()
+        self.load_patterns()
+
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+        
+        info_label = QLabel(tr('lfs_tracking_info'))
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+        
+        self.patterns_list = QListWidget()
+        layout.addWidget(self.patterns_list)
+        
+        input_layout = QHBoxLayout()
+        self.pattern_input = QLineEdit()
+        self.pattern_input.setPlaceholderText("*.psd")
+        input_layout.addWidget(self.pattern_input)
+        
+        self.add_btn = QPushButton(tr('add'))
+        self.add_btn.clicked.connect(self.add_pattern)
+        input_layout.addWidget(self.add_btn)
+        
+        layout.addLayout(input_layout)
+        
+        btn_layout = QHBoxLayout()
+        
+        self.add_unreal_btn = QPushButton(tr('add_unreal_defaults'))
+        self.add_unreal_btn.clicked.connect(self.add_unreal_defaults)
+        btn_layout.addWidget(self.add_unreal_btn)
+        
+        btn_layout.addStretch()
+        
+        self.close_btn = QPushButton(tr('close'))
+        self.close_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(self.close_btn)
+        
+        layout.addLayout(btn_layout)
+
+    def load_patterns(self):
+        self.patterns_list.clear()
+        patterns = self.git_manager.get_lfs_tracked_patterns()
+        for pattern in patterns:
+            self.patterns_list.addItem(pattern)
+
+    def add_pattern(self):
+        pattern = self.pattern_input.text().strip()
+        if pattern:
+            success, msg = self.git_manager.lfs_track_files([pattern])
+            if success:
+                self.pattern_input.clear()
+                self.load_patterns()
+            else:
+                QMessageBox.warning(self, tr('error'), msg)
+
+    def add_unreal_defaults(self):
+        extensions = [
+            "*.uasset", "*.umap", "*.ubulk", "*.upk",
+            "*.uproject", "*.uplugin"
+        ]
+        success, msg = self.git_manager.lfs_track_files(extensions)
+        if success:
+            self.load_patterns()
+            QMessageBox.information(self, tr('success'), tr('success_unreal_defaults'))
+        else:
+            QMessageBox.warning(self, tr('error'), msg)
