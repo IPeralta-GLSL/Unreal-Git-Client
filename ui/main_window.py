@@ -276,6 +276,7 @@ class MainWindow(QMainWindow):
         
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self.update_new_tab_button_position()
     
     def update_new_tab_button_position(self):
         """Reposiciona el botón de nueva pestaña al final de las pestañas"""
@@ -283,9 +284,19 @@ class MainWindow(QMainWindow):
         if tab_bar and self.tab_widget.count() > 0:
             # Obtener la posición de la última pestaña
             last_tab_rect = tab_bar.tabRect(self.tab_widget.count() - 1)
+            
+            # Convertir coordenadas de la barra de pestañas a coordenadas del widget de pestañas
+            # Esto es importante si hay widgets en las esquinas o márgenes
+            tab_bar_pos = tab_bar.pos()
+            
             # Posicionar el botón justo después de la última pestaña
-            button_x = last_tab_rect.right() + 2
-            button_y = last_tab_rect.top() + (last_tab_rect.height() - self.new_tab_button.height()) // 2
+            button_x = tab_bar_pos.x() + last_tab_rect.right() + 5
+            
+            # Ajustar verticalmente para centrar en la barra de pestañas
+            tab_bar_height = tab_bar.height()
+            button_y = tab_bar_pos.y() + (tab_bar_height - self.new_tab_button.height()) // 2
+            
+            # Asegurar que el botón esté dentro del área visible y sobre la barra de pestañas
             self.new_tab_button.move(button_x, button_y)
             self.new_tab_button.raise_()
     
@@ -403,6 +414,7 @@ class MainWindow(QMainWindow):
             }}
             QTabBar {{
                 background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
             }}
             QTabBar::tab {{
                 background-color: transparent;
@@ -418,19 +430,18 @@ class MainWindow(QMainWindow):
             QTabBar::tab:selected {{
                 background-color: palette(base);
                 color: {theme.colors['primary']};
-                border-top: 2px solid {theme.colors['primary']};
+                border-bottom: 2px solid palette(base); /* Connect to content */
             }}
             QTabBar::tab:hover:!selected {{
                 background-color: {theme.colors['surface_hover']};
             }}
             QTabBar::close-button {{
-                image: url(none);
                 subcontrol-position: right;
                 margin-right: 4px;
+                border-radius: 2px;
             }}
             QTabBar::close-button:hover {{
                 background-color: {theme.colors['danger']};
-                border-radius: 2px;
             }}
             QStatusBar {{
                 background-color: {theme.colors['primary']};
