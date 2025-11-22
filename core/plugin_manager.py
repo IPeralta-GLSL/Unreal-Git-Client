@@ -32,12 +32,19 @@ class PluginManager:
                 
                 if hasattr(module, 'Plugin'):
                     plugin_instance = module.Plugin()
+                    
+                    # Check if plugin should be enabled by default
+                    enabled_by_default = True
+                    if hasattr(plugin_instance, 'is_enabled_by_default'):
+                        enabled_by_default = plugin_instance.is_enabled_by_default()
+                        
                     self.plugins[plugin_dir.name] = {
                         'instance': plugin_instance,
                         'module': module,
-                        'enabled': True
+                        'enabled': enabled_by_default
                     }
-                    print(f"✓ Plugin cargado: {plugin_instance.get_name()}")
+                    status = "cargado" if enabled_by_default else "cargado (desactivado)"
+                    print(f"✓ Plugin {status}: {plugin_instance.get_name()}")
             except Exception as e:
                 print(f"✗ Error cargando plugin {plugin_dir.name}: {str(e)}")
     

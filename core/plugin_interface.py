@@ -48,3 +48,15 @@ class PluginInterface(ABC):
         Devuelve una lista de patrones de archivo sugeridos para Git LFS.
         """
         return []
+
+    def is_enabled_by_default(self) -> bool:
+        """
+        Devuelve True si el plugin debe estar activado por defecto.
+        """
+        return True
+
+    def is_enabled_by_default(self) -> bool:
+        """
+        Devuelve True si el plugin debe estar activado por defecto.
+        """
+        return True

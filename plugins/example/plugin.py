@@ -11,6 +11,9 @@ class Plugin(PluginInterface):
     def get_description(self):
         return "An example plugin to demonstrate modularity"
     
+    def is_enabled_by_default(self):
+        return False
+
     def get_icon(self):
         return "ui/Icons/info.svg" # Using an existing icon
     
