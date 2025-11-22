@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
+from core.plugin_interface import PluginInterface
 
-class Plugin:
+class Plugin(PluginInterface):
     def get_name(self):
         return "Unreal Engine"
     
@@ -54,14 +55,14 @@ class Plugin:
             {
                 'id': 'open_uproject',
                 'name': 'Abrir en Unreal Engine',
-                'icon': '🎮',
+                'icon': 'unreal-engine-svgrepo-com', # Use icon name from IconManager if possible, or emoji
                 'callback': self.open_in_unreal,
                 'requires_unreal': True
             },
             {
                 'id': 'configure_lfs',
                 'name': 'Configurar LFS para Unreal',
-                'icon': '📦',
+                'icon': 'file-code',
                 'callback': self.track_unreal_files,
                 'requires_unreal': True
             },
@@ -152,16 +153,7 @@ class Plugin:
         try:
             import subprocess
             
-            unreal_extensions = [
-                "*.uasset", "*.umap", "*.blend", "*.blend1",
-                "*.fbx", "*.3ds", "*.obj", "*.dae",
-                "*.jpg", "*.jpeg", "*.png", "*.tga", "*.bmp",
-                "*.tif", "*.gif", "*.iff", "*.pict", "*.dds",
-                "*.xcf", "*.exr", "*.wav", "*.mp3", "*.ogg",
-                "*.flac", "*.aiff", "*.aif", "*.mod", "*.it",
-                "*.s3m", "*.xm", "*.psd", "*.mov", "*.avi",
-                "*.mp4", "*.wmv"
-            ]
+            unreal_extensions = self.get_lfs_patterns()
             
             gitattributes_path = os.path.join(repo_path, ".gitattributes")
             
@@ -175,3 +167,16 @@ class Plugin:
             return True, f"Configurados {len(unreal_extensions)} tipos de archivos para LFS"
         except Exception as e:
             return False, f"Error al configurar LFS: {str(e)}"
+    
+    def get_lfs_patterns(self):
+        return [
+            "*.uasset", "*.umap", "*.ubulk", "*.upk",
+            "*.uproject", "*.uplugin", "*.blend", "*.blend1",
+            "*.fbx", "*.3ds", "*.obj", "*.dae",
+            "*.jpg", "*.jpeg", "*.png", "*.tga", "*.bmp",
+            "*.tif", "*.gif", "*.iff", "*.pict", "*.dds",
+            "*.xcf", "*.exr", "*.wav", "*.mp3", "*.ogg",
+            "*.flac", "*.aiff", "*.aif", "*.mod", "*.it",
+            "*.s3m", "*.xm", "*.psd", "*.mov", "*.avi",
+            "*.mp4", "*.wmv"
+        ]

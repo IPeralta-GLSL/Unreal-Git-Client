@@ -86,8 +86,8 @@ class RepositoryTab(QWidget):
             self.lfs_install_btn.setText(f" {tr('install')}")
             self.lfs_install_btn.setToolTip(tr('install_tooltip'))
         if hasattr(self, 'lfs_track_btn'):
-            self.lfs_track_btn.setText(f" {tr('config_unreal')}")
-            self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
+            self.lfs_track_btn.setText(f" {tr('config_lfs')}")
+            self.lfs_track_btn.setToolTip(tr('config_lfs_tooltip'))
         if hasattr(self, 'lfs_pull_btn'):
             self.lfs_pull_btn.setText(f" {tr('download_lfs_files')}")
             self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
@@ -256,16 +256,6 @@ class RepositoryTab(QWidget):
         self.open_terminal_btn.setToolTip(tr('terminal_tooltip'))
         self.open_terminal_btn.clicked.connect(self.open_terminal)
         layout.addWidget(self.open_terminal_btn)
-        
-        self.open_unreal_btn = QPushButton(tr('unreal_button'))
-        self.open_unreal_btn.setIcon(self.icon_manager.get_icon("unreal-engine-svgrepo-com", size=18))
-        self.open_unreal_btn.setMinimumSize(100, 36)
-        self.open_unreal_btn.setMaximumSize(130, 36)
-        self.open_unreal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.open_unreal_btn.setStyleSheet(button_style)
-        self.open_unreal_btn.setToolTip(tr('unreal_tooltip'))
-        self.open_unreal_btn.clicked.connect(self.open_with_unreal)
-        layout.addWidget(self.open_unreal_btn)
         
         layout.addSpacing(10)
         
@@ -1268,9 +1258,6 @@ class RepositoryTab(QWidget):
         indicators = self.plugin_manager.get_repository_indicators(self.repo_path)
         
         for indicator in indicators:
-            if indicator.get('plugin_name') == 'unreal_engine':
-                continue
-
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -1308,22 +1295,20 @@ class RepositoryTab(QWidget):
                     border-color: {theme.colors['primary_hover']};
                 }}
             """)
-            btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions())
+            btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions(ind))
             container_layout.addWidget(btn)
             
             self.plugin_indicators_layout.addWidget(container)
         
-        unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
-        is_unreal_project = False
-        if unreal_plugin and self.repo_path:
-            is_unreal_project = unreal_plugin.is_unreal_project(self.repo_path)
-        
-        if hasattr(self, 'open_unreal_btn'):
-            self.open_unreal_btn.setVisible(is_unreal_project)
         if hasattr(self, 'lfs_track_btn'):
-            self.lfs_track_btn.setVisible(is_unreal_project)
+            # Check if any plugin wants to show LFS track button or similar
+            # For now, we keep lfs_track_btn generic or managed by plugins?
+            # The original code hid it if not unreal project.
+            # Let's make it visible if LFS is installed, or maybe we should let plugins manage this too?
+            # For now, I'll just leave it visible or check if LFS is relevant.
+            pass
     
-    def show_plugin_actions(self):
+    def show_plugin_actions(self, indicator=None):
         if not self.plugin_manager or not self.repo_path:
             return
         
@@ -1349,11 +1334,20 @@ class RepositoryTab(QWidget):
             }
         """)
         
+        # Filter actions by plugin if indicator is provided
+        target_plugin = indicator.get('plugin_name') if indicator else None
+        
         for action_data in actions:
-            if not action_data.get('requires_unreal'):
-                continue
+            # If we clicked a specific plugin indicator, maybe prioritize its actions?
+            # Or just show all actions? The original code showed only unreal actions.
+            # Let's show all actions for now, or filter if needed.
             
-            action = QAction(f"{action_data['icon']} {action_data['name']}", self)
+            # If the action requires unreal, check if it's an unreal project (this check should be inside the plugin ideally)
+            # But here we just display what the plugin manager gave us.
+            
+            action = QAction(f"{action_data.get('icon_char', '')} {action_data['name']}", self)
+            # If we have an icon path/name, we could use it.
+            
             action.triggered.connect(lambda checked, ad=action_data: self.execute_plugin_action(ad))
             menu.addAction(action)
         
@@ -1412,7 +1406,7 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), message)
             
     def show_lfs_tracking(self):
-        dialog = LFSTrackingDialog(self.git_manager, self)
+        dialog = LFSTrackingDialog(self.git_manager, self.plugin_manager, self)
         dialog.exec()
         self.check_lfs_status()
             
@@ -1581,32 +1575,6 @@ class RepositoryTab(QWidget):
         else:
             subprocess.Popen(["gnome-terminal", "--working-directory", repo_path])
     
-    def open_with_unreal(self):
-        if not self.plugin_manager:
-            return
-        
-        unreal_plugin = self.plugin_manager.get_plugin('unreal_engine')
-        if not unreal_plugin:
-            QMessageBox.warning(
-                self,
-                tr('plugin_disabled'),
-                tr('unreal_plugin_disabled')
-            )
-            return
-        
-        if not unreal_plugin.is_unreal_project(self.repo_path):
-            QMessageBox.information(
-                self,
-                tr('not_unreal_project'),
-                tr('not_unreal_project_text')
-            )
-            return
-        
-        success, message = unreal_plugin.open_in_unreal(self.repo_path)
-        
-        if not success:
-            QMessageBox.warning(self, tr('error'), message)
-    
     def update_translations(self):
         if hasattr(self, 'branch_title'):
             self.branch_title.setText(tr('current_branch_label'))
@@ -1669,8 +1637,8 @@ class RepositoryTab(QWidget):
             self.lfs_install_btn.setText(f" {tr('install')}")
             self.lfs_install_btn.setToolTip(tr('install_tooltip'))
         if hasattr(self, 'lfs_track_btn'):
-            self.lfs_track_btn.setText(f" {tr('config_unreal')}")
-            self.lfs_track_btn.setToolTip(tr('config_unreal_tooltip'))
+            self.lfs_track_btn.setText(f" {tr('config_lfs')}")
+            self.lfs_track_btn.setToolTip(tr('config_lfs_tooltip'))
         if hasattr(self, 'lfs_pull_btn'):
             self.lfs_pull_btn.setText(f" {tr('download_lfs_files')}")
             self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
@@ -1760,9 +1728,10 @@ class LFSLocksDialog(QDialog):
         self.load_locks()
 
 class LFSTrackingDialog(QDialog):
-    def __init__(self, git_manager, parent=None):
+    def __init__(self, git_manager, plugin_manager=None, parent=None):
         super().__init__(parent)
         self.git_manager = git_manager
+        self.plugin_manager = plugin_manager
         self.setWindowTitle(tr('lfs_tracking_title'))
         self.setMinimumSize(500, 400)
         self.init_ui()
@@ -1791,9 +1760,10 @@ class LFSTrackingDialog(QDialog):
         
         btn_layout = QHBoxLayout()
         
-        self.add_unreal_btn = QPushButton(tr('add_unreal_defaults'))
-        self.add_unreal_btn.clicked.connect(self.add_unreal_defaults)
-        btn_layout.addWidget(self.add_unreal_btn)
+        if self.plugin_manager:
+            self.add_defaults_btn = QPushButton(tr('add_plugin_defaults')) # We can rename this translation key later to be more generic
+            self.add_defaults_btn.clicked.connect(self.add_plugin_defaults)
+            btn_layout.addWidget(self.add_defaults_btn)
         
         btn_layout.addStretch()
         
@@ -1819,12 +1789,16 @@ class LFSTrackingDialog(QDialog):
             else:
                 QMessageBox.warning(self, tr('error'), msg)
 
-    def add_unreal_defaults(self):
-        extensions = [
-            "*.uasset", "*.umap", "*.ubulk", "*.upk",
-            "*.uproject", "*.uplugin"
-        ]
-        success, msg = self.git_manager.lfs_track_files(extensions)
+    def add_plugin_defaults(self):
+        if not self.plugin_manager:
+            return
+            
+        patterns = self.plugin_manager.get_all_lfs_patterns()
+        if not patterns:
+            QMessageBox.information(self, tr('info'), "No hay patrones predefinidos en los plugins activos.")
+            return
+            
+        success, msg = self.git_manager.lfs_track_files(patterns)
         if success:
             self.load_patterns()
             QMessageBox.information(self, tr('success'), tr('success_unreal_defaults'))

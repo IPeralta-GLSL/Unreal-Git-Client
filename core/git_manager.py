@@ -300,31 +300,6 @@ class GitManager:
     def lfs_prune(self):
         return self.run_command("git lfs prune")
     
-    def is_unreal_project(self):
-        if not self.repo_path:
-            return False
-        
-        import glob
-        uproject_files = glob.glob(os.path.join(self.repo_path, "*.uproject"))
-        
-        has_content = os.path.exists(os.path.join(self.repo_path, "Content"))
-        has_source = os.path.exists(os.path.join(self.repo_path, "Source"))
-        has_config = os.path.exists(os.path.join(self.repo_path, "Config"))
-        
-        return len(uproject_files) > 0 or (has_content and (has_source or has_config))
-    
-    def get_unreal_project_name(self):
-        if not self.repo_path:
-            return None
-        
-        import glob
-        uproject_files = glob.glob(os.path.join(self.repo_path, "*.uproject"))
-        
-        if uproject_files:
-            return os.path.basename(uproject_files[0]).replace('.uproject', '')
-        
-        return None
-
     def get_lfs_storage_usage(self):
         if not self.repo_path:
             return 0

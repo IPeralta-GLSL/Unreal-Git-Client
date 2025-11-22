@@ -87,6 +87,17 @@ class PluginManager:
                         actions.extend(plugin_actions)
         return actions
     
+    def get_all_lfs_patterns(self):
+        patterns = []
+        for name, data in self.plugins.items():
+            if data['enabled']:
+                plugin = data['instance']
+                if hasattr(plugin, 'get_lfs_patterns'):
+                    plugin_patterns = plugin.get_lfs_patterns()
+                    if plugin_patterns:
+                        patterns.extend(plugin_patterns)
+        return list(set(patterns))
+    
     def get_repository_indicators(self, repo_path):
         indicators = []
         for name, data in self.plugins.items():
