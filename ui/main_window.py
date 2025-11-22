@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
                              QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame)
-from PyQt6.QtCore import Qt, QSize, QTimer, QPoint, QRect
+from PyQt6.QtCore import Qt, QSize, QTimer, QPoint, QRect, QEvent
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut, QCursor
 from ui.repository_tab import RepositoryTab
 from ui.clone_dialog import CloneDialog
@@ -54,14 +54,17 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        title_bar = self.create_title_bar()
-        layout.addWidget(title_bar)
-        
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabsClosable(True)
         self.tab_widget.setMovable(True)
+        self.tab_widget.setDocumentMode(True)
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
+        
+        self.tab_widget.setCornerWidget(self.create_window_controls(), Qt.Corner.TopRightCorner)
+        self.tab_widget.setCornerWidget(self.create_app_icon(), Qt.Corner.TopLeftCorner)
+        
+        self.tab_widget.tabBar().installEventFilter(self)
         
         layout.addWidget(self.tab_widget)
         
@@ -93,63 +96,36 @@ class MainWindow(QMainWindow):
         """)
         
         self.add_empty_tab()
-        
-    def setup_shortcuts(self):
-        new_tab_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
-        new_tab_shortcut.activated.connect(self.add_empty_tab)
-        
-        close_tab_shortcut = QShortcut(QKeySequence("Ctrl+W"), self)
-        close_tab_shortcut.activated.connect(self.close_current_tab)
-        
-        next_tab_shortcut = QShortcut(QKeySequence("Ctrl+Tab"), self)
-        next_tab_shortcut.activated.connect(self.next_tab)
-        
-        prev_tab_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
-        prev_tab_shortcut.activated.connect(self.prev_tab)
-        
-        open_shortcut = QShortcut(QKeySequence("Ctrl+O"), self)
-        open_shortcut.activated.connect(self.open_repository)
-        
-        clone_shortcut = QShortcut(QKeySequence("Ctrl+Shift+C"), self)
-        clone_shortcut.activated.connect(self.clone_repository)
-        
-        settings_shortcut = QShortcut(QKeySequence("Ctrl+,"), self)
-        settings_shortcut.activated.connect(self.open_settings)
-        
-        quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
-        quit_shortcut.activated.connect(self.close)
-    
-    def create_title_bar(self):
+
+    def create_app_icon(self):
         from ui.icon_manager import IconManager
         icon_manager = IconManager()
-        theme = get_current_theme()
         
-        title_bar = QFrame()
-        title_bar.setFixedHeight(40)
-        title_bar.setStyleSheet(f"""
-            QFrame {{
-                background-color: {theme.colors['surface']};
-                border-bottom: 1px solid {theme.colors['border']};
-            }}
-        """)
-        
-        layout = QHBoxLayout(title_bar)
-        layout.setContentsMargins(10, 0, 0, 0)
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(10, 0, 5, 0)
         layout.setSpacing(0)
         
         app_icon = QLabel()
         app_icon.setPixmap(icon_manager.get_pixmap("git-branch", size=20))
         layout.addWidget(app_icon)
         
-        title_label = QLabel(tr('app_name'))
-        title_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 14px; margin-left: 5px;")
-        layout.addWidget(title_label)
+        return container
+
+    def create_window_controls(self):
+        from ui.icon_manager import IconManager
+        from ui.theme import get_current_theme
+        icon_manager = IconManager()
+        theme = get_current_theme()
         
-        layout.addStretch()
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
         self.settings_button = QPushButton()
         self.settings_button.setIcon(icon_manager.get_icon("gear-six", size=18))
-        self.settings_button.setFixedSize(46, 40)
+        self.settings_button.setFixedSize(46, 32)
         self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_button.setToolTip(tr('settings'))
         self.settings_button.clicked.connect(self.open_settings)
@@ -167,7 +143,7 @@ class MainWindow(QMainWindow):
         
         min_button = QPushButton()
         min_button.setIcon(icon_manager.get_icon("window-minimize-symbolic-svgrepo-com", size=16))
-        min_button.setFixedSize(46, 40)
+        min_button.setFixedSize(46, 32)
         min_button.setCursor(Qt.CursorShape.PointingHandCursor)
         min_button.clicked.connect(self.showMinimized)
         min_button.setStyleSheet(f"""
@@ -184,7 +160,7 @@ class MainWindow(QMainWindow):
         
         self.max_button = QPushButton()
         self.max_button.setIcon(icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
-        self.max_button.setFixedSize(46, 40)
+        self.max_button.setFixedSize(46, 32)
         self.max_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.max_button.clicked.connect(self.toggle_maximize)
         self.max_button.setStyleSheet(f"""
@@ -201,7 +177,7 @@ class MainWindow(QMainWindow):
         
         close_button = QPushButton()
         close_button.setIcon(icon_manager.get_icon("x-square", size=16))
-        close_button.setFixedSize(46, 40)
+        close_button.setFixedSize(46, 32)
         close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         close_button.clicked.connect(self.close)
         close_button.setStyleSheet(f"""
@@ -216,23 +192,23 @@ class MainWindow(QMainWindow):
         """)
         layout.addWidget(close_button)
         
-        title_bar.mousePressEvent = self.title_bar_mouse_press
-        title_bar.mouseMoveEvent = self.title_bar_mouse_move
-        title_bar.mouseDoubleClickEvent = self.title_bar_double_click
-        
-        return title_bar
-    
-    def title_bar_mouse_press(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            if self.windowHandle():
-                self.windowHandle().startSystemMove()
-    
-    def title_bar_mouse_move(self, event):
-        pass
-    
-    def title_bar_double_click(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.toggle_maximize()
+        return container
+
+    def eventFilter(self, obj, event):
+        if obj == self.tab_widget.tabBar():
+            if event.type() == QEvent.Type.MouseButtonPress:
+                if event.button() == Qt.MouseButton.LeftButton:
+                    if self.tab_widget.tabBar().tabAt(event.pos()) == -1:
+                        if self.windowHandle():
+                            self.windowHandle().startSystemMove()
+                        return True
+            elif event.type() == QEvent.Type.MouseButtonDblClick:
+                if event.button() == Qt.MouseButton.LeftButton:
+                    if self.tab_widget.tabBar().tabAt(event.pos()) == -1:
+                        self.toggle_maximize()
+                        return True
+        return super().eventFilter(obj, event)
+
     
     def toggle_maximize(self):
         if self.isMaximized():
@@ -420,28 +396,32 @@ class MainWindow(QMainWindow):
             QTabWidget::pane {{
                 border: 1px solid {theme.colors['border']};
                 background-color: palette(base);
-                border-top: 2px solid {theme.colors['primary']};
+                border-top: none;
+            }}
+            QTabWidget::tab-bar {{
+                left: 5px;
             }}
             QTabBar {{
-                background-color: palette(button);
+                background-color: {theme.colors['surface']};
             }}
             QTabBar::tab {{
-                background-color: palette(button);
-                color: palette(window-text);
-                border: 1px solid {theme.colors['border']};
-                padding: 10px 20px;
+                background-color: transparent;
+                color: {theme.colors['text']};
+                border: none;
+                padding: 8px 20px;
                 margin-right: 2px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
                 min-width: 120px;
+                max-width: 200px;
             }}
             QTabBar::tab:selected {{
                 background-color: palette(base);
-                color: palette(bright-text);
-                border-bottom: 2px solid {theme.colors['primary']};
+                color: {theme.colors['primary']};
+                border-top: 2px solid {theme.colors['primary']};
             }}
             QTabBar::tab:hover:!selected {{
-                background-color: palette(text);
+                background-color: {theme.colors['surface_hover']};
             }}
             QTabBar::close-button {{
                 image: url(none);
@@ -458,3 +438,28 @@ class MainWindow(QMainWindow):
                 font-weight: bold;
             }}
         """)
+    
+    def setup_shortcuts(self):
+        new_tab_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
+        new_tab_shortcut.activated.connect(self.add_empty_tab)
+        
+        close_tab_shortcut = QShortcut(QKeySequence("Ctrl+W"), self)
+        close_tab_shortcut.activated.connect(self.close_current_tab)
+        
+        next_tab_shortcut = QShortcut(QKeySequence("Ctrl+Tab"), self)
+        next_tab_shortcut.activated.connect(self.next_tab)
+        
+        prev_tab_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Tab"), self)
+        prev_tab_shortcut.activated.connect(self.prev_tab)
+        
+        open_shortcut = QShortcut(QKeySequence("Ctrl+O"), self)
+        open_shortcut.activated.connect(self.open_repository)
+        
+        clone_shortcut = QShortcut(QKeySequence("Ctrl+Shift+C"), self)
+        clone_shortcut.activated.connect(self.clone_repository)
+        
+        settings_shortcut = QShortcut(QKeySequence("Ctrl+,"), self)
+        settings_shortcut.activated.connect(self.open_settings)
+        
+        quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
+        quit_shortcut.activated.connect(self.close)
