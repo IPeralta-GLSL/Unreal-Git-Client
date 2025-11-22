@@ -279,24 +279,17 @@ class MainWindow(QMainWindow):
         self.update_new_tab_button_position()
     
     def update_new_tab_button_position(self):
-        """Reposiciona el botón de nueva pestaña al final de las pestañas"""
         tab_bar = self.tab_widget.tabBar()
         if tab_bar and self.tab_widget.count() > 0:
-            # Obtener la posición de la última pestaña
             last_tab_rect = tab_bar.tabRect(self.tab_widget.count() - 1)
             
-            # Convertir coordenadas de la barra de pestañas a coordenadas del widget de pestañas
-            # Esto es importante si hay widgets en las esquinas o márgenes
             tab_bar_pos = tab_bar.pos()
             
-            # Posicionar el botón justo después de la última pestaña
             button_x = tab_bar_pos.x() + last_tab_rect.right() + 5
             
-            # Ajustar verticalmente para centrar en la barra de pestañas
             tab_bar_height = tab_bar.height()
             button_y = tab_bar_pos.y() + (tab_bar_height - self.new_tab_button.height()) // 2
             
-            # Asegurar que el botón esté dentro del área visible y sobre la barra de pestañas
             self.new_tab_button.move(button_x, button_y)
             self.new_tab_button.raise_()
     
@@ -430,7 +423,7 @@ class MainWindow(QMainWindow):
             QTabBar::tab:selected {{
                 background-color: palette(base);
                 color: {theme.colors['primary']};
-                border-bottom: 2px solid palette(base); /* Connect to content */
+                border-bottom: 2px solid palette(base);
             }}
             QTabBar::tab:hover:!selected {{
                 background-color: {theme.colors['surface_hover']};
