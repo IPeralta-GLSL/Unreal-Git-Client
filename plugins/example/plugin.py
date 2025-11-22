@@ -3,26 +3,26 @@ import os
 
 class Plugin(PluginInterface):
     def get_name(self):
-        return "Hello World"
+        return "Example Plugin"
     
     def get_version(self):
         return "1.0.0"
     
     def get_description(self):
-        return "Un plugin de ejemplo para demostrar la modularidad"
+        return "An example plugin to demonstrate modularity"
     
     def get_icon(self):
-        return "ui/Icons/info.svg" # Usamos un icono existente
+        return "ui/Icons/info.svg" # Using an existing icon
     
     def get_repository_indicator(self, repo_path):
-        # Este plugin siempre muestra un indicador para propósitos de demostración
-        # En un caso real, verificarías si existe un archivo específico, etc.
+        # This plugin always shows an indicator for demonstration purposes
+        # In a real scenario, you would check if a specific file exists, etc.
         return {
             'icon': '👋',
-            'text': 'Hello World',
-            'tooltip': 'Plugin de ejemplo activo',
-            'color': '#6366f1', # Un color índigo
-            'plugin_name': 'hello_world'
+            'text': 'Example',
+            'tooltip': 'Example plugin active',
+            'color': '#6366f1', # Indigo color
+            'plugin_name': 'example'
         }
     
     def get_actions(self, context):
@@ -30,7 +30,7 @@ class Plugin(PluginInterface):
             return [
                 {
                     'id': 'say_hello',
-                    'name': 'Saludar',
+                    'name': 'Say Hello',
                     'icon': 'chat',
                     'callback': self.say_hello
                 }
@@ -38,4 +38,4 @@ class Plugin(PluginInterface):
         return []
     
     def say_hello(self, repo_path):
-        return True, f"¡Hola desde el repositorio en: {os.path.basename(repo_path)}!"
+        return True, f"Hello from the repository at: {os.path.basename(repo_path)}!"

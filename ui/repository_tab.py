@@ -1337,22 +1337,21 @@ class RepositoryTab(QWidget):
         # Filter actions by plugin if indicator is provided
         target_plugin = indicator.get('plugin_name') if indicator else None
         
+        visible_actions = 0
         for action_data in actions:
-            # If we clicked a specific plugin indicator, maybe prioritize its actions?
-            # Or just show all actions? The original code showed only unreal actions.
-            # Let's show all actions for now, or filter if needed.
+            # Filter actions if a specific plugin indicator was clicked
+            if target_plugin and action_data.get('plugin_name') != target_plugin:
+                continue
             
-            # If the action requires unreal, check if it's an unreal project (this check should be inside the plugin ideally)
-            # But here we just display what the plugin manager gave us.
-            
+            visible_actions += 1
             action = QAction(f"{action_data.get('icon_char', '')} {action_data['name']}", self)
-            # If we have an icon path/name, we could use it.
             
             action.triggered.connect(lambda checked, ad=action_data: self.execute_plugin_action(ad))
             menu.addAction(action)
         
-        cursor_pos = QCursor.pos()
-        menu.exec(cursor_pos)
+        if visible_actions > 0:
+            cursor_pos = QCursor.pos()
+            menu.exec(cursor_pos)
     
     def execute_plugin_action(self, action_data):
         if not self.repo_path:

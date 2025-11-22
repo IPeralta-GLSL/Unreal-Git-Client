@@ -1,49 +1,49 @@
-# Sistema de Plugins
+# Plugin System
 
-Este cliente Git soporta un sistema de plugins modular basado en Python.
-Cada plugin debe residir en su propia carpeta dentro del directorio `plugins/`.
+This Git client supports a modular plugin system based on Python.
+Each plugin must reside in its own folder within the `plugins/` directory.
 
-## Estructura de un Plugin
+## Plugin Structure
 
 ```
 plugins/
-  mi_plugin/
-    __init__.py  (opcional)
-    plugin.py    (requerido)
+  my_plugin/
+    __init__.py  (optional)
+    plugin.py    (required)
 ```
 
-## Implementación
+## Implementation
 
-El archivo `plugin.py` debe contener una clase llamada `Plugin` que herede de `core.plugin_interface.PluginInterface`.
+The `plugin.py` file must contain a class named `Plugin` that inherits from `core.plugin_interface.PluginInterface`.
 
-### Ejemplo Básico
+### Basic Example
 
 ```python
 from core.plugin_interface import PluginInterface
 
 class Plugin(PluginInterface):
     def get_name(self):
-        return "Mi Plugin"
+        return "My Plugin"
     
     def get_version(self):
         return "1.0.0"
     
     def get_description(self):
-        return "Descripción de mi plugin"
+        return "Description of my plugin"
     
     def get_icon(self):
-        # Ruta a un icono o nombre de icono del sistema
-        return "ui/Icons/mi_icono.svg" 
+        # Path to an icon or system icon name
+        return "ui/Icons/my_icon.svg" 
     
     def get_repository_indicator(self, repo_path):
-        # Lógica para detectar si este plugin es relevante para el repo
-        if es_mi_tipo_de_proyecto(repo_path):
+        # Logic to detect if this plugin is relevant for the repo
+        if is_my_project_type(repo_path):
             return {
                 'icon': '🚀',
-                'text': 'Mi Proyecto',
-                'tooltip': 'Proyecto detectado',
+                'text': 'My Project',
+                'tooltip': 'Project detected',
                 'color': '#123456',
-                'plugin_name': 'mi_plugin'
+                'plugin_name': 'my_plugin'
             }
         return None
         
@@ -51,22 +51,22 @@ class Plugin(PluginInterface):
         if context == 'repository':
             return [
                 {
-                    'id': 'mi_accion',
-                    'name': 'Ejecutar Acción',
+                    'id': 'my_action',
+                    'name': 'Execute Action',
                     'icon': 'play',
-                    'callback': self.mi_funcion
+                    'callback': self.my_function
                 }
             ]
         return []
 
-    def mi_funcion(self, repo_path):
-        print(f"Ejecutando acción en {repo_path}")
-        return True, "Acción completada"
+    def my_function(self, repo_path):
+        print(f"Executing action in {repo_path}")
+        return True, "Action completed"
 ```
 
-## Capacidades
+## Capabilities
 
-Los plugins pueden:
-1.  **Detectar tipos de proyectos**: Mostrar indicadores en la barra superior (ej: Unreal, Unity, Web).
-2.  **Agregar acciones**: Añadir botones al menú de acciones del repositorio.
-3.  **Configurar LFS**: Sugerir patrones de archivos para Git LFS (`get_lfs_patterns`).
+Plugins can:
+1.  **Detect project types**: Show indicators in the top bar (e.g., Unreal, Unity, Web).
+2.  **Add actions**: Add buttons to the repository action menu.
+3.  **Configure LFS**: Suggest file patterns for Git LFS (`get_lfs_patterns`).

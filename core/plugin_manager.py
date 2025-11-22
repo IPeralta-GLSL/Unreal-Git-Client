@@ -84,6 +84,9 @@ class PluginManager:
                 if hasattr(plugin, 'get_actions'):
                     plugin_actions = plugin.get_actions(context)
                     if plugin_actions:
+                        # Inject plugin name into actions for filtering
+                        for action in plugin_actions:
+                            action['plugin_name'] = name
                         actions.extend(plugin_actions)
         return actions
     
