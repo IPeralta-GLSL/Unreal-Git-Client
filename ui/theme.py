@@ -15,18 +15,18 @@ class Theme:
     def load_theme(self):
         if self.name == "Dark":
             self.colors = {
-                'primary': '#4ade80',
-                'primary_hover': '#5ef090',
-                'primary_pressed': '#3bc970',
+                'primary': '#16a34a',
+                'primary_hover': '#15803d',
+                'primary_pressed': '#14532d',
                 'primary_text': '#ffffff',
                 
                 'secondary': '#0e639c',
                 'secondary_hover': '#1177bb',
                 'secondary_pressed': '#0a4f7d',
                 
-                'success': '#22c55e',
-                'success_hover': '#2dd36c',
-                'success_pressed': '#16a34a',
+                'success': '#15803d',
+                'success_hover': '#166534',
+                'success_pressed': '#14532d',
                 
                 'danger': '#ef4444',
                 'danger_hover': '#f87171',

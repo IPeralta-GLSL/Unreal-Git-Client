@@ -437,9 +437,9 @@ class MainWindow(QMainWindow):
                 background-color: {theme.colors['danger']};
             }}
             QStatusBar {{
-                background-color: {theme.colors['primary']};
-                color: palette(bright-text);
-                font-weight: bold;
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['text']};
+                border-top: 1px solid {theme.colors['border']};
             }}
         """)
     
