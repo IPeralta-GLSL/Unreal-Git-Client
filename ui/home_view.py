@@ -121,7 +121,7 @@ class HomeView(QWidget):
                 QFrame {
                     background-color: palette(base);
                     border-radius: 12px;
-                    border: 2px dashed palette(mid);
+                    border: none;
                 }
             """)
             placeholder_layout = QVBoxLayout(placeholder_frame)
@@ -168,7 +168,7 @@ class HomeView(QWidget):
             QFrame {{
                 background-color: palette(base);
                 border-radius: 12px;
-                border: 1px solid palette(mid);
+                border: none;
             }}
         """)
         tips_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -191,11 +191,6 @@ class HomeView(QWidget):
         tips_title_layout.addWidget(self.tips_title)
         tips_title_layout.addStretch()
         tips_layout.addLayout(tips_title_layout)
-        
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: palette(mid); max-height: 1px;")
-        tips_layout.addWidget(separator)
         
         tips_data = [
             ("plus-circle", 'tip_new_tab'),
@@ -304,7 +299,7 @@ class HomeView(QWidget):
             QFrame {{
                 background-color: palette(base);
                 border-radius: 12px;
-                border: 1px solid palette(mid);
+                border: none;
             }}
         """)
         section.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -340,11 +335,6 @@ class HomeView(QWidget):
         header_layout.addWidget(repo_count)
         
         layout.addLayout(header_layout)
-        
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: palette(mid); max-height: 1px;")
-        layout.addWidget(separator)
         
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -407,7 +397,7 @@ class HomeView(QWidget):
         btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: palette(window);
-                border: 2px solid palette(mid);
+                border: none;
                 border-radius: 10px;
                 padding: 15px 18px;
                 text-align: left;
@@ -417,12 +407,10 @@ class HomeView(QWidget):
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['surface_hover']};
-                border-color: {theme.colors['primary']};
                 transform: translateY(-2px);
             }}
             QPushButton:pressed {{
                 background-color: {theme.colors['primary']};
-                border-color: {theme.colors['primary']};
                 color: white;
             }}
         """)
