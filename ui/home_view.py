@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                             QLabel, QFrame, QSizePolicy, QScrollArea)
-from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QFont
+                             QLabel, QFrame, QSizePolicy, QScrollArea, QGraphicsDropShadowEffect)
+from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty
+from PyQt6.QtGui import QFont, QColor
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
 from core.translations import tr
@@ -33,51 +33,47 @@ class HomeView(QWidget):
                 background-color: palette(window);
             }}
             QScrollBar:vertical {{
-                background-color: palette(window);
-                width: 12px;
-                border-radius: 6px;
+                background-color: transparent;
+                width: 14px;
+                margin: 2px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: palette(text);
-                border-radius: 6px;
-                min-height: 30px;
+                background-color: palette(mid);
+                border-radius: 7px;
+                min-height: 40px;
             }}
             QScrollBar::handle:vertical:hover {{
                 background-color: {theme.colors['surface_hover']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
             }}
         """)
         
         scroll_widget = QWidget()
         layout = QVBoxLayout(scroll_widget)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
-        layout.setSpacing(20)
-        layout.setContentsMargins(40, 40, 40, 40)
+        layout.setSpacing(35)
+        layout.setContentsMargins(50, 60, 50, 50)
         
         header_container = QWidget()
-        header_container.setMaximumWidth(900)
+        header_container.setMaximumWidth(1000)
         header_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         header_layout = QVBoxLayout(header_container)
-        header_layout.setSpacing(15)
+        header_layout.setSpacing(12)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         self.title = QLabel(tr('git_client'))
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title.setWordWrap(True)
-        self.title.setStyleSheet("""
-            font-size: 32px;
-            font-weight: bold;
-            color: palette(bright-text);
-            margin: 5px;
-        """)
-        header_layout.addWidget(self.title)
         
         layout.addWidget(header_container)
         
         buttons_container = QWidget()
-        buttons_container.setMaximumWidth(900)
+        buttons_container.setMaximumWidth(1000)
         buttons_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         buttons_layout = QHBoxLayout(buttons_container)
-        buttons_layout.setSpacing(15)
+        buttons_layout.setSpacing(20)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         
         theme = get_current_theme()
@@ -94,7 +90,7 @@ class HomeView(QWidget):
         self.clone_btn = self.create_action_button(
             tr('clone_repository_btn'),
             tr('clone_repository_desc'),
-            theme.colors['primary'],
+            "#16825d",
             "download"
         )
         self.clone_btn.clicked.connect(self.clone_repo_requested.emit)
@@ -103,16 +99,16 @@ class HomeView(QWidget):
         layout.addWidget(buttons_container)
         
         content_splitter = QWidget()
-        content_splitter.setMaximumWidth(1200)
+        content_splitter.setMaximumWidth(1300)
         content_splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         content_layout = QHBoxLayout(content_splitter)
-        content_layout.setSpacing(20)
+        content_layout.setSpacing(25)
         content_layout.setContentsMargins(0, 0, 0, 0)
         
         left_panel = QWidget()
         left_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setSpacing(10)
+        left_layout.setSpacing(12)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
         recent_section = self.create_recent_repos_section()
@@ -120,41 +116,86 @@ class HomeView(QWidget):
             left_layout.addWidget(recent_section)
             self.no_recent_placeholder = None
         else:
+            placeholder_frame = QFrame()
+            placeholder_frame.setStyleSheet("""
+                QFrame {
+                    background-color: palette(base);
+                    border-radius: 12px;
+                    border: 2px dashed palette(mid);
+                }
+            """)
+            placeholder_layout = QVBoxLayout(placeholder_frame)
+            placeholder_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder_layout.setSpacing(15)
+            placeholder_layout.setContentsMargins(40, 60, 40, 60)
+            
+            empty_icon = QLabel()
+            empty_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=64))
+            empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder_layout.addWidget(empty_icon)
+            
             self.no_recent_placeholder = QLabel(tr('no_recent_repos'))
             self.no_recent_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.no_recent_placeholder.setStyleSheet("color: palette(text); font-size: 14px; padding: 40px;")
-            left_layout.addWidget(self.no_recent_placeholder)
+            self.no_recent_placeholder.setWordWrap(True)
+            self.no_recent_placeholder.setStyleSheet("""
+                color: palette(text); 
+                font-size: 15px; 
+                font-weight: 500;
+            """)
+            placeholder_layout.addWidget(self.no_recent_placeholder)
+            
+            hint_label = QLabel("Open or clone a repository to get started")
+            hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            hint_label.setWordWrap(True)
+            hint_label.setStyleSheet("""
+                color: palette(mid); 
+                font-size: 12px;
+            """)
+            placeholder_layout.addWidget(hint_label)
+            
+            left_layout.addWidget(placeholder_frame)
         
         left_layout.addStretch()
         
         right_panel = QWidget()
         right_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         right_layout = QVBoxLayout(right_panel)
-        right_layout.setSpacing(10)
+        right_layout.setSpacing(12)
         right_layout.setContentsMargins(0, 0, 0, 0)
         
         tips_container = QFrame()
-        tips_container.setStyleSheet("""
-            QFrame {
+        tips_container.setStyleSheet(f"""
+            QFrame {{
                 background-color: palette(base);
-                border-radius: 10px;
-                padding: 20px;
-            }
+                border-radius: 12px;
+                border: 1px solid palette(mid);
+            }}
         """)
         tips_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         tips_layout = QVBoxLayout(tips_container)
-        tips_layout.setSpacing(12)
+        tips_layout.setSpacing(15)
+        tips_layout.setContentsMargins(25, 25, 25, 25)
         
         tips_title_layout = QHBoxLayout()
         tips_icon = QLabel()
-        tips_icon.setPixmap(self.icon_manager.get_pixmap("lightbulb", size=20))
+        tips_icon.setPixmap(self.icon_manager.get_pixmap("lightbulb", size=22))
         tips_title_layout.addWidget(tips_icon)
         
         self.tips_title = QLabel(tr('quick_tips'))
-        self.tips_title.setStyleSheet("font-size: 15px; font-weight: bold; color: palette(link); margin-left: 5px;")
+        self.tips_title.setStyleSheet(f"""
+            font-size: 16px; 
+            font-weight: 600; 
+            color: {theme.colors['primary']};
+            margin-left: 8px;
+        """)
         tips_title_layout.addWidget(self.tips_title)
         tips_title_layout.addStretch()
         tips_layout.addLayout(tips_title_layout)
+        
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setStyleSheet("background-color: palette(mid); max-height: 1px;")
+        tips_layout.addWidget(separator)
         
         tips_data = [
             ("plus-circle", 'tip_new_tab'),
@@ -169,17 +210,21 @@ class HomeView(QWidget):
             tip_container = QWidget()
             tip_layout = QHBoxLayout(tip_container)
             tip_layout.setContentsMargins(0, 0, 0, 0)
-            tip_layout.setSpacing(10)
+            tip_layout.setSpacing(12)
             
             icon_label = QLabel()
-            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=16))
-            icon_label.setStyleSheet("font-size: 16px;")
-            icon_label.setFixedWidth(30)
+            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=18))
+            icon_label.setFixedWidth(32)
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             tip_layout.addWidget(icon_label)
             
             tip_label = QLabel(tr(tip_key))
             tip_label.setWordWrap(True)
-            tip_label.setStyleSheet("font-size: 12px; color: palette(window-text);")
+            tip_label.setStyleSheet("""
+                font-size: 13px; 
+                color: palette(window-text);
+                line-height: 1.5;
+            """)
             tip_layout.addWidget(tip_label, stretch=1)
             
             self.tip_labels.append((tip_label, tip_key))
@@ -188,29 +233,50 @@ class HomeView(QWidget):
         right_layout.addWidget(tips_container)
         right_layout.addStretch()
         
-        content_layout.addWidget(left_panel, stretch=1)
-        content_layout.addWidget(right_panel, stretch=1)
+        content_layout.addWidget(left_panel, stretch=3)
+        content_layout.addWidget(right_panel, stretch=2)
         
         layout.addWidget(content_splitter)
         
         layout.addStretch()
         
         footer = QWidget()
-        footer.setMaximumWidth(900)
+        footer.setMaximumWidth(1000)
         footer_layout = QVBoxLayout(footer)
-        footer_layout.setSpacing(5)
-        footer_layout.setContentsMargins(0, 20, 0, 0)
+        footer_layout.setSpacing(8)
+        footer_layout.setContentsMargins(0, 30, 0, 0)
+        
+        shortcuts_container = QFrame()
+        shortcuts_container.setStyleSheet("""
+            QFrame {
+                background-color: rgba(128, 128, 128, 0.05);
+                border-radius: 8px;
+                padding: 15px;
+            }
+        """)
+        shortcuts_layout = QVBoxLayout(shortcuts_container)
+        shortcuts_layout.setSpacing(5)
         
         self.shortcuts_label = QLabel(tr('shortcuts_text'))
         self.shortcuts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.shortcuts_label.setWordWrap(True)
-        self.shortcuts_label.setStyleSheet("color: palette(text); font-size: 11px;")
-        footer_layout.addWidget(self.shortcuts_label)
+        self.shortcuts_label.setStyleSheet("""
+            color: palette(text); 
+            font-size: 12px;
+            font-weight: 500;
+        """)
+        shortcuts_layout.addWidget(self.shortcuts_label)
+        
+        footer_layout.addWidget(shortcuts_container)
         
         self.version_label = QLabel(tr('version_text'))
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.version_label.setWordWrap(True)
-        self.version_label.setStyleSheet("font-size: 10px; color: palette(text);")
+        self.version_label.setStyleSheet("""
+            font-size: 11px; 
+            color: palette(mid);
+            margin-top: 5px;
+        """)
         footer_layout.addWidget(self.version_label)
         
         layout.addWidget(footer)
@@ -232,56 +298,83 @@ class HomeView(QWidget):
         if not recent_repos:
             return None
         
+        theme = get_current_theme()
         section = QFrame()
-        section.setStyleSheet("""
-            QFrame {
+        section.setStyleSheet(f"""
+            QFrame {{
                 background-color: palette(base);
-                border-radius: 10px;
-                padding: 20px;
-            }
+                border-radius: 12px;
+                border: 1px solid palette(mid);
+            }}
         """)
         section.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         layout = QVBoxLayout(section)
-        layout.setSpacing(10)
+        layout.setSpacing(15)
+        layout.setContentsMargins(25, 25, 25, 25)
         
         header_layout = QHBoxLayout()
         header_icon = QLabel()
-        header_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=20))
+        header_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=22))
         header_layout.addWidget(header_icon)
         
         self.recent_repos_header = QLabel(tr('recent_repositories'))
-        self.recent_repos_header.setStyleSheet("color: palette(bright-text); font-size: 15px; font-weight: bold; margin-left: 5px;")
+        self.recent_repos_header.setStyleSheet(f"""
+            color: {theme.colors['primary']}; 
+            font-size: 16px; 
+            font-weight: 600; 
+            margin-left: 8px;
+        """)
         header_layout.addWidget(self.recent_repos_header)
         header_layout.addStretch()
+        
+        repo_count = QLabel(f"{len(recent_repos[:8])}")
+        repo_count.setStyleSheet(f"""
+            background-color: {theme.colors['primary']};
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 10px;
+        """)
+        header_layout.addWidget(repo_count)
+        
         layout.addLayout(header_layout)
         
-        theme = get_current_theme()
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setStyleSheet("background-color: palette(mid); max-height: 1px;")
+        layout.addWidget(separator)
+        
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setMinimumHeight(200)
+        scroll.setMinimumHeight(220)
         scroll.setStyleSheet(f"""
             QScrollArea {{
                 border: none;
                 background-color: transparent;
             }}
             QScrollBar:vertical {{
-                background-color: palette(window);
+                background-color: transparent;
                 width: 10px;
-                border-radius: 5px;
+                margin: 2px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: palette(text);
+                background-color: palette(mid);
                 border-radius: 5px;
+                min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
                 background-color: {theme.colors['surface_hover']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
             }}
         """)
         
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setSpacing(8)
+        scroll_layout.setSpacing(10)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         
         for repo in recent_repos[:8]:
@@ -295,10 +388,11 @@ class HomeView(QWidget):
         return section
     
     def create_recent_repo_item(self, repo):
+        theme = get_current_theme()
         btn = QPushButton()
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        btn.setMinimumHeight(60)
+        btn.setMinimumHeight(70)
         
         repo_name = repo.get('name', os.path.basename(repo['path']))
         repo_path = repo['path']
@@ -307,28 +401,53 @@ class HomeView(QWidget):
                     any(f.endswith('.uproject') for f in os.listdir(repo_path) if os.path.isfile(os.path.join(repo_path, f)))
         
         icon_name = "file-code" if is_unreal else "folder"
-        btn.setIcon(self.icon_manager.get_icon(icon_name, size=24))
+        btn.setIcon(self.icon_manager.get_icon(icon_name, size=28))
+        btn.setIconSize(QSize(28, 28))
         
-        btn.setStyleSheet("""
-            QPushButton {
+        btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: palette(window);
                 border: 2px solid palette(mid);
-                border-radius: 8px;
-                padding: 12px 15px;
+                border-radius: 10px;
+                padding: 15px 18px;
                 text-align: left;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: palette(button);
-                border-color: palette(link);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
+                font-size: 14px;
+                font-weight: 500;
                 color: palette(bright-text);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+                transform: translateY(-2px);
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                border-color: {theme.colors['primary']};
+                color: white;
+            }}
         """)
         
-        btn.setText(f"{repo_name}\n    {repo_path}")
+        btn_layout = QVBoxLayout()
+        btn_layout.setSpacing(4)
+        btn_layout.setContentsMargins(45, 0, 0, 0)
+        
+        name_label = QLabel(repo_name)
+        name_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: 600;
+            color: palette(bright-text);
+        """)
+        btn_layout.addWidget(name_label)
+        
+        path_label = QLabel(repo_path)
+        path_label.setStyleSheet("""
+            font-size: 11px;
+            color: palette(mid);
+        """)
+        path_label.setWordWrap(False)
+        btn_layout.addWidget(path_label)
+        
+        btn.setLayout(btn_layout)
         btn.clicked.connect(lambda: self.open_recent_repo.emit(repo_path))
         
         return btn
@@ -337,45 +456,55 @@ class HomeView(QWidget):
         self.init_ui()
         
     def create_action_button(self, text, description, color, icon_name=None):
+        theme = get_current_theme()
         button = QPushButton()
-        button.setMinimumHeight(80)
-        button.setMaximumHeight(100)
+        button.setMinimumHeight(100)
+        button.setMaximumHeight(120)
         button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         
-        theme = get_current_theme()
-        
         if icon_name:
-            button.setIcon(self.icon_manager.get_icon(icon_name, size=32))
-            button.setIconSize(QSize(32, 32))
+            button.setIcon(self.icon_manager.get_icon(icon_name, size=40))
+            button.setIconSize(QSize(40, 40))
+        
+        hover_color = self.lighten_color(color)
+        pressed_color = self.darken_color(color)
         
         button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {color};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {color}, stop:1 {self.darken_color(color)});
                 border: none;
-                border-radius: 8px;
-                padding: 20px;
+                border-radius: 12px;
+                padding: 25px;
                 text-align: left;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }}
             QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {hover_color}, stop:1 {color});
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             }}
             QPushButton:pressed {{
-                background-color: {theme.colors['primary_pressed']};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {pressed_color}, stop:1 {self.darken_color(pressed_color)});
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }}
         """)
         
         layout = QVBoxLayout(button)
-        layout.setContentsMargins(20, 15, 20, 15)
-        layout.setSpacing(8)
+        layout.setContentsMargins(25, 20, 25, 20)
+        layout.setSpacing(10)
         layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
         btn_text = QLabel(text)
         btn_text.setWordWrap(True)
+        text_font = QFont()
+        text_font.setPointSize(15)
+        text_font.setWeight(QFont.Weight.Bold)
+        btn_text.setFont(text_font)
         btn_text.setStyleSheet("""
-            font-size: 16px;
-            font-weight: bold;
-            color: palette(bright-text);
+            color: white;
             background: transparent;
         """)
         layout.addWidget(btn_text)
@@ -383,8 +512,8 @@ class HomeView(QWidget):
         btn_desc = QLabel(description)
         btn_desc.setWordWrap(True)
         btn_desc.setStyleSheet("""
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
             background: transparent;
         """)
         layout.addWidget(btn_desc)
@@ -392,19 +521,30 @@ class HomeView(QWidget):
         button.text_label = btn_text
         button.desc_label = btn_desc
         
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(15)
+        shadow.setColor(QColor(0, 0, 0, 60))
+        shadow.setOffset(0, 4)
+        button.setGraphicsEffect(shadow)
+        
         return button
     
     def lighten_color(self, color):
         color_map = {
-            "#0e639c": "#1177bb",
-            "#16825d": "#1a9d6f"
+            "#0e639c": "#1a7ab8",
+            "#16825d": "#1e9d73",
+            "#2c5f2d": "#3a7a3c"
         }
         return color_map.get(color, color)
     
     def darken_color(self, color):
         color_map = {
-            "#0e639c": "#0d5a8f",
-            "#16825d": "#136d4d"
+            "#0e639c": "#0a5280",
+            "#16825d": "#126d4d",
+            "#2c5f2d": "#234a24",
+            "#1a7ab8": "#0e639c",
+            "#1e9d73": "#16825d",
+            "#3a7a3c": "#2c5f2d"
         }
         return color_map.get(color, color)
     
