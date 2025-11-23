@@ -517,36 +517,58 @@ class RepositoryTab(QWidget):
             QFrame {{
                 background-color: {theme.colors['surface']};
                 border-bottom: {theme.borders['width_thin']}px solid {theme.colors['border']};
-                border-radius: {theme.borders['radius_sm']}px {theme.borders['radius_sm']}px 0px 0px;
             }}
         """)
-        header.setMinimumHeight(50)
-        header.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        header.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(theme.spacing['lg'], theme.spacing['sm'], theme.spacing['lg'], theme.spacing['sm'])
+        layout.setContentsMargins(theme.spacing['lg'], theme.spacing['lg'], 
+                                 theme.spacing['lg'], theme.spacing['lg'])
         layout.setSpacing(theme.spacing['md'])
         
         if icon_name:
             icon_label = QLabel()
-            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=20))
-            icon_label.setFixedSize(24, 24)
-            layout.addWidget(icon_label)
+            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=24))
+            icon_label.setFixedSize(28, 28)
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            icon_label.setStyleSheet("background: transparent; border: none;")
+            layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignTop)
         
         text_layout = QVBoxLayout()
-        text_layout.setSpacing(2)
+        text_layout.setSpacing(theme.spacing['xs'])
+        text_layout.setContentsMargins(0, 0, 0, 0)
         
         title_label = QLabel(title)
         title_label.setWordWrap(True)
-        title_label.setStyleSheet(f"color: {theme.colors['primary']}; font-size: {theme.fonts['size_base']}px; font-weight: {theme.fonts['weight_bold']};")
+        title_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        title_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme.colors['primary']};
+                font-size: {theme.fonts['size_md']}px;
+                font-weight: {theme.fonts['weight_bold']};
+                background: transparent;
+                border: none;
+                padding: 0px;
+            }}
+        """)
         text_layout.addWidget(title_label)
         
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: {theme.fonts['size_xs']}px;")
+        desc_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        desc_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme.colors['text_secondary']};
+                font-size: {theme.fonts['size_xs']}px;
+                background: transparent;
+                border: none;
+                padding: 0px;
+            }}
+        """)
         text_layout.addWidget(desc_label)
         
-        layout.addLayout(text_layout)
+        layout.addLayout(text_layout, 1)
+        layout.addStretch()
         
         header.title_label = title_label
         header.desc_label = desc_label
