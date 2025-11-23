@@ -1,5 +1,5 @@
 from PyQt6.QtGui import QColor, QPalette, QFont
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPushButton, QWidget
 
 class Theme:
     def __init__(self, name="Dark"):
@@ -165,12 +165,7 @@ class Theme:
             }
         
         if not self.shadows:
-            self.shadows = {
-                'sm': 'box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);',
-                'md': 'box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);',
-                'lg': 'box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);',
-                'xl': 'box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);',
-            }
+            self.shadows = {}
         
         if not self.animations:
             self.animations = {
@@ -645,7 +640,6 @@ class Theme:
                 font-size: {self.fonts['size_md']}px;
                 font-weight: {self.fonts['weight_bold']};
                 min-height: 28px;
-                
             }}
             QPushButton:hover {{
                 background-color: {self.colors['surface_hover']};
@@ -670,7 +664,6 @@ class Theme:
                     padding: {self.spacing['sm']}px {self.spacing['lg']}px;
                     font-size: {self.fonts['size_md']}px;
                     font-weight: {self.fonts['weight_bold']};
-                    
                 }}
                 QPushButton:hover {{
                     background-color: {self.colors['primary_hover']};
@@ -689,7 +682,6 @@ class Theme:
                     padding: {self.spacing['sm']}px {self.spacing['lg']}px;
                     font-size: {self.fonts['size_md']}px;
                     font-weight: {self.fonts['weight_bold']};
-                    
                 }}
                 QPushButton:hover {{
                     background-color: {self.colors['success_hover']};
@@ -708,7 +700,6 @@ class Theme:
                     padding: {self.spacing['sm']}px {self.spacing['lg']}px;
                     font-size: {self.fonts['size_md']}px;
                     font-weight: {self.fonts['weight_bold']};
-                    
                 }}
                 QPushButton:hover {{
                     background-color: {self.colors['danger_hover']};
@@ -717,8 +708,71 @@ class Theme:
                     background-color: {self.colors['danger_pressed']};
                 }}
             """
+        elif variant == 'github':
+            return f"""
+                QPushButton {{
+                    background-color: {self.colors['github']};
+                    color: {self.colors['text_inverse']};
+                    border: none;
+                    border-radius: {self.borders['radius_md']}px;
+                    padding: {self.spacing['sm']}px {self.spacing['lg']}px;
+                    font-size: {self.fonts['size_md']}px;
+                    font-weight: {self.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: #2ea043;
+                }}
+                QPushButton:pressed {{
+                    background-color: #1a7f37;
+                }}
+            """
+        elif variant == 'gitlab':
+            return f"""
+                QPushButton {{
+                    background-color: {self.colors['gitlab']};
+                    color: {self.colors['text_inverse']};
+                    border: none;
+                    border-radius: {self.borders['radius_md']}px;
+                    padding: {self.spacing['sm']}px {self.spacing['lg']}px;
+                    font-size: {self.fonts['size_md']}px;
+                    font-weight: {self.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: #FCA326;
+                }}
+                QPushButton:pressed {{
+                    background-color: #E24329;
+                }}
+            """
+        elif variant == 'icon':
+            return f"""
+                QPushButton {{
+                    background-color: transparent;
+                    border: none;
+                    border-radius: {self.borders['radius_sm']}px;
+                    padding: {self.spacing['xs']}px;
+                    min-width: 32px;
+                    min-height: 32px;
+                }}
+                QPushButton:hover {{
+                    background-color: {self.colors['surface_hover']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {self.colors['surface']};
+                }}
+            """
         
         return base_style
+    
+    def get_card_style(self):
+        return f"""
+            QFrame {{
+                background-color: {self.colors['surface']};
+                border: {self.borders['width_thin']}px solid {self.colors['border']};
+                border-radius: {self.borders['radius_lg']}px;
+                padding: {self.spacing['lg']}px;
+            }}
+        """
     
     def get_section_header_style(self):
         return f"""
@@ -726,21 +780,52 @@ class Theme:
                 background-color: {self.colors['surface']};
                 border-bottom: {self.borders['width_medium']}px solid {self.colors['primary']};
                 border-radius: {self.borders['radius_sm']}px {self.borders['radius_sm']}px 0px 0px;
+                padding: {self.spacing['md']}px;
+            }}
+            QLabel {{
+                color: {self.colors['primary']};
+                font-size: {self.fonts['size_lg']}px;
+                font-weight: {self.fonts['weight_bold']};
+            }}
+        """
+    
+    def get_title_label_style(self):
+        return f"""
+            QLabel {{
+                color: {self.colors['primary']};
+                font-size: {self.fonts['size_2xl']}px;
+                font-weight: {self.fonts['weight_bold']};
+            }}
+        """
+    
+    def get_heading_label_style(self):
+        return f"""
+            QLabel {{
+                color: {self.colors['text']};
+                font-size: {self.fonts['size_xl']}px;
+                font-weight: {self.fonts['weight_bold']};
+            }}
+        """
+    
+    def get_secondary_label_style(self):
+        return f"""
+            QLabel {{
+                color: {self.colors['text_secondary']};
+                font-size: {self.fonts['size_sm']}px;
             }}
         """
     
     def get_input_style(self):
         return f"""
-            QLineEdit, QTextEdit {{
+            QLineEdit, QTextEdit, QPlainTextEdit {{
                 background-color: {self.colors['input_bg']};
                 color: {self.colors['text']};
                 border: {self.borders['width_thin']}px solid {self.colors['input_border']};
                 border-radius: {self.borders['radius_md']}px;
                 padding: {self.spacing['sm']}px;
                 selection-background-color: {self.colors['surface_selected']};
-                
             }}
-            QLineEdit:focus, QTextEdit:focus {{
+            QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
                 border-color: {self.colors['input_focus']};
                 border-width: {self.borders['width_medium']}px;
             }}
@@ -758,7 +843,6 @@ class Theme:
                 padding: {self.spacing['md']}px;
                 border-radius: {self.borders['radius_sm']}px;
                 margin: {self.spacing['xs']}px 0px;
-                
             }}
             QListWidget::item:hover {{
                 background-color: {self.colors['surface']};
@@ -768,6 +852,93 @@ class Theme:
                 color: {self.colors['text_inverse']};
             }}
         """
+    
+    def get_tree_style(self):
+        return f"""
+            QTreeWidget {{
+                background-color: {self.colors['background_secondary']};
+                border: {self.borders['width_thin']}px solid {self.colors['border']};
+                border-radius: {self.borders['radius_md']}px;
+                padding: {self.spacing['xs']}px;
+                outline: none;
+            }}
+            QTreeWidget::item {{
+                padding: {self.spacing['sm']}px;
+                border-radius: {self.borders['radius_sm']}px;
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {self.colors['surface']};
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {self.colors['surface_selected']};
+                color: {self.colors['text_inverse']};
+            }}
+        """
+    
+    def get_table_style(self):
+        return f"""
+            QTableWidget {{
+                background-color: {self.colors['background_secondary']};
+                border: {self.borders['width_thin']}px solid {self.colors['border']};
+                border-radius: {self.borders['radius_md']}px;
+                gridline-color: {self.colors['border']};
+            }}
+            QTableWidget::item {{
+                padding: {self.spacing['sm']}px;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {self.colors['surface_selected']};
+                color: {self.colors['text_inverse']};
+            }}
+            QHeaderView::section {{
+                background-color: {self.colors['surface']};
+                color: {self.colors['text']};
+                padding: {self.spacing['sm']}px;
+                border: none;
+                border-bottom: {self.borders['width_thin']}px solid {self.colors['border']};
+                font-weight: {self.fonts['weight_bold']};
+            }}
+        """
+    
+    def get_dialog_style(self):
+        return f"""
+            QDialog {{
+                background-color: {self.colors['background']};
+                color: {self.colors['text']};
+            }}
+        """
+    
+    def get_combobox_style(self):
+        return f"""
+            QComboBox {{
+                background-color: {self.colors['input_bg']};
+                border: {self.borders['width_thin']}px solid {self.colors['input_border']};
+                border-radius: {self.borders['radius_md']}px;
+                padding: {self.spacing['sm']}px;
+                min-width: 80px;
+            }}
+            QComboBox:hover {{
+                border-color: {self.colors['primary']};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {self.colors['surface']};
+                border: {self.borders['width_thin']}px solid {self.colors['border']};
+                selection-background-color: {self.colors['surface_selected']};
+                border-radius: {self.borders['radius_md']}px;
+            }}
+        """
+    
+    def apply_button_style(self, button: QPushButton, variant='default'):
+        button.setStyleSheet(self.get_button_style(variant))
+        if variant != 'default':
+            button.setProperty('class', variant)
+    
+    def apply_widget_style(self, widget: QWidget, style_method):
+        if hasattr(self, style_method):
+            widget.setStyleSheet(getattr(self, style_method)())
 
 current_theme = None
 

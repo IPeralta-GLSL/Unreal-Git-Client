@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QFont, QColor
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
+from ui.style_utils import apply_primary_button, apply_danger_button, apply_default_button, get_theme
 import platform
 
 class BranchManagerDialog(QDialog):
@@ -19,6 +20,7 @@ class BranchManagerDialog(QDialog):
         self.load_branches()
         
     def init_ui(self):
+        theme = get_theme()
         self.setWindowTitle("Administrador de Ramas")
         self.setModal(True)
         self.setMinimumSize(700, 500)
@@ -32,63 +34,83 @@ class BranchManagerDialog(QDialog):
         
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setSpacing(15)
-        content_layout.setContentsMargins(20, 20, 20, 20)
+        content_layout.setSpacing(theme.spacing['lg'])
+        content_layout.setContentsMargins(theme.spacing['lg'], theme.spacing['lg'], 
+                                         theme.spacing['lg'], theme.spacing['lg'])
         
         current_branch_label = QLabel("Rama actual:")
-        current_branch_label.setStyleSheet("color: palette(text); font-size: 12px;")
+        current_branch_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme.colors['text']};
+                font-size: {theme.fonts['size_base']}px;
+            }}
+        """)
         content_layout.addWidget(current_branch_label)
         
         self.current_branch = QLabel()
-        self.current_branch.setStyleSheet("""
-            font-size: 16px;
-            font-weight: bold;
-            color: palette(link);
-            background-color: palette(button);
-            padding: 10px;
-            border-radius: 4px;
+        self.current_branch.setStyleSheet(f"""
+            QLabel {{
+                font-size: {theme.fonts['size_xl']}px;
+                font-weight: {theme.fonts['weight_bold']};
+                color: {theme.colors['primary']};
+                background-color: {theme.colors['surface']};
+                padding: {theme.spacing['md']}px;
+                border-radius: {theme.borders['radius_md']}px;
+            }}
         """)
         content_layout.addWidget(self.current_branch)
         
         list_label = QLabel("Todas las Ramas:")
-        list_label.setStyleSheet("color: palette(window-text); font-weight: bold; margin-top: 10px;")
+        list_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme.colors['text']};
+                font-weight: {theme.fonts['weight_bold']};
+                margin-top: {theme.spacing['md']}px;
+            }}
+        """)
         content_layout.addWidget(list_label)
         
         self.branches_list = QListWidget()
+        self.branches_list.setStyleSheet(theme.get_list_style())
         self.branches_list.itemDoubleClicked.connect(self.switch_to_branch)
         content_layout.addWidget(self.branches_list)
         
         buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
+        buttons_layout.setSpacing(theme.spacing['md'])
         
         self.new_branch_btn = QPushButton("Nueva Rama")
         self.new_branch_btn.setIcon(self.icon_manager.get_icon("plus-circle", size=18))
         self.new_branch_btn.clicked.connect(self.create_new_branch)
+        apply_primary_button(self.new_branch_btn)
         buttons_layout.addWidget(self.new_branch_btn)
         
         self.switch_btn = QPushButton("Cambiar")
         self.switch_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
         self.switch_btn.clicked.connect(self.switch_to_selected_branch)
+        apply_default_button(self.switch_btn)
         buttons_layout.addWidget(self.switch_btn)
         
         self.delete_btn = QPushButton("Eliminar")
         self.delete_btn.setIcon(self.icon_manager.get_icon("trash", size=18))
         self.delete_btn.clicked.connect(self.delete_selected_branch)
+        apply_danger_button(self.delete_btn)
         buttons_layout.addWidget(self.delete_btn)
         
         self.merge_btn = QPushButton("Merge")
         self.merge_btn.setIcon(self.icon_manager.get_icon("git-merge", size=18))
         self.merge_btn.clicked.connect(self.merge_selected_branch)
+        apply_default_button(self.merge_btn)
         buttons_layout.addWidget(self.merge_btn)
         
         content_layout.addLayout(buttons_layout)
         
         close_btn = QPushButton("Cerrar")
         close_btn.clicked.connect(self.accept)
+        apply_default_button(close_btn)
         content_layout.addWidget(close_btn)
         
         layout.addWidget(content_widget)
-        self.apply_styles()
+        self.setStyleSheet(theme.get_dialog_style())
     
     def create_title_bar(self):
         theme = get_current_theme()
@@ -111,7 +133,14 @@ class BranchManagerDialog(QDialog):
         title_layout.addWidget(title_icon)
         
         title = QLabel("Administrador de Ramas")
-        title.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px; margin-left: 5px;")
+        title.setStyleSheet(f"""
+            QLabel {{
+                color: {theme.colors['text']};
+                font-weight: {theme.fonts['weight_bold']};
+                font-size: {theme.fonts['size_md']}px;
+                margin-left: {theme.spacing['xs']}px;
+            }}
+        """)
         title_layout.addWidget(title)
         title_layout.addStretch()
         
@@ -127,7 +156,7 @@ class BranchManagerDialog(QDialog):
                 border-radius: 0px;
             }}
             QPushButton:hover {{
-                background-color: #e81123;
+                background-color: {theme.colors['danger']};
             }}
         """)
         title_layout.addWidget(close_button)
@@ -255,55 +284,6 @@ class BranchManagerDialog(QDialog):
                 QMessageBox.information(self, "Éxito", "Merge completado correctamente")
             else:
                 QMessageBox.warning(self, "Error", f"Error en merge:\n{message}")
-                
-    def apply_styles(self):
-        from ui.theme import get_current_theme
-        theme = get_current_theme()
-        
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: {theme.colors['background']};
-            }}
-            QLabel {{
-                color: {theme.colors['text']};
-            }}
-            QListWidget {{
-                background-color: {theme.colors['background_secondary']};
-                color: {theme.colors['text']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 4px;
-                padding: 5px;
-                font-size: 13px;
-            }}
-            QListWidget::item {{
-                padding: 8px;
-                border-radius: 3px;
-                margin: 2px;
-            }}
-            QListWidget::item:selected {{
-                background-color: {theme.colors['surface_selected']};
-                color: {theme.colors['text_inverse']};
-            }}
-            QListWidget::item:hover {{
-                background-color: {theme.colors['surface_hover']};
-            }}
-            QPushButton {{
-                background-color: {theme.colors['primary']};
-                color: {theme.colors['text_inverse']};
-                border: none;
-                border-radius: 4px;
-                padding: 10px 15px;
-                font-weight: bold;
-                font-size: 13px;
-                padding-left: 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['primary_pressed']};
-            }}
-        """)
 
 class CreateBranchDialog(QDialog):
     def __init__(self, git_manager, parent=None):

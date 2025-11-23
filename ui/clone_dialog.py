@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QFileDialog)
 from PyQt6.QtCore import Qt
 from ui.icon_manager import IconManager
+from ui.theme import get_current_theme
 from core.translations import tr
 import os
 
@@ -9,6 +10,7 @@ class CloneDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.icon_manager = IconManager()
+        self.theme = get_current_theme()
         self.init_ui()
         self.retranslate_ui()
         
@@ -18,8 +20,9 @@ class CloneDialog(QDialog):
         self.setMinimumHeight(280)
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(self.theme.spacing['md'])
+        layout.setContentsMargins(self.theme.spacing['xl'], self.theme.spacing['xl'], 
+                                 self.theme.spacing['xl'], self.theme.spacing['xl'])
         
         title_layout = QHBoxLayout()
         icon_label = QLabel()
@@ -27,36 +30,50 @@ class CloneDialog(QDialog):
         title_layout.addWidget(icon_label)
         
         self.title_label = QLabel()
-        self.title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(bright-text); margin-bottom: 10px;")
+        self.title_label.setStyleSheet(self.theme.get_title_label_style())
         title_layout.addWidget(self.title_label)
         title_layout.addStretch()
         
         layout.addLayout(title_layout)
         
         self.description_label = QLabel()
-        self.description_label.setStyleSheet("color: palette(text); font-size: 12px; margin-bottom: 10px;")
+        self.description_label.setStyleSheet(self.theme.get_secondary_label_style())
         self.description_label.setWordWrap(True)
         layout.addWidget(self.description_label)
         
         self.url_label = QLabel()
-        self.url_label.setStyleSheet("color: palette(window-text); font-weight: bold; font-size: 13px;")
+        self.url_label.setStyleSheet(f"""
+            QLabel {{
+                color: {self.theme.colors['text']};
+                font-weight: {self.theme.fonts['weight_bold']};
+                font-size: {self.theme.fonts['size_md']}px;
+            }}
+        """)
         layout.addWidget(self.url_label)
         
         self.url_input = QLineEdit()
         self.url_input.setPlaceholderText("https://github.com/usuario/repositorio.git")
+        self.url_input.setStyleSheet(self.theme.get_input_style())
         self.url_input.setMinimumHeight(40)
         layout.addWidget(self.url_input)
         
-        layout.addSpacing(10)
+        layout.addSpacing(self.theme.spacing['md'])
         
         self.path_label = QLabel()
-        self.path_label.setStyleSheet("color: palette(window-text); font-weight: bold; font-size: 13px;")
+        self.path_label.setStyleSheet(f"""
+            QLabel {{
+                color: {self.theme.colors['text']};
+                font-weight: {self.theme.fonts['weight_bold']};
+                font-size: {self.theme.fonts['size_md']}px;
+            }}
+        """)
         layout.addWidget(self.path_label)
         
         path_layout = QHBoxLayout()
-        path_layout.setSpacing(10)
+        path_layout.setSpacing(self.theme.spacing['md'])
         self.path_input = QLineEdit()
         self.path_input.setText(os.path.expanduser("~"))
+        self.path_input.setStyleSheet(self.theme.get_input_style())
         self.path_input.setMinimumHeight(40)
         path_layout.addWidget(self.path_input)
         
@@ -65,12 +82,19 @@ class CloneDialog(QDialog):
         self.browse_btn.setMinimumHeight(40)
         self.browse_btn.setMinimumWidth(120)
         self.browse_btn.clicked.connect(self.browse_folder)
+        self.theme.apply_button_style(self.browse_btn, 'default')
         path_layout.addWidget(self.browse_btn)
         
         layout.addLayout(path_layout)
         
         self.helper_text = QLabel()
-        self.helper_text.setStyleSheet("color: palette(link); font-size: 11px; font-style: italic;")
+        self.helper_text.setStyleSheet(f"""
+            QLabel {{
+                color: {self.theme.colors['text_link']};
+                font-size: {self.theme.fonts['size_xs']}px;
+                font-style: italic;
+            }}
+        """)
         self.helper_text.setWordWrap(True)
         layout.addWidget(self.helper_text)
         
@@ -83,6 +107,7 @@ class CloneDialog(QDialog):
         self.cancel_btn.setMinimumHeight(40)
         self.cancel_btn.setMinimumWidth(120)
         self.cancel_btn.clicked.connect(self.reject)
+        self.theme.apply_button_style(self.cancel_btn, 'default')
         button_layout.addWidget(self.cancel_btn)
         
         self.clone_btn = QPushButton()
@@ -91,25 +116,12 @@ class CloneDialog(QDialog):
         self.clone_btn.setMinimumWidth(180)
         self.clone_btn.clicked.connect(self.accept)
         self.clone_btn.setDefault(True)
-        self.clone_btn.setStyleSheet("""
-            QPushButton {
-                background-color: palette(highlight);
-                color: palette(bright-text);
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
-        """)
+        self.theme.apply_button_style(self.clone_btn, 'primary')
         button_layout.addWidget(self.clone_btn)
         
         layout.addLayout(button_layout)
         
-        self.apply_styles()
+        self.setStyleSheet(self.theme.get_dialog_style())
         
     def retranslate_ui(self):
         self.setWindowTitle(tr('clone_repository'))
@@ -136,39 +148,3 @@ class CloneDialog(QDialog):
         
     def get_path(self):
         return self.path_input.text().strip()
-        
-    def apply_styles(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: palette(window);
-            }
-            QLabel {
-                color: palette(window-text);
-            }
-            QLineEdit {
-                background-color: palette(base);
-                color: palette(window-text);
-                border: 2px solid #3d3d3d;
-                border-radius: 4px;
-                padding: 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 2px solid #0e639c;
-            }
-            QPushButton {
-                background-color: palette(link);
-                color: palette(bright-text);
-                border: none;
-                border-radius: 4px;
-                padding: 10px 20px;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-            QPushButton:pressed {
-                background-color: palette(highlight);
-            }
-        """)
