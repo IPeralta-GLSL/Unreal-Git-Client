@@ -396,7 +396,7 @@ class HomeView(QWidget):
         
         btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: palette(window);
+                background-color: transparent;
                 border: none;
                 border-radius: 10px;
                 padding: 15px 18px;
@@ -421,16 +421,19 @@ class HomeView(QWidget):
         
         name_label = QLabel(repo_name)
         name_label.setStyleSheet("""
-            font-size: 14px;
-            font-weight: 600;
+            background-color: transparent;
+            font-size: 15px;
+            font-weight: bold;
             color: palette(bright-text);
         """)
         btn_layout.addWidget(name_label)
         
         path_label = QLabel(repo_path)
         path_label.setStyleSheet("""
-            font-size: 11px;
-            color: palette(mid);
+            background-color: transparent;
+            font-size: 12px;
+            color: palette(text);
+            opacity: 0.8;
         """)
         path_label.setWordWrap(False)
         btn_layout.addWidget(path_label)
