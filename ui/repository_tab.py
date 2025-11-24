@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
                              QSizePolicy, QMenu, QInputDialog, QApplication, QDialog,
-                             QTableWidget, QTableWidgetItem, QHeaderView)
+                             QTableWidget, QTableWidgetItem, QHeaderView, QGridLayout)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl
 from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
@@ -446,66 +446,90 @@ class RepositoryTab(QWidget):
         lfs_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         lfs_layout = QVBoxLayout(lfs_container)
         lfs_layout.setContentsMargins(10, 10, 10, 10)
+        lfs_layout.setSpacing(15)
         
         status_widget = QWidget()
-        status_widget.setStyleSheet("background-color: palette(button); border-radius: 4px;")
+        status_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+            }}
+        """)
         status_layout = QVBoxLayout(status_widget)
-        status_layout.setContentsMargins(10, 8, 10, 8)
+        status_layout.setContentsMargins(15, 12, 15, 12)
+        status_layout.setSpacing(5)
         
         status_row = QHBoxLayout()
+        status_row.setSpacing(10)
         status_icon = QLabel()
         status_icon.setPixmap(self.icon_manager.get_pixmap("info", 16))
+        status_icon.setStyleSheet("background: transparent; border: none;")
         status_row.addWidget(status_icon)
         
         self.lfs_status_label = QLabel(tr('lfs_status'))
-        self.lfs_status_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
+        self.lfs_status_label.setStyleSheet(f"color: {theme.colors['primary']}; font-weight: bold; font-size: 13px; background: transparent; border: none;")
         status_row.addWidget(self.lfs_status_label)
         status_row.addStretch()
         status_layout.addLayout(status_row)
         
         self.lfs_tracked_label = QLabel("")
-        self.lfs_tracked_label.setStyleSheet("color: palette(text); font-size: 11px; margin-top: 4px;")
+        self.lfs_tracked_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px; margin-left: 26px; background: transparent; border: none;")
         self.lfs_tracked_label.setWordWrap(True)
         status_layout.addWidget(self.lfs_tracked_label)
         
         lfs_layout.addWidget(status_widget)
-        lfs_layout.addSpacing(10)
         
-        actions_layout = QVBoxLayout()
-        actions_layout.setSpacing(5)
+        actions_widget = QWidget()
+        actions_layout = QGridLayout(actions_widget)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
+        actions_layout.setSpacing(10)
         
-        row1 = QHBoxLayout()
-        self.lfs_install_btn = QPushButton(tr('install'))
-        self.lfs_install_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.lfs_install_btn.clicked.connect(self.install_lfs)
-        row1.addWidget(self.lfs_install_btn)
-        
-        self.lfs_track_btn = QPushButton(tr('lfs_tracking'))
-        self.lfs_track_btn.setIcon(self.icon_manager.get_icon("file-code", size=16))
-        self.lfs_track_btn.clicked.connect(self.show_lfs_tracking)
-        row1.addWidget(self.lfs_track_btn)
-        actions_layout.addLayout(row1)
-        
-        row2 = QHBoxLayout()
-        self.lfs_pull_btn = QPushButton(tr('download_lfs_files'))
-        self.lfs_pull_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.lfs_pull_btn.clicked.connect(self.do_lfs_pull)
-        row2.addWidget(self.lfs_pull_btn)
-        
-        self.lfs_locks_btn = QPushButton(tr('lfs_locks'))
-        self.lfs_locks_btn.setIcon(self.icon_manager.get_icon("lock", size=16))
-        self.lfs_locks_btn.clicked.connect(self.show_lfs_locks)
-        row2.addWidget(self.lfs_locks_btn)
-        actions_layout.addLayout(row2)
+        def create_lfs_btn(text, icon_name, callback, tooltip):
+            btn = QPushButton(text)
+            btn.setIcon(self.icon_manager.get_icon(icon_name, size=16))
+            btn.setToolTip(tooltip)
+            btn.clicked.connect(callback)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            btn.setMinimumHeight(40)
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {theme.colors['surface']};
+                    color: {theme.colors['text']};
+                    border: 1px solid {theme.colors['border']};
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    text-align: left;
+                    font-weight: 500;
+                }}
+                QPushButton:hover {{
+                    background-color: {theme.colors['surface_hover']};
+                    border-color: {theme.colors['primary']};
+                    color: {theme.colors['primary']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {theme.colors['background_secondary']};
+                }}
+            """)
+            return btn
 
-        row3 = QHBoxLayout()
-        self.lfs_prune_btn = QPushButton(tr('lfs_prune'))
-        self.lfs_prune_btn.setIcon(self.icon_manager.get_icon("trash", size=16))
-        self.lfs_prune_btn.clicked.connect(self.do_lfs_prune)
-        row3.addWidget(self.lfs_prune_btn)
-        actions_layout.addLayout(row3)
+        self.lfs_install_btn = create_lfs_btn(tr('install'), "download", self.install_lfs, tr('install_tooltip'))
+        actions_layout.addWidget(self.lfs_install_btn, 0, 0)
         
-        lfs_layout.addLayout(actions_layout)
+        self.lfs_track_btn = create_lfs_btn(tr('lfs_tracking'), "file-code", self.show_lfs_tracking, tr('config_lfs_tooltip'))
+        actions_layout.addWidget(self.lfs_track_btn, 0, 1)
+        
+        self.lfs_pull_btn = create_lfs_btn(tr('download_lfs_files'), "download", self.do_lfs_pull, tr('download_lfs_files_tooltip'))
+        actions_layout.addWidget(self.lfs_pull_btn, 1, 0)
+        
+        self.lfs_locks_btn = create_lfs_btn(tr('lfs_locks'), "lock", self.show_lfs_locks, tr('lfs_locks'))
+        actions_layout.addWidget(self.lfs_locks_btn, 1, 1)
+
+        self.lfs_prune_btn = create_lfs_btn(tr('lfs_prune'), "trash", self.do_lfs_prune, tr('lfs_prune'))
+        actions_layout.addWidget(self.lfs_prune_btn, 2, 0, 1, 2)
+        
+        lfs_layout.addWidget(actions_widget)
         
         layout.addWidget(lfs_container)
         
