@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QRect
 from PyQt6.QtGui import QPainter, QPen, QColor, QBrush, QFont, QPainterPath, QPixmap
+from ui.theme import get_current_theme
 import math
 
 class CommitGraphWidget(QWidget):
@@ -10,16 +11,15 @@ class CommitGraphWidget(QWidget):
         super().__init__(parent)
         self.setMouseTracking(True)
         self.commits = []
-        self.colors = [
-            QColor("#007acc"),
-            QColor("#4ec9b0"),
-            QColor("#dcdcaa"),
-            QColor("#ce9178"),
-            QColor("#c586c0"),
-            QColor("#9cdcfe"),
-            QColor("#b5cea8"),
-            QColor("#f48771"),
-        ]
+        
+        theme = get_current_theme()
+        self.colors = [QColor(c) for c in theme.colors.get('graph_colors', [])]
+        if not self.colors:
+            self.colors = [
+                QColor("#007acc"), QColor("#4ec9b0"), QColor("#dcdcaa"), QColor("#ce9178"),
+                QColor("#c586c0"), QColor("#9cdcfe"), QColor("#b5cea8"), QColor("#f48771")
+            ]
+            
         self.branch_colors = {}
         self.node_radius = 6
         self.row_height = 55
@@ -112,10 +112,18 @@ class CommitGraphWidget(QWidget):
         y = 30 + row * self.row_height
         rect = QRect(0, int(y - self.row_height/2), self.width(), self.row_height)
         
+        theme = get_current_theme()
+        # Use theme colors for selection/hover
         if self.selected_commit == commit.get('hash'):
-            painter.fillRect(rect, QColor(255, 255, 255, 25))
+            # Use surface_selected color with transparency
+            c = QColor(theme.colors['surface_selected'])
+            c.setAlpha(40)
+            painter.fillRect(rect, c)
         elif self.hovered_commit == commit.get('hash'):
-            painter.fillRect(rect, QColor(255, 255, 255, 10))
+            # Use text color with very low opacity for hover
+            c = QColor(theme.colors['text'])
+            c.setAlpha(15)
+            painter.fillRect(rect, c)
 
     def draw_graph_lines(self, painter, commit, index):
         column = commit.get('column', 0)
@@ -252,7 +260,12 @@ class CommitGraphWidget(QWidget):
         painter.save()
         mono_font = QFont("Consolas", 9)
         painter.setFont(mono_font)
-        painter.setPen(QPen(QColor("#4ec9b0"))) # Cyan-ish for hash
+        
+        # Use theme primary color or a specific hash color
+        theme = get_current_theme()
+        hash_color = QColor(theme.colors.get('text_link', '#4ec9b0'))
+        painter.setPen(QPen(hash_color)) 
+        
         painter.drawText(hash_final_x, int(y + 15), hash_short)
         painter.restore()
 

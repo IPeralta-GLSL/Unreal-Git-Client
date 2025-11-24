@@ -860,10 +860,10 @@ class RepositoryTab(QWidget):
                 html += f'<div style="color: {theme.colors["secondary"]}; background-color: {theme.colors["surface"]}; margin: 5px 0; padding: 4px 8px; border-radius: 3px;">{line_content}</div>'
             elif line.startswith('+') and not line.startswith('+++'):
                 # Softer green background
-                html += f'<div style="background-color: rgba(22, 163, 74, 0.15); color: #86efac; white-space: pre-wrap;">{line_content}</div>'
+                html += f'<div style="background-color: {theme.colors["diff_add_bg"]}; color: {theme.colors["diff_add_text"]}; white-space: pre-wrap;">{line_content}</div>'
             elif line.startswith('-') and not line.startswith('---'):
                 # Softer red background
-                html += f'<div style="background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; white-space: pre-wrap;">{line_content}</div>'
+                html += f'<div style="background-color: {theme.colors["diff_del_bg"]}; color: {theme.colors["diff_del_text"]}; white-space: pre-wrap;">{line_content}</div>'
             else:
                 html += f'<div style="white-space: pre-wrap;">{line_content}</div>'
         

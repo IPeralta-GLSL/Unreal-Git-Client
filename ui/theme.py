@@ -67,6 +67,16 @@ class Theme:
                 'unreal': '#0E1128',
                 'github': '#22c55e',
                 'gitlab': '#FC6D26',
+                
+                'diff_add_bg': 'rgba(22, 163, 74, 0.15)',
+                'diff_add_text': '#86efac',
+                'diff_del_bg': 'rgba(239, 68, 68, 0.15)',
+                'diff_del_text': '#fca5a5',
+                
+                'graph_colors': [
+                    '#007acc', '#4ec9b0', '#dcdcaa', '#ce9178', 
+                    '#c586c0', '#9cdcfe', '#b5cea8', '#f48771'
+                ]
             }
         
         elif self.name == "Light":
@@ -74,10 +84,11 @@ class Theme:
                 'primary': '#0078d4',
                 'primary_hover': '#106ebe',
                 'primary_pressed': '#005a9e',
+                'primary_text': '#ffffff',
                 
-                'secondary': '#4ade80',
-                'secondary_hover': '#5ef090',
-                'secondary_pressed': '#3bc970',
+                'secondary': '#107c10',
+                'secondary_hover': '#0e6b0e',
+                'secondary_pressed': '#0c5a0c',
                 
                 'success': '#107c10',
                 'success_hover': '#0e6b0e',
@@ -122,6 +133,16 @@ class Theme:
                 'unreal': '#0E1128',
                 'github': '#238636',
                 'gitlab': '#FC6D26',
+                
+                'diff_add_bg': 'rgba(16, 124, 16, 0.1)',
+                'diff_add_text': '#0b5a0b',
+                'diff_del_bg': 'rgba(209, 52, 56, 0.1)',
+                'diff_del_text': '#a72b2e',
+                
+                'graph_colors': [
+                    '#0078d4', '#005a9e', '#107c10', '#d13438', 
+                    '#881798', '#004e8c', '#0b6a0b', '#a4262c'
+                ]
             }
         
         # Fuentes, espaciado y bordes son iguales para todos los temas
