@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
-                             QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame)
+                             QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame,
+                             QSystemTrayIcon, QApplication)
 from PyQt6.QtCore import Qt, QSize, QTimer, QPoint, QRect, QEvent
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut, QCursor
 from ui.repository_tab import RepositoryTab
@@ -36,8 +37,54 @@ class MainWindow(QMainWindow):
         
         self.setup_statusbar()
         self.setup_central_widget()
+        self.setup_tray_icon()
         
         self.apply_styles()
+
+    def setup_tray_icon(self):
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(self.icon_manager.get_icon("git-branch"))
+        
+        tray_menu = QMenu()
+        
+        show_action = QAction(tr('show'), self)
+        show_action.triggered.connect(self.show_window)
+        tray_menu.addAction(show_action)
+        
+        quit_action = QAction(tr('quit'), self)
+        quit_action.triggered.connect(self.quit_application)
+        tray_menu.addAction(quit_action)
+        
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        self.tray_icon.show()
+        
+    def on_tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.show_window()
+            
+    def show_window(self):
+        self.show()
+        self.setWindowState(self.windowState() & ~Qt.WindowState.WindowMinimized | Qt.WindowState.WindowActive)
+        self.activateWindow()
+        self.raise_()
+        
+    def quit_application(self):
+        self.tray_icon.hide()
+        QApplication.quit()
+        
+    def closeEvent(self, event):
+        if self.tray_icon.isVisible():
+            self.hide()
+            self.tray_icon.showMessage(
+                tr('app_name'),
+                tr('app_minimized_to_tray'),
+                QSystemTrayIcon.MessageIcon.Information,
+                2000
+            )
+            event.ignore()
+        else:
+            event.accept()
         
     def setup_toolbar(self):
         from ui.icon_manager import IconManager

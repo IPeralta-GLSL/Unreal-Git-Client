@@ -29,6 +29,7 @@ def main():
         
         app.setApplicationName("Git Client")
         app.setOrganizationName("GitClient")
+        app.setQuitOnLastWindowClosed(False)
         
         print("Loading settings...")
         settings_manager = SettingsManager()

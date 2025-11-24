@@ -351,6 +351,8 @@ class TranslationManager:
                 'error_verify_token': 'Error al verificar token',
                 'enter_name_email': 'Ingresa nombre y email',
                 'error_save_config': 'Error al guardar configuración',
+                'app_minimized_to_tray': 'La aplicación se ha minimizado a la bandeja del sistema. Doble clic para restaurar.',
+                'quit': 'Salir',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -698,6 +700,8 @@ class TranslationManager:
                 'error_verify_token': 'Error verifying token',
                 'enter_name_email': 'Enter name and email',
                 'error_save_config': 'Error saving configuration',
+                'app_minimized_to_tray': 'The application has been minimized to the system tray. Double click to restore.',
+                'quit': 'Quit',
             }
         }
         
