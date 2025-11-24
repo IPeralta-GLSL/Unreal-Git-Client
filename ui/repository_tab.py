@@ -181,6 +181,16 @@ class RepositoryTab(QWidget):
             }}
         """
         
+        self.lfs_btn = QPushButton(" LFS")
+        self.lfs_btn.setIcon(self.icon_manager.get_icon("database", size=18))
+        self.lfs_btn.setMinimumSize(85, 36)
+        self.lfs_btn.setMaximumSize(110, 36)
+        self.lfs_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.lfs_btn.setStyleSheet(button_style)
+        self.lfs_btn.setToolTip(tr('lfs_title'))
+        self.lfs_btn.clicked.connect(self.show_lfs_menu)
+        layout.addWidget(self.lfs_btn)
+
         self.open_folder_btn = QPushButton(tr('folder_button'))
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         self.open_folder_btn.setMinimumSize(100, 36)
@@ -250,16 +260,6 @@ class RepositoryTab(QWidget):
         self.refresh_btn.setToolTip(tr('refresh_tooltip'))
         self.refresh_btn.clicked.connect(self.refresh_status)
         layout.addWidget(self.refresh_btn)
-        
-        self.lfs_btn = QPushButton(" LFS")
-        self.lfs_btn.setIcon(self.icon_manager.get_icon("database", size=18))
-        self.lfs_btn.setMinimumSize(85, 36)
-        self.lfs_btn.setMaximumSize(110, 36)
-        self.lfs_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.lfs_btn.setStyleSheet(button_style)
-        self.lfs_btn.setToolTip(tr('lfs_title'))
-        self.lfs_btn.clicked.connect(self.show_lfs_menu)
-        layout.addWidget(self.lfs_btn)
         
         layout.addStretch()
         
