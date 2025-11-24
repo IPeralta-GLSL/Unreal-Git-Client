@@ -309,11 +309,18 @@ class RepositoryTab(QWidget):
         
     def create_left_panel(self):
         theme = get_current_theme()
+        
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setMinimumWidth(300)
+        scroll_area.setMaximumWidth(600)
+        scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
         widget = QWidget()
         widget.setStyleSheet("background-color: palette(base);")
-        widget.setMinimumWidth(300)
-        widget.setMaximumWidth(600)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -441,7 +448,7 @@ class RepositoryTab(QWidget):
         lfs_layout.setContentsMargins(10, 10, 10, 10)
         
         status_widget = QWidget()
-        status_widget.setStyleSheet("background-color: palette(button); border-radius: 4px; padding: 8px;")
+        status_widget.setStyleSheet("background-color: palette(button); border-radius: 4px;")
         status_layout = QVBoxLayout(status_widget)
         status_layout.setContentsMargins(10, 8, 10, 8)
         
@@ -504,9 +511,11 @@ class RepositoryTab(QWidget):
         
         layout.addStretch()
         
+        scroll_area.setWidget(widget)
+        
         self.apply_left_panel_styles()
         
-        return widget
+        return scroll_area
         
     def create_section_header(self, title, description, icon_name=None):
         theme = get_current_theme()
