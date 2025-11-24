@@ -837,23 +837,37 @@ class RepositoryTab(QWidget):
     def format_diff(self, diff_text):
         theme = get_current_theme()
         lines = diff_text.split('\n')
-        html = '<pre style="margin: 0; line-height: 1.6;">'
+        
+        html = f'<div style="font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5; color: {theme.colors["text"]};">'
         
         for line in lines:
-            if line.startswith('diff --git'):
-                html += f'<span style="color: palette(link); font-weight: bold;">{line}</span>\n'
-            elif line.startswith('index ') or line.startswith('---') or line.startswith('+++'):
-                html += f'<span style="color: palette(text);">{line}</span>\n'
+            # Escape HTML special characters
+            line_content = line.replace('<', '&lt;').replace('>', '&gt;')
+            
+            if line.startswith('commit '):
+                html += f'<div style="color: {theme.colors["warning"]}; font-weight: bold; font-size: 14px; padding: 10px 0 5px 0;">{line_content}</div>'
+            elif line.startswith('Author: '):
+                html += f'<div style="color: {theme.colors["text"]}; padding-bottom: 2px;"><span style="color: {theme.colors["text_secondary"]};">Author: </span>{line_content[8:]}</div>'
+            elif line.startswith('Date:   '):
+                html += f'<div style="color: {theme.colors["text"]}; padding-bottom: 15px; border-bottom: 1px solid {theme.colors["border"]}; margin-bottom: 15px;"><span style="color: {theme.colors["text_secondary"]};">Date: </span>{line_content[8:]}</div>'
+            elif line.startswith('diff --git'):
+                html += f'<div style="color: {theme.colors["primary"]}; font-weight: bold; margin-top: 20px; padding: 8px; background-color: {theme.colors["surface"]}; border-radius: 5px; border: 1px solid {theme.colors["border"]};">{line_content}</div>'
+            elif line.startswith('index ') or line.startswith('new file mode') or line.startswith('deleted file mode'):
+                 html += f'<div style="color: {theme.colors["text_secondary"]}; padding-left: 10px; font-size: 11px;">{line_content}</div>'
+            elif line.startswith('---') or line.startswith('+++'):
+                html += f'<div style="color: {theme.colors["text_secondary"]}; padding-left: 10px;">{line_content}</div>'
             elif line.startswith('@@'):
-                html += f'<span style="color: palette(link); font-weight: bold;">{line}</span>\n'
+                html += f'<div style="color: {theme.colors["secondary"]}; background-color: {theme.colors["surface"]}; margin: 5px 0; padding: 4px 8px; border-radius: 3px;">{line_content}</div>'
             elif line.startswith('+') and not line.startswith('+++'):
-                html += f'<span style="background-color: {theme.colors["success_pressed"]}; color: palette(link);">{line}</span>\n'
+                # Softer green background
+                html += f'<div style="background-color: rgba(22, 163, 74, 0.15); color: #86efac; white-space: pre-wrap;">{line_content}</div>'
             elif line.startswith('-') and not line.startswith('---'):
-                html += f'<span style="background-color: {theme.colors["danger_pressed"]}; color: palette(bright-text);">{line}</span>\n'
+                # Softer red background
+                html += f'<div style="background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; white-space: pre-wrap;">{line_content}</div>'
             else:
-                html += f'<span style="color: palette(window-text);">{line}</span>\n'
+                html += f'<div style="white-space: pre-wrap;">{line_content}</div>'
         
-        html += '</pre>'
+        html += '</div>'
         return html
     
     def show_commit_context_menu(self, position):
