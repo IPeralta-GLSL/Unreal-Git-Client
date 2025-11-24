@@ -8,6 +8,7 @@ class CommitGraphWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setMouseTracking(True)
         self.commits = []
         self.colors = [
             QColor("#007acc"),
@@ -20,12 +21,13 @@ class CommitGraphWidget(QWidget):
             QColor("#f48771"),
         ]
         self.branch_colors = {}
-        self.node_radius = 8
-        self.row_height = 70
+        self.node_radius = 6
+        self.row_height = 55
         self.left_margin = 20
-        self.graph_width = 200
-        self.avatar_size = 32
+        self.graph_width = 130
+        self.avatar_size = 36
         self.selected_commit = None
+        self.hovered_commit = None
         self.avatars = {}
         
     def set_commits(self, commits):
@@ -64,6 +66,27 @@ class CommitGraphWidget(QWidget):
             commit['column'] = columns[branch]
             commit['row'] = i
             
+    def mouseMoveEvent(self, event):
+        y = event.pos().y()
+        # Calculate row based on y position
+        # y = 30 + row * row_height
+        # row = (y - 30 + row_height/2) / row_height
+        row = int((y - 30 + self.row_height / 2) / self.row_height)
+        
+        hovered = None
+        if 0 <= row < len(self.commits):
+            hovered = self.commits[row].get('hash')
+            
+        if self.hovered_commit != hovered:
+            self.hovered_commit = hovered
+            self.update()
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event):
+        self.hovered_commit = None
+        self.update()
+        super().leaveEvent(event)
+
     def paintEvent(self, event):
         if not self.commits:
             return
@@ -71,15 +94,35 @@ class CommitGraphWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
+        # Draw backgrounds first
         for i, commit in enumerate(self.commits):
-            self.draw_commit(painter, commit, i)
+            self.draw_row_background(painter, commit, i)
+
+        # Draw graph lines
+        for i, commit in enumerate(self.commits):
+            self.draw_graph_lines(painter, commit, i)
+
+        # Draw nodes and content
+        for i, commit in enumerate(self.commits):
+            self.draw_commit_node(painter, commit, i)
+            self.draw_commit_content(painter, commit, i)
             
-    def draw_commit(self, painter, commit, index):
+    def draw_row_background(self, painter, commit, index):
+        row = commit.get('row', index)
+        y = 30 + row * self.row_height
+        rect = QRect(0, int(y - self.row_height/2), self.width(), self.row_height)
+        
+        if self.selected_commit == commit.get('hash'):
+            painter.fillRect(rect, QColor(255, 255, 255, 25))
+        elif self.hovered_commit == commit.get('hash'):
+            painter.fillRect(rect, QColor(255, 255, 255, 10))
+
+    def draw_graph_lines(self, painter, commit, index):
         column = commit.get('column', 0)
         row = commit.get('row', index)
         branch = commit.get('branch', 'main')
         
-        x = self.left_margin + column * 30
+        x = self.left_margin + column * 24  # Reduced spacing between lines
         y = 30 + row * self.row_height
         
         color = self.branch_colors.get(branch, self.colors[0])
@@ -93,47 +136,54 @@ class CommitGraphWidget(QWidget):
             painter.setPen(pen)
             
             if column == next_column:
-                painter.drawLine(x, y + self.node_radius, x, next_y - self.node_radius)
+                painter.drawLine(int(x), int(y), int(x), int(next_y))
             else:
-                next_x = self.left_margin + next_column * 30
+                next_x = self.left_margin + next_column * 24
                 path = QPainterPath()
-                path.moveTo(x, y + self.node_radius)
+                path.moveTo(x, y)
                 
                 ctrl_y = y + (next_y - y) / 2
-                path.cubicTo(x, ctrl_y, next_x, ctrl_y, next_x, next_y - self.node_radius)
+                path.cubicTo(x, ctrl_y, next_x, ctrl_y, next_x, next_y)
                 painter.drawPath(path)
+
+    def draw_commit_node(self, painter, commit, index):
+        column = commit.get('column', 0)
+        row = commit.get('row', index)
+        branch = commit.get('branch', 'main')
         
+        x = self.left_margin + column * 24
+        y = 30 + row * self.row_height
+        
+        color = self.branch_colors.get(branch, self.colors[0])
         is_selected = self.selected_commit == commit.get('hash', '')
         
         if is_selected:
-            painter.setPen(QPen(QColor("#ffffff"), 2))
+            painter.setPen(QPen(Qt.GlobalColor.white, 2))
             painter.setBrush(QBrush(color))
-            painter.drawEllipse(x - self.node_radius - 2, y - self.node_radius - 2, 
-                              (self.node_radius + 2) * 2, (self.node_radius + 2) * 2)
+            painter.drawEllipse(QPoint(int(x), int(y)), self.node_radius + 1, self.node_radius + 1)
         else:
             painter.setPen(QPen(color.darker(120), 2))
             painter.setBrush(QBrush(color))
-            painter.drawEllipse(x - self.node_radius, y - self.node_radius, 
-                              self.node_radius * 2, self.node_radius * 2)
+            painter.drawEllipse(QPoint(int(x), int(y)), self.node_radius, self.node_radius)
+
+    def draw_commit_content(self, painter, commit, index):
+        row = commit.get('row', index)
+        y = 30 + row * self.row_height
         
+        # Avatar
         email = commit.get('email', '')
         avatar_x = self.graph_width - self.avatar_size - 10
-        avatar_y = y - self.avatar_size // 2
+        avatar_y = int(y - self.avatar_size / 2)
         
         if email in self.avatars:
             painter.save()
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            
             path = QPainterPath()
             path.addEllipse(avatar_x, avatar_y, self.avatar_size, self.avatar_size)
             painter.setClipPath(path)
-            
             painter.drawPixmap(avatar_x, avatar_y, self.avatars[email])
             painter.restore()
         else:
             painter.save()
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            
             author = commit.get('author', 'Unknown')
             colors = ['#4ec9b0', '#007acc', '#c586c0', '#dcdcaa', '#ce9178', '#4fc1ff', '#b5cea8']
             color_index = sum(ord(c) for c in author) % len(colors)
@@ -145,26 +195,30 @@ class CommitGraphWidget(QWidget):
             
             initials = self.get_initials(author)
             painter.setPen(QColor('#ffffff'))
-            font = QFont('Arial', 11, QFont.Weight.Bold)
+            font = QFont('Segoe UI', 10, QFont.Weight.Bold)
             painter.setFont(font)
             painter.drawText(avatar_x, avatar_y, self.avatar_size, self.avatar_size, 
                            Qt.AlignmentFlag.AlignCenter, initials)
             painter.restore()
         
+        # Text Content
         text_x = self.graph_width + 10
-        text_y = y - 20
         
+        # Message
         text_color = self.palette().color(self.palette().ColorRole.WindowText)
         painter.setPen(QPen(text_color))
         font = QFont("Segoe UI", 10, QFont.Weight.Bold)
         painter.setFont(font)
         
-        message = commit.get('message', 'No message')[:60]
-        if len(commit.get('message', '')) > 60:
-            message += "..."
-        painter.drawText(text_x, text_y, message)
+        message = commit.get('message', 'No message')
+        # Simple truncation
+        metrics = painter.fontMetrics()
+        elided_message = metrics.elidedText(message, Qt.TextElideMode.ElideRight, self.width() - text_x - 20)
+        painter.drawText(text_x, int(y - 5), elided_message)
         
+        # Meta info (Author, Date, Hash)
         secondary_color = self.palette().color(self.palette().ColorRole.Text)
+        secondary_color.setAlpha(180) # Make it slightly dimmer
         painter.setPen(QPen(secondary_color))
         font = QFont("Segoe UI", 9)
         painter.setFont(font)
@@ -173,8 +227,38 @@ class CommitGraphWidget(QWidget):
         date = commit.get('date', '')
         hash_short = commit.get('hash', '')[:7]
         
-        info_text = f"{author}  •  {date}  •  {hash_short}"
-        painter.drawText(text_x, text_y + 20, info_text)
+        # Draw author
+        author_rect = metrics.boundingRect(author)
+        painter.drawText(text_x, int(y + 15), author)
+        
+        # Draw dot separator
+        dot_x = text_x + metrics.horizontalAdvance(author) + 8
+        painter.drawText(dot_x, int(y + 15), "•")
+        
+        # Draw date
+        date_x = dot_x + 12
+        painter.drawText(date_x, int(y + 15), date)
+        
+        # Draw hash (right aligned or after date)
+        # Let's put hash at the end with a different style maybe?
+        # Or keep the current format but cleaner
+        
+        hash_x = date_x + metrics.horizontalAdvance(date) + 12
+        painter.drawText(hash_x, int(y + 15), "•")
+        
+        hash_final_x = hash_x + 12
+        
+        # Draw hash with monospace font
+        painter.save()
+        mono_font = QFont("Consolas", 9)
+        painter.setFont(mono_font)
+        painter.setPen(QPen(QColor("#4ec9b0"))) # Cyan-ish for hash
+        painter.drawText(hash_final_x, int(y + 15), hash_short)
+        painter.restore()
+
+    def draw_commit(self, painter, commit, index):
+        # Legacy method kept for compatibility if needed, but paintEvent now calls specific methods
+        pass
     
     def get_initials(self, name):
         parts = name.strip().split()
@@ -186,26 +270,28 @@ class CommitGraphWidget(QWidget):
         
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+            # Check for row click first (easier and covers everything)
+            y = event.pos().y()
+            row = int((y - 30 + self.row_height / 2) / self.row_height)
+            
+            if 0 <= row < len(self.commits):
+                commit = self.commits[row]
+                self.selected_commit = commit.get('hash', '')
+                self.commit_clicked.emit(commit.get('hash', ''))
+                self.update()
+                return
+
+            # Fallback to specific node click if needed (though row click covers it)
             for commit in self.commits:
                 column = commit.get('column', 0)
                 row = commit.get('row', 0)
                 
-                x = self.left_margin + column * 30
+                x = self.left_margin + column * 24
                 y = 30 + row * self.row_height
                 
                 distance = math.sqrt((event.pos().x() - x)**2 + (event.pos().y() - y)**2)
                 
                 if distance <= self.node_radius * 2:
-                    self.selected_commit = commit.get('hash', '')
-                    self.commit_clicked.emit(commit.get('hash', ''))
-                    self.update()
-                    return
-                    
-                text_x = self.graph_width
-                text_y = y - 25
-                text_rect = QRect(text_x, text_y, self.width() - text_x, 50)
-                
-                if text_rect.contains(event.pos()):
                     self.selected_commit = commit.get('hash', '')
                     self.commit_clicked.emit(commit.get('hash', ''))
                     self.update()
