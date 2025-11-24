@@ -44,61 +44,7 @@ class RepositoryTab(QWidget):
         self.icon_manager = IconManager()
         self.init_ui()
     
-    def update_translations(self):
-        if hasattr(self, 'branch_title'):
-            self.branch_title.setText(tr('current_branch_label'))
-        if hasattr(self, 'open_folder_btn'):
-            self.open_folder_btn.setText(f" {tr('folder_button')}")
-            self.open_folder_btn.setToolTip(tr('folder_tooltip'))
-        if hasattr(self, 'open_terminal_btn'):
-            self.open_terminal_btn.setText(f" {tr('terminal_button')}")
-            self.open_terminal_btn.setToolTip(tr('terminal_tooltip'))
-        if hasattr(self, 'open_unreal_btn'):
-            self.open_unreal_btn.setText(f" {tr('unreal_button')}")
-            self.open_unreal_btn.setToolTip(tr('unreal_tooltip'))
-        if hasattr(self, 'pull_btn'):
-            self.pull_btn.setText(f" {tr('pull')}")
-            self.pull_btn.setToolTip(tr('pull_tooltip'))
-        if hasattr(self, 'push_btn'):
-            self.push_btn.setText(f" {tr('push')}")
-            self.push_btn.setToolTip(tr('push_tooltip'))
-        if hasattr(self, 'fetch_btn'):
-            self.fetch_btn.setText(f" {tr('fetch')}")
-            self.fetch_btn.setToolTip(tr('fetch_tooltip'))
-        if hasattr(self, 'refresh_btn'):
-            self.refresh_btn.setText(f" {tr('refresh')}")
-            self.refresh_btn.setToolTip(tr('refresh_tooltip'))
-        if hasattr(self, 'stage_all_btn'):
-            self.stage_all_btn.setText(f" {tr('add_all')}")
-            self.stage_all_btn.setToolTip(tr('add_all_tooltip'))
-        if hasattr(self, 'stage_btn'):
-            self.stage_btn.setText(f" {tr('add')}")
-            self.stage_btn.setToolTip(tr('add_tooltip'))
-        if hasattr(self, 'unstage_btn'):
-            self.unstage_btn.setText(f" {tr('remove')}")
-            self.unstage_btn.setToolTip(tr('remove_tooltip'))
-        if hasattr(self, 'commit_message'):
-            self.commit_message.setPlaceholderText(tr('commit_placeholder'))
-        if hasattr(self, 'commit_btn'):
-            self.commit_btn.setText(f" {tr('commit_and_save')}")
-            self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))
-        if hasattr(self, 'lfs_install_btn'):
-            self.lfs_install_btn.setText(f" {tr('install')}")
-            self.lfs_install_btn.setToolTip(tr('install_tooltip'))
-        if hasattr(self, 'lfs_track_btn'):
-            self.lfs_track_btn.setText(f" {tr('config_lfs')}")
-            self.lfs_track_btn.setToolTip(tr('config_lfs_tooltip'))
-        if hasattr(self, 'lfs_pull_btn'):
-            self.lfs_pull_btn.setText(f" {tr('download_lfs_files')}")
-            self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
-        if hasattr(self, 'diff_view'):
-            self.diff_view.setPlaceholderText(tr('select_file_diff'))
-        
-        self.check_lfs_status()
-        if self.repo_path:
-            self.update_repo_info()
-            self.refresh_status()
-        
+    
     def init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -305,6 +251,16 @@ class RepositoryTab(QWidget):
         self.refresh_btn.clicked.connect(self.refresh_status)
         layout.addWidget(self.refresh_btn)
         
+        self.lfs_btn = QPushButton(" LFS")
+        self.lfs_btn.setIcon(self.icon_manager.get_icon("database", size=18))
+        self.lfs_btn.setMinimumSize(85, 36)
+        self.lfs_btn.setMaximumSize(110, 36)
+        self.lfs_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.lfs_btn.setStyleSheet(button_style)
+        self.lfs_btn.setToolTip(tr('lfs_title'))
+        self.lfs_btn.clicked.connect(self.show_lfs_menu)
+        layout.addWidget(self.lfs_btn)
+        
         layout.addStretch()
         
     def create_left_panel(self):
@@ -438,100 +394,6 @@ class RepositoryTab(QWidget):
         commit_layout.addWidget(self.commit_btn)
         
         layout.addWidget(commit_container)
-        
-        self.lfs_header = self.create_section_header(tr('lfs_title'), tr('lfs_subtitle'), "files")
-        layout.addWidget(self.lfs_header)
-        
-        lfs_container = QWidget()
-        lfs_container.setStyleSheet("background-color: palette(window); padding: 10px;")
-        lfs_layout = QVBoxLayout(lfs_container)
-        lfs_layout.setContentsMargins(10, 10, 10, 10)
-        lfs_layout.setSpacing(15)
-        
-        status_widget = QWidget()
-        status_widget.setStyleSheet(f"""
-            QWidget {{
-                background-color: {theme.colors['surface']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-            }}
-        """)
-        status_layout = QVBoxLayout(status_widget)
-        status_layout.setContentsMargins(15, 12, 15, 12)
-        status_layout.setSpacing(5)
-        
-        status_row = QHBoxLayout()
-        status_row.setSpacing(10)
-        status_icon = QLabel()
-        status_icon.setPixmap(self.icon_manager.get_pixmap("info", 16))
-        status_icon.setStyleSheet("background: transparent; border: none;")
-        status_row.addWidget(status_icon)
-        
-        self.lfs_status_label = QLabel(tr('lfs_status'))
-        self.lfs_status_label.setStyleSheet(f"color: {theme.colors['primary']}; font-weight: bold; font-size: 13px; background: transparent; border: none;")
-        status_row.addWidget(self.lfs_status_label)
-        status_row.addStretch()
-        status_layout.addLayout(status_row)
-        
-        self.lfs_tracked_label = QLabel("")
-        self.lfs_tracked_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px; margin-left: 26px; background: transparent; border: none;")
-        self.lfs_tracked_label.setWordWrap(True)
-        status_layout.addWidget(self.lfs_tracked_label)
-        
-        lfs_layout.addWidget(status_widget)
-        
-        actions_widget = QWidget()
-        actions_layout = QGridLayout(actions_widget)
-        actions_layout.setContentsMargins(0, 0, 0, 0)
-        actions_layout.setSpacing(10)
-        
-        def create_lfs_btn(text, icon_name, callback, tooltip):
-            btn = QPushButton(text)
-            btn.setIcon(self.icon_manager.get_icon(icon_name, size=16))
-            btn.setToolTip(tooltip)
-            btn.clicked.connect(callback)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            btn.setMinimumHeight(40)
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {theme.colors['surface']};
-                    color: {theme.colors['text']};
-                    border: 1px solid {theme.colors['border']};
-                    border-radius: 6px;
-                    padding: 8px 12px;
-                    text-align: left;
-                    font-weight: 500;
-                }}
-                QPushButton:hover {{
-                    background-color: {theme.colors['surface_hover']};
-                    border-color: {theme.colors['primary']};
-                    color: {theme.colors['primary']};
-                }}
-                QPushButton:pressed {{
-                    background-color: {theme.colors['background_secondary']};
-                }}
-            """)
-            return btn
-
-        self.lfs_install_btn = create_lfs_btn(tr('install'), "download", self.install_lfs, tr('install_tooltip'))
-        actions_layout.addWidget(self.lfs_install_btn, 0, 0)
-        
-        self.lfs_track_btn = create_lfs_btn(tr('lfs_tracking'), "file-code", self.show_lfs_tracking, tr('config_lfs_tooltip'))
-        actions_layout.addWidget(self.lfs_track_btn, 0, 1)
-        
-        self.lfs_pull_btn = create_lfs_btn(tr('download_lfs_files'), "download", self.do_lfs_pull, tr('download_lfs_files_tooltip'))
-        actions_layout.addWidget(self.lfs_pull_btn, 1, 0)
-        
-        self.lfs_locks_btn = create_lfs_btn(tr('lfs_locks'), "lock", self.show_lfs_locks, tr('lfs_locks'))
-        actions_layout.addWidget(self.lfs_locks_btn, 1, 1)
-
-        self.lfs_prune_btn = create_lfs_btn(tr('lfs_prune'), "trash", self.do_lfs_prune, tr('lfs_prune'))
-        actions_layout.addWidget(self.lfs_prune_btn, 2, 0, 1, 2)
-        
-        lfs_layout.addWidget(actions_widget)
-        
-        layout.addWidget(lfs_container)
         
         layout.addStretch()
         
@@ -1406,6 +1268,74 @@ class RepositoryTab(QWidget):
             cursor_pos = QCursor.pos()
             menu.exec(cursor_pos)
     
+    def show_lfs_menu(self):
+        menu = QMenu(self)
+        theme = get_current_theme()
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                padding: 5px;
+                border-radius: 6px;
+            }}
+            QMenu::item {{
+                padding: 8px 25px;
+                color: {theme.colors['text']};
+                border-radius: 4px;
+            }}
+            QMenu::item:selected {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {theme.colors['border']};
+                margin: 5px 0;
+            }}
+        """)
+        
+        # Status Action (Disabled, just for info)
+        status_text = tr('lfs_not_installed')
+        if self.git_manager.is_lfs_installed():
+            status_text = tr('lfs_installed')
+            
+        status_action = QAction(status_text, self)
+        status_action.setEnabled(False)
+        status_action.setIcon(self.icon_manager.get_icon("info", size=16))
+        menu.addAction(status_action)
+        
+        menu.addSeparator()
+        
+        # Actions
+        install_action = QAction(tr('install'), self)
+        install_action.setIcon(self.icon_manager.get_icon("download", size=16))
+        install_action.triggered.connect(self.install_lfs)
+        menu.addAction(install_action)
+        
+        track_action = QAction(tr('lfs_tracking'), self)
+        track_action.setIcon(self.icon_manager.get_icon("file-code", size=16))
+        track_action.triggered.connect(self.show_lfs_tracking)
+        menu.addAction(track_action)
+        
+        pull_action = QAction(tr('download_lfs_files'), self)
+        pull_action.setIcon(self.icon_manager.get_icon("download", size=16))
+        pull_action.triggered.connect(self.do_lfs_pull)
+        menu.addAction(pull_action)
+        
+        locks_action = QAction(tr('lfs_locks'), self)
+        locks_action.setIcon(self.icon_manager.get_icon("lock", size=16))
+        locks_action.triggered.connect(self.show_lfs_locks)
+        menu.addAction(locks_action)
+        
+        menu.addSeparator()
+        
+        prune_action = QAction(tr('lfs_prune'), self)
+        prune_action.setIcon(self.icon_manager.get_icon("trash", size=16))
+        prune_action.triggered.connect(self.do_lfs_prune)
+        menu.addAction(prune_action)
+        
+        menu.exec(QCursor.pos())
+
     def execute_plugin_action(self, action_data):
         if not self.repo_path:
             return
@@ -1429,25 +1359,43 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, "Error", message)
         
     def check_lfs_status(self):
-        if not self.repo_path:
+        if not self.repo_path or not hasattr(self, 'lfs_btn'):
             return
             
+        theme = get_current_theme()
         if self.git_manager.is_lfs_installed():
-            self.lfs_status_label.setText(tr('lfs_installed'))
-            
-            patterns = self.git_manager.get_lfs_tracked_patterns()
-            size_bytes = self.git_manager.get_lfs_storage_usage()
-            size_str = self.git_manager.format_size(size_bytes)
-            
-            if patterns:
-                count = len(patterns)
-                self.lfs_tracked_label.setText(f"{tr('lfs_tracking_patterns', count=count)} • {tr('lfs_size')}: {size_str}")
-                self.lfs_tracked_label.setToolTip("\n".join(patterns))
-            else:
-                self.lfs_tracked_label.setText(f"{tr('lfs_no_files_tracked')} • {tr('lfs_size')}: {size_str}")
+            self.lfs_btn.setStyleSheet(f"""
+                QPushButton {{
+                    color: {theme.colors['primary']};
+                    background-color: transparent;
+                    border: {theme.borders['width_thin']}px solid {theme.colors['primary']};
+                    border-radius: {theme.borders['radius_md']}px;
+                    padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                    font-size: {theme.fonts['size_md']}px;
+                    font-weight: {theme.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: {theme.colors['surface_hover']};
+                }}
+            """)
+            self.lfs_btn.setToolTip(tr('lfs_installed'))
         else:
-            self.lfs_status_label.setText(tr('lfs_not_installed'))
-            self.lfs_tracked_label.setText("")
+            self.lfs_btn.setStyleSheet(f"""
+                QPushButton {{
+                    color: {theme.colors['text_secondary']};
+                    background-color: transparent;
+                    border: {theme.borders['width_thin']}px solid transparent;
+                    border-radius: {theme.borders['radius_md']}px;
+                    padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                    font-size: {theme.fonts['size_md']}px;
+                    font-weight: {theme.fonts['weight_bold']};
+                }}
+                QPushButton:hover {{
+                    background-color: {theme.colors['surface_hover']};
+                    border-color: {theme.colors['text_secondary']};
+                }}
+            """)
+            self.lfs_btn.setToolTip(tr('lfs_not_installed'))
             
     def install_lfs(self):
         success, message = self.git_manager.install_lfs()
@@ -1637,9 +1585,6 @@ class RepositoryTab(QWidget):
         if hasattr(self, 'commit_header'):
             self.commit_header.title_label.setText(tr('commit_title'))
             self.commit_header.desc_label.setText(tr('commit_subtitle'))
-        if hasattr(self, 'lfs_header'):
-            self.lfs_header.title_label.setText(tr('lfs_title'))
-            self.lfs_header.desc_label.setText(tr('lfs_subtitle'))
         if hasattr(self, 'history_header'):
             self.history_header.title_label.setText(tr('history_title'))
             self.history_header.desc_label.setText(tr('history_subtitle'))
@@ -1685,15 +1630,9 @@ class RepositoryTab(QWidget):
         if hasattr(self, 'commit_btn'):
             self.commit_btn.setText(f" {tr('commit_and_save')}")
             self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))
-        if hasattr(self, 'lfs_install_btn'):
-            self.lfs_install_btn.setText(f" {tr('install')}")
-            self.lfs_install_btn.setToolTip(tr('install_tooltip'))
-        if hasattr(self, 'lfs_track_btn'):
-            self.lfs_track_btn.setText(f" {tr('config_lfs')}")
-            self.lfs_track_btn.setToolTip(tr('config_lfs_tooltip'))
-        if hasattr(self, 'lfs_pull_btn'):
-            self.lfs_pull_btn.setText(f" {tr('download_lfs_files')}")
-            self.lfs_pull_btn.setToolTip(tr('download_lfs_files_tooltip'))
+        if hasattr(self, 'lfs_btn'):
+            self.lfs_btn.setText(" LFS")
+            self.lfs_btn.setToolTip(tr('lfs_title'))
         if hasattr(self, 'diff_view'):
             self.diff_view.setPlaceholderText(tr('select_file_diff'))
         
