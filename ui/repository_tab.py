@@ -144,8 +144,8 @@ class RepositoryTab(QWidget):
     def create_top_bar(self):
         theme = get_current_theme()
         self.top_bar = QFrame()
-        self.top_bar.setMaximumHeight(70)
-        self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.top_bar.setMinimumHeight(120)
+        self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.top_bar.setStyleSheet(f"""
             QFrame {{
                 background-color: {theme.colors['surface']};
@@ -154,24 +154,23 @@ class RepositoryTab(QWidget):
         """)
         
         layout = QHBoxLayout(self.top_bar)
-        layout.setContentsMargins(15, 8, 15, 8)
-        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
         
         branch_container = QWidget()
-        branch_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        branch_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         branch_layout = QVBoxLayout(branch_container)
         branch_layout.setContentsMargins(0, 0, 0, 0)
-        branch_layout.setSpacing(3)
+        branch_layout.setSpacing(8)
         
         self.branch_title = QLabel(tr('current_branch_label'))
         self.branch_title.setStyleSheet(f"color: {theme.colors['primary']}; font-size: {theme.fonts['size_xs']}px; font-weight: {theme.fonts['weight_bold']};")
-        self.branch_title.setMaximumHeight(14)
         branch_layout.addWidget(self.branch_title)
         
         self.branch_button = QPushButton()
         self.branch_button.setText("main")
-        self.branch_button.setMinimumSize(180, 28)
-        self.branch_button.setMaximumHeight(28)
+        self.branch_button.setMinimumSize(200, 45)
+        self.branch_button.setMaximumHeight(50)
         self.branch_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.branch_button.setStyleSheet(f"""
             QPushButton {{
@@ -181,9 +180,8 @@ class RepositoryTab(QWidget):
                 background-color: {theme.colors['background']};
                 border: {theme.borders['width_medium']}px solid {theme.colors['primary']};
                 border-radius: {theme.borders['radius_md']}px;
-                padding: {theme.spacing['xs']}px {theme.spacing['md']}px;
+                padding: 8px 15px;
                 text-align: left;
-                padding-left: 10px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['surface']};
@@ -981,7 +979,7 @@ class RepositoryTab(QWidget):
                 QMessageBox.information(
                     self,
                     tr('success'),
-                    tr('branch_created_from_commit', branch=branch_hash[:7])
+                    tr('branch_created_from_commit', branch=commit_hash[:7])
                 )
                 self.refresh_status()
             else:
