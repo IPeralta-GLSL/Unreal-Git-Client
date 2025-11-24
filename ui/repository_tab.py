@@ -293,28 +293,48 @@ class RepositoryTab(QWidget):
         self.changes_list.setMinimumHeight(200)
         self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
-        self.changes_list.setStyleSheet("""
-            QListWidget {
+        self.changes_list.setStyleSheet(f"""
+            QListWidget {{
                 background-color: palette(window);
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
                 padding: 5px;
                 font-family: 'Consolas', 'Monaco', monospace;
                 font-size: 13px;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 8px;
                 border-radius: 4px;
                 margin: 2px;
                 border-left: 3px solid transparent;
-            }
-            QListWidget::item:hover {
+            }}
+            QListWidget::item:hover {{
                 background-color: palette(button);
-            }
-            QListWidget::item:selected {
+            }}
+            QListWidget::item:selected {{
                 background-color: palette(highlight);
                 border-left-color: {theme.colors['border_focus']};
-            }
+            }}
+            QListWidget::indicator {{
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                border: 2px solid {theme.colors['border']};
+                background-color: {theme.colors['surface']};
+            }}
+            QListWidget::indicator:hover {{
+                border-color: {theme.colors['primary']};
+                background-color: {theme.colors['surface_hover']};
+            }}
+            QListWidget::indicator:checked {{
+                background-color: {theme.colors['primary']};
+                border-color: {theme.colors['primary']};
+                image: url(none);
+            }}
+            QListWidget::indicator:checked:hover {{
+                background-color: {theme.colors['primary_hover']};
+                border-color: {theme.colors['primary_hover']};
+            }}
         """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
         self.changes_list.itemDoubleClicked.connect(self.on_change_double_clicked)
