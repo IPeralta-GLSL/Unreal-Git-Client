@@ -127,7 +127,7 @@ class TranslationManager:
                 'tip_pull_before_push': 'Usa Pull antes de Push para evitar conflictos',
                 'tip_create_branches': 'Crea ramas para nuevas características',
                 'shortcuts_text': 'Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar',
-                'version_text': 'v1.0.0 • Soporte para Git LFS y Unreal Engine',
+                'version_text': 'v1.0.0',
                 
                 'current_branch_label': 'RAMA ACTUAL (clic para cambiar)',
                 'folder_button': 'Carpeta',
@@ -488,7 +488,7 @@ class TranslationManager:
                 'tip_pull_before_push': 'Use Pull before Push to avoid conflicts',
                 'tip_create_branches': 'Create branches for new features',
                 'shortcuts_text': 'Shortcuts: Ctrl+T new tab • Ctrl+W close • Ctrl+Tab switch',
-                'version_text': 'v1.0.0 • Support for Git LFS and Unreal Engine',
+                'version_text': 'v1.0.0',
                 
                 'current_branch_label': 'CURRENT BRANCH (click to change)',
                 'folder_button': 'Folder',
