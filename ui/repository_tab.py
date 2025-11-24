@@ -293,6 +293,7 @@ class RepositoryTab(QWidget):
         self.changes_list.setMinimumHeight(200)
         self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
+        self.changes_list.itemChanged.connect(self.on_item_check_changed)
         self.changes_list.setStyleSheet(f"""
             QListWidget {{
                 background-color: palette(window);
@@ -885,17 +886,25 @@ class RepositoryTab(QWidget):
         else:
             QMessageBox.warning(self, tr('error'), message)
 
+    def on_item_check_changed(self, item):
+        # Immediate visual feedback - no refresh needed
+        pass
+
     def select_all_changes(self):
+        self.changes_list.blockSignals(True)
         for i in range(self.changes_list.count()):
             item = self.changes_list.item(i)
             if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
                 item.setCheckState(Qt.CheckState.Checked)
+        self.changes_list.blockSignals(False)
             
     def deselect_all_changes(self):
+        self.changes_list.blockSignals(True)
         for i in range(self.changes_list.count()):
             item = self.changes_list.item(i)
             if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
                 item.setCheckState(Qt.CheckState.Unchecked)
+        self.changes_list.blockSignals(False)
 
     def stage_file_single(self, file_path):
         success, message = self.git_manager.stage_file(file_path)
