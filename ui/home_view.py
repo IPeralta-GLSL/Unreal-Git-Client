@@ -454,10 +454,6 @@ class HomeView(QWidget):
         button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         
-        if icon_name:
-            button.setIcon(self.icon_manager.get_icon(icon_name, size=40))
-            button.setIconSize(QSize(40, 40))
-        
         hover_color = self.lighten_color(color)
         pressed_color = self.darken_color(color)
         
@@ -467,26 +463,34 @@ class HomeView(QWidget):
                     stop:0 {color}, stop:1 {self.darken_color(color)});
                 border: none;
                 border-radius: 12px;
-                padding: 25px;
+                padding: 0px;
                 text-align: left;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }}
             QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 {hover_color}, stop:1 {color});
-                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             }}
             QPushButton:pressed {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 {pressed_color}, stop:1 {self.darken_color(pressed_color)});
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }}
         """)
         
-        layout = QVBoxLayout(button)
+        layout = QHBoxLayout(button)
         layout.setContentsMargins(25, 20, 25, 20)
-        layout.setSpacing(10)
+        layout.setSpacing(20)
         layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        
+        if icon_name:
+            icon_label = QLabel()
+            icon_label.setPixmap(self.icon_manager.get_pixmap(icon_name, size=40))
+            icon_label.setStyleSheet("background: transparent; border: none;")
+            icon_label.setFixedSize(40, 40)
+            layout.addWidget(icon_label)
+        
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(5)
+        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         
         btn_text = QLabel(text)
         btn_text.setWordWrap(True)
@@ -497,8 +501,9 @@ class HomeView(QWidget):
         btn_text.setStyleSheet("""
             color: white;
             background: transparent;
+            border: none;
         """)
-        layout.addWidget(btn_text)
+        text_layout.addWidget(btn_text)
         
         btn_desc = QLabel(description)
         btn_desc.setWordWrap(True)
@@ -506,8 +511,12 @@ class HomeView(QWidget):
             font-size: 13px;
             color: rgba(255, 255, 255, 0.9);
             background: transparent;
+            border: none;
         """)
-        layout.addWidget(btn_desc)
+        text_layout.addWidget(btn_desc)
+        
+        layout.addLayout(text_layout)
+        layout.addStretch()
         
         button.text_label = btn_text
         button.desc_label = btn_desc
