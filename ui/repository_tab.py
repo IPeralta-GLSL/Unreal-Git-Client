@@ -887,7 +887,6 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), message)
 
     def on_item_check_changed(self, item):
-        # Immediate visual feedback - no refresh needed
         pass
 
     def select_all_changes(self):
