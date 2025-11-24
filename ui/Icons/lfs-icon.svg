@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffffff">
+  <!-- Right Face -->
+  <path d="M13.5 13.2L21.5 8.8V17.8L13.5 22.2V13.2Z"/>
+  <!-- Left Face Left Part -->
+  <path d="M2.5 8.8L5.5 10.45V19.45L2.5 17.8V8.8Z"/>
+  <!-- Left Face Right Part -->
+  <path d="M8.5 12.1V21.1L11.5 22.75V13.75L8.5 12.1Z"/>
+  <!-- Top Face Back Part -->
+  <path d="M12 2.5L21 7.5L14.5 11.1L5.5 6.1L12 2.5Z"/>
+</svg>

@@ -182,7 +182,7 @@ class RepositoryTab(QWidget):
         """
         
         self.lfs_btn = QPushButton(" LFS")
-        self.lfs_btn.setIcon(self.icon_manager.get_icon("database", size=18))
+        self.lfs_btn.setIcon(self.icon_manager.get_icon("lfs-icon", size=18))
         self.lfs_btn.setMinimumSize(85, 36)
         self.lfs_btn.setMaximumSize(110, 36)
         self.lfs_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
