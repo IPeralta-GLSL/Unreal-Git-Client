@@ -95,6 +95,7 @@ class MainWindow(QMainWindow):
         
     def setup_central_widget(self):
         central_widget = QWidget()
+        central_widget.setObjectName("centralWidget")
         self.setCentralWidget(central_widget)
         
         layout = QVBoxLayout(central_widget)
@@ -443,18 +444,22 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(f"""
             QMainWindow {{
                 background-color: palette(window);
+                border: 1px solid {theme.colors['border']};
+            }}
+            QTabWidget {{
+                border: none;
             }}
             QTabWidget::pane {{
-                border: 1px solid {theme.colors['border']};
+                border: none;
                 background-color: palette(base);
-                border-top: none;
             }}
             QTabWidget::tab-bar {{
                 left: 5px;
             }}
             QTabBar {{
-                background-color: {theme.colors['surface']};
-                border-bottom: 1px solid {theme.colors['border']};
+                background-color: transparent;
+                qproperty-drawBase: 0;
+                border-bottom: none;
             }}
             QTabBar::tab {{
                 background-color: transparent;
