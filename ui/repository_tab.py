@@ -323,23 +323,15 @@ class RepositoryTab(QWidget):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(5)
         
-        self.stage_all_btn = QPushButton(tr('add_all'))
-        self.stage_all_btn.setIcon(self.icon_manager.get_icon("folder-plus", size=16))
-        self.stage_all_btn.setToolTip(tr('add_all_tooltip'))
-        self.stage_all_btn.clicked.connect(self.stage_all)
-        btn_layout.addWidget(self.stage_all_btn)
+        self.select_all_btn = QPushButton(tr('select_all'))
+        self.select_all_btn.setIcon(self.icon_manager.get_icon("check-square", size=16))
+        self.select_all_btn.clicked.connect(self.select_all_changes)
+        btn_layout.addWidget(self.select_all_btn)
         
-        self.stage_btn = QPushButton(tr('add'))
-        self.stage_btn.setIcon(self.icon_manager.get_icon("file-plus", size=16))
-        self.stage_btn.setToolTip(tr('add_tooltip'))
-        self.stage_btn.clicked.connect(self.stage_selected)
-        btn_layout.addWidget(self.stage_btn)
-        
-        self.unstage_btn = QPushButton(tr('remove'))
-        self.unstage_btn.setIcon(self.icon_manager.get_icon("file-minus", size=16))
-        self.unstage_btn.setToolTip(tr('remove_tooltip'))
-        self.unstage_btn.clicked.connect(self.unstage_selected)
-        btn_layout.addWidget(self.unstage_btn)
+        self.deselect_all_btn = QPushButton(tr('deselect_all'))
+        self.deselect_all_btn.setIcon(self.icon_manager.get_icon("square", size=16))
+        self.deselect_all_btn.clicked.connect(self.deselect_all_changes)
+        btn_layout.addWidget(self.deselect_all_btn)
         
         changes_layout.addLayout(btn_layout)
         layout.addWidget(changes_container)
@@ -694,7 +686,7 @@ class RepositoryTab(QWidget):
             item.setFont(font)
             item.setData(Qt.ItemDataRole.UserRole, file_path)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Unchecked)
+            item.setCheckState(Qt.CheckState.Checked)
             self.changes_list.addItem(item)
             
     def on_change_double_clicked(self, item):
@@ -790,11 +782,30 @@ class RepositoryTab(QWidget):
             }}
         """)
         
+        stage_action = QAction(tr('stage_file_context'), self)
+        stage_action.setIcon(self.icon_manager.get_icon("file-plus", size=16))
+        stage_action.triggered.connect(lambda: self.stage_file_single(file_path))
+        menu.addAction(stage_action)
+        
+        unstage_action = QAction(tr('unstage_file_context'), self)
+        unstage_action.setIcon(self.icon_manager.get_icon("file-minus", size=16))
+        unstage_action.triggered.connect(lambda: self.unstage_file_single(file_path))
+        menu.addAction(unstage_action)
+        
+        discard_action = QAction(tr('discard_changes_context'), self)
+        discard_action.setIcon(self.icon_manager.get_icon("x-circle", size=16))
+        discard_action.triggered.connect(lambda: self.discard_file_context(file_path))
+        menu.addAction(discard_action)
+        
+        menu.addSeparator()
+        
         ignore_action = QAction(tr('add_to_gitignore'), self)
+        ignore_action.setIcon(self.icon_manager.get_icon("file-x", size=16))
         ignore_action.triggered.connect(lambda: self.add_to_gitignore(file_path))
         menu.addAction(ignore_action)
         
         lfs_action = QAction(tr('add_to_lfs'), self)
+        lfs_action.setIcon(self.icon_manager.get_icon("lfs-icon", size=16))
         lfs_action.triggered.connect(lambda: self.add_to_lfs(file_path))
         menu.addAction(lfs_action)
         
@@ -815,6 +826,47 @@ class RepositoryTab(QWidget):
             self.refresh_status()
         else:
             QMessageBox.warning(self, tr('error'), message)
+
+    def select_all_changes(self):
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                item.setCheckState(Qt.CheckState.Checked)
+            
+    def deselect_all_changes(self):
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+    def stage_file_single(self, file_path):
+        success, message = self.git_manager.stage_file(file_path)
+        if success:
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), message)
+
+    def unstage_file_single(self, file_path):
+        success, message = self.git_manager.unstage_file(file_path)
+        if success:
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), message)
+
+    def discard_file_context(self, file_path):
+        reply = QMessageBox.question(
+            self,
+            tr('confirm_discard'),
+            tr('confirm_discard_text', file=file_path),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.git_manager.discard_file(file_path)
+            if success:
+                self.refresh_status()
+            else:
+                QMessageBox.warning(self, tr('error'), message)
                 
     def do_commit(self):
         message = self.commit_message.toPlainText().strip()
@@ -1746,157 +1798,57 @@ class RepositoryTab(QWidget):
             self.check_lfs_status()
             self.update_repo_info()
     
-class LFSLocksDialog(QDialog):
-    def __init__(self, git_manager, parent=None):
-        super().__init__(parent)
-        self.git_manager = git_manager
-        self.setWindowTitle(tr('lfs_locks_title'))
-        self.setMinimumSize(600, 400)
-        self.init_ui()
-        self.load_locks()
+    def select_all_changes(self):
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            item.setCheckState(Qt.CheckState.Checked)
+            
+    def deselect_all_changes(self):
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            item.setCheckState(Qt.CheckState.Unchecked)
 
-    def init_ui(self):
-        layout = QVBoxLayout(self)
+    def discard_selected(self):
+        items_to_process = self.get_checked_items()
+        if not items_to_process:
+            current_item = self.changes_list.currentItem()
+            if current_item:
+                items_to_process.append(current_item)
         
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels([
-            tr('lfs_lock_path'), 
-            tr('lfs_lock_owner'), 
-            tr('lfs_lock_id'), 
-            tr('lfs_lock_date')
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        layout.addWidget(self.table)
-        
-        btn_layout = QHBoxLayout()
-        
-        self.unlock_btn = QPushButton(tr('lfs_unlock_selected'))
-        self.unlock_btn.clicked.connect(self.unlock_selected)
-        btn_layout.addWidget(self.unlock_btn)
-        
-        self.refresh_btn = QPushButton(tr('refresh'))
-        self.refresh_btn.clicked.connect(self.load_locks)
-        btn_layout.addWidget(self.refresh_btn)
-        
-        self.close_btn = QPushButton(tr('close'))
-        self.close_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(self.close_btn)
-        
-        layout.addLayout(btn_layout)
-
-    def load_locks(self):
-        self.table.setRowCount(0)
-        locks = self.git_manager.get_lfs_locks()
-        
-        for lock in locks:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            
-            self.table.setItem(row, 0, QTableWidgetItem(lock.get('path', '')))
-            
-            owner = lock.get('owner', {})
-            owner_name = owner.get('name', tr('unknown'))
-            self.table.setItem(row, 1, QTableWidgetItem(owner_name))
-            
-            self.table.setItem(row, 2, QTableWidgetItem(lock.get('id', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(lock.get('locked_at', '')))
-            
-            self.table.item(row, 0).setData(Qt.ItemDataRole.UserRole, lock)
-
-    def unlock_selected(self):
-        selected_items = self.table.selectedItems()
-        if not selected_items:
+        if not items_to_process:
             return
-            
-        rows = set(item.row() for item in selected_items)
+
+        reply = QMessageBox.question(
+            self,
+            tr('confirm_discard'),
+            tr('confirm_discard_text', file=f"{len(items_to_process)} files"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
         
-        for row in rows:
-            item = self.table.item(row, 0)
-            lock = item.data(Qt.ItemDataRole.UserRole)
-            path = lock.get('path')
-            
-            if path:
-                success, msg = self.git_manager.lfs_unlock_file(path, force=True)
+        if reply == QMessageBox.StandardButton.Yes:
+            errors = []
+            for item in items_to_process:
+                file_path = item.data(Qt.ItemDataRole.UserRole)
+                success, message = self.git_manager.discard_file(file_path)
                 if not success:
-                    QMessageBox.warning(self, tr('error'), f"{tr('error')}: {msg}")
-        
-        self.load_locks()
+                    errors.append(f"{file_path}: {message}")
+            
+            self.refresh_status()
+            
+            if errors:
+                QMessageBox.warning(self, tr('error'), "\n".join(errors))
 
-class LFSTrackingDialog(QDialog):
-    def __init__(self, git_manager, plugin_manager=None, parent=None):
-        super().__init__(parent)
-        self.git_manager = git_manager
-        self.plugin_manager = plugin_manager
-        self.setWindowTitle(tr('lfs_tracking_title'))
-        self.setMinimumSize(500, 400)
-        self.init_ui()
-        self.load_patterns()
-
-    def init_ui(self):
-        layout = QVBoxLayout(self)
+    def discard_file_context(self, file_path):
+        reply = QMessageBox.question(
+            self,
+            tr('confirm_discard'),
+            tr('confirm_discard_text', file=file_path),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
         
-        info_label = QLabel(tr('lfs_tracking_info'))
-        info_label.setWordWrap(True)
-        layout.addWidget(info_label)
-        
-        self.patterns_list = QListWidget()
-        layout.addWidget(self.patterns_list)
-        
-        input_layout = QHBoxLayout()
-        self.pattern_input = QLineEdit()
-        self.pattern_input.setPlaceholderText("*.psd")
-        input_layout.addWidget(self.pattern_input)
-        
-        self.add_btn = QPushButton(tr('add'))
-        self.add_btn.clicked.connect(self.add_pattern)
-        input_layout.addWidget(self.add_btn)
-        
-        layout.addLayout(input_layout)
-        
-        btn_layout = QHBoxLayout()
-        
-        if self.plugin_manager:
-            self.add_defaults_btn = QPushButton(tr('add_plugin_defaults')) # We can rename this translation key later to be more generic
-            self.add_defaults_btn.clicked.connect(self.add_plugin_defaults)
-            btn_layout.addWidget(self.add_defaults_btn)
-        
-        btn_layout.addStretch()
-        
-        self.close_btn = QPushButton(tr('close'))
-        self.close_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(self.close_btn)
-        
-        layout.addLayout(btn_layout)
-
-    def load_patterns(self):
-        self.patterns_list.clear()
-        patterns = self.git_manager.get_lfs_tracked_patterns()
-        for pattern in patterns:
-            self.patterns_list.addItem(pattern)
-
-    def add_pattern(self):
-        pattern = self.pattern_input.text().strip()
-        if pattern:
-            success, msg = self.git_manager.lfs_track_files([pattern])
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.git_manager.discard_file(file_path)
             if success:
-                self.pattern_input.clear()
-                self.load_patterns()
+                self.refresh_status()
             else:
-                QMessageBox.warning(self, tr('error'), msg)
-
-    def add_plugin_defaults(self):
-        if not self.plugin_manager:
-            return
-            
-        patterns = self.plugin_manager.get_all_lfs_patterns()
-        if not patterns:
-            QMessageBox.information(self, tr('info'), "No hay patrones predefinidos en los plugins activos.")
-            return
-            
-        success, msg = self.git_manager.lfs_track_files(patterns)
-        if success:
-            self.load_patterns()
-            QMessageBox.information(self, tr('success'), tr('success_unreal_defaults'))
-        else:
-            QMessageBox.warning(self, tr('error'), msg)
+                QMessageBox.warning(self, tr('error'), message)

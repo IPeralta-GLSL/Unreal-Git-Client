@@ -337,3 +337,22 @@ class GitManager:
             return True, "Added to .gitignore"
         except Exception as e:
             return False, str(e)
+        
+    def discard_file(self, file_path):
+        # Check if file is tracked
+        success, output = self.run_command(f"git ls-files --error-unmatch \"{file_path}\"")
+        is_tracked = success
+        
+        if is_tracked:
+            return self.run_command(f"git checkout HEAD -- \"{file_path}\"")
+        else:
+            # Untracked file, just delete it
+            try:
+                full_path = os.path.join(self.repo_path, file_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+                    return True, "File deleted"
+                else:
+                    return False, "File not found"
+            except Exception as e:
+                return False, str(e)
