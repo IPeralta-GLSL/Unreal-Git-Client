@@ -325,11 +325,49 @@ class RepositoryTab(QWidget):
         
         self.select_all_btn = QPushButton(tr('select_all'))
         self.select_all_btn.setIcon(self.icon_manager.get_icon("check-square", size=16))
+        self.select_all_btn.setMinimumHeight(36)
+        self.select_all_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+                border: none;
+                border-radius: {theme.borders['radius_md']}px;
+                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                font-size: {theme.fonts['size_sm']}px;
+                font-weight: {theme.fonts['weight_bold']};
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
+        """)
         self.select_all_btn.clicked.connect(self.select_all_changes)
         btn_layout.addWidget(self.select_all_btn)
         
         self.deselect_all_btn = QPushButton(tr('deselect_all'))
         self.deselect_all_btn.setIcon(self.icon_manager.get_icon("square", size=16))
+        self.deselect_all_btn.setMinimumHeight(36)
+        self.deselect_all_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['text']};
+                border: {theme.borders['width_thin']}px solid {theme.colors['border']};
+                border-radius: {theme.borders['radius_md']}px;
+                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                font-size: {theme.fonts['size_sm']}px;
+                font-weight: {theme.fonts['weight_bold']};
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+        """)
         self.deselect_all_btn.clicked.connect(self.deselect_all_changes)
         btn_layout.addWidget(self.deselect_all_btn)
         
