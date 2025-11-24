@@ -1368,7 +1368,7 @@ class RepositoryTab(QWidget):
                 QPushButton {{
                     color: {theme.colors['primary']};
                     background-color: transparent;
-                    border: {theme.borders['width_thin']}px solid {theme.colors['primary']};
+                    border: {theme.borders['width_thin']}px solid transparent;
                     border-radius: {theme.borders['radius_md']}px;
                     padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
                     font-size: {theme.fonts['size_md']}px;
@@ -1376,6 +1376,11 @@ class RepositoryTab(QWidget):
                 }}
                 QPushButton:hover {{
                     background-color: {theme.colors['surface_hover']};
+                    border-color: {theme.colors['primary']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {theme.colors['primary']};
+                    color: {theme.colors['primary_text']};
                 }}
             """)
             self.lfs_btn.setToolTip(tr('lfs_installed'))
