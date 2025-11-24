@@ -291,6 +291,8 @@ class RepositoryTab(QWidget):
         
         self.changes_list = QListWidget()
         self.changes_list.setMinimumHeight(200)
+        self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
         self.changes_list.setStyleSheet("""
             QListWidget {
                 background-color: palette(window);
@@ -691,6 +693,8 @@ class RepositoryTab(QWidget):
             font = QFont("Consolas", 11)
             item.setFont(font)
             item.setData(Qt.ItemDataRole.UserRole, file_path)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Unchecked)
             self.changes_list.addItem(item)
             
     def on_change_double_clicked(self, item):
@@ -710,25 +714,107 @@ class RepositoryTab(QWidget):
         else:
             QMessageBox.warning(self, tr('error'), message)
     
+    def get_checked_items(self):
+        checked_items = []
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                checked_items.append(item)
+        return checked_items
+
     def stage_selected(self):
-        current_item = self.changes_list.currentItem()
-        if current_item:
-            file_path = current_item.data(Qt.ItemDataRole.UserRole)
+        items_to_process = self.get_checked_items()
+        if not items_to_process:
+            current_item = self.changes_list.currentItem()
+            if current_item:
+                items_to_process.append(current_item)
+        
+        if not items_to_process:
+            return
+
+        errors = []
+        for item in items_to_process:
+            file_path = item.data(Qt.ItemDataRole.UserRole)
             success, message = self.git_manager.stage_file(file_path)
-            if success:
-                self.refresh_status()
-            else:
-                QMessageBox.warning(self, tr('error'), message)
+            if not success:
+                errors.append(f"{file_path}: {message}")
+        
+        self.refresh_status()
+        
+        if errors:
+            QMessageBox.warning(self, tr('error'), "\n".join(errors))
                 
     def unstage_selected(self):
-        current_item = self.changes_list.currentItem()
-        if current_item:
-            file_path = current_item.data(Qt.ItemDataRole.UserRole)
+        items_to_process = self.get_checked_items()
+        if not items_to_process:
+            current_item = self.changes_list.currentItem()
+            if current_item:
+                items_to_process.append(current_item)
+        
+        if not items_to_process:
+            return
+
+        errors = []
+        for item in items_to_process:
+            file_path = item.data(Qt.ItemDataRole.UserRole)
             success, message = self.git_manager.unstage_file(file_path)
-            if success:
-                self.refresh_status()
-            else:
-                QMessageBox.warning(self, tr('error'), message)
+            if not success:
+                errors.append(f"{file_path}: {message}")
+        
+        self.refresh_status()
+        
+        if errors:
+            QMessageBox.warning(self, tr('error'), "\n".join(errors))
+
+    def show_changes_context_menu(self, position):
+        item = self.changes_list.itemAt(position)
+        if not item:
+            return
+            
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        menu = QMenu(self)
+        theme = get_current_theme()
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                padding: 5px;
+            }}
+            QMenu::item {{
+                padding: 8px 25px;
+                color: {theme.colors['text']};
+            }}
+            QMenu::item:selected {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+        """)
+        
+        ignore_action = QAction(tr('add_to_gitignore'), self)
+        ignore_action.triggered.connect(lambda: self.add_to_gitignore(file_path))
+        menu.addAction(ignore_action)
+        
+        lfs_action = QAction(tr('add_to_lfs'), self)
+        lfs_action.triggered.connect(lambda: self.add_to_lfs(file_path))
+        menu.addAction(lfs_action)
+        
+        menu.exec(self.changes_list.mapToGlobal(position))
+
+    def add_to_gitignore(self, file_path):
+        success, message = self.git_manager.add_to_gitignore(file_path)
+        if success:
+            QMessageBox.information(self, tr('success'), tr('success_gitignore_added', file=file_path))
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), message)
+
+    def add_to_lfs(self, file_path):
+        success, message = self.git_manager.lfs_track_files([file_path])
+        if success:
+            QMessageBox.information(self, tr('success'), tr('success_lfs_added', file=file_path))
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), message)
                 
     def do_commit(self):
         message = self.commit_message.toPlainText().strip()

@@ -161,6 +161,10 @@ class TranslationManager:
                 'add_tooltip': 'Agregar archivo seleccionado',
                 'remove': 'Quitar',
                 'remove_tooltip': 'Quitar archivo del staging',
+                'add_to_gitignore': 'Agregar a .gitignore',
+                'add_to_lfs': 'Agregar a LFS',
+                'success_gitignore_added': 'Archivo {file} agregado a .gitignore',
+                'success_lfs_added': 'Archivo {file} agregado a LFS',
                 
                 'commit_placeholder': 'Describe tus cambios...',
                 'commit_and_save': 'Hacer Commit y Guardar',
@@ -510,6 +514,10 @@ class TranslationManager:
                 'add_tooltip': 'Add selected file',
                 'remove': 'Remove',
                 'remove_tooltip': 'Remove file from staging',
+                'add_to_gitignore': 'Add to .gitignore',
+                'add_to_lfs': 'Add to LFS',
+                'success_gitignore_added': 'File {file} added to .gitignore',
+                'success_lfs_added': 'File {file} added to LFS',
                 
                 'commit_placeholder': 'Describe your changes...',
                 'commit_and_save': 'Commit and Save',

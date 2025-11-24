@@ -320,3 +320,20 @@ class GitManager:
                 return f"{size_bytes:.2f} {unit}"
             size_bytes /= 1024.0
         return f"{size_bytes:.2f} PB"
+
+    def add_to_gitignore(self, file_path):
+        if not self.repo_path:
+            return False, "No repository loaded"
+        
+        gitignore_path = os.path.join(self.repo_path, '.gitignore')
+        try:
+            # Ensure newline at start if file exists and not empty
+            prefix = ""
+            if os.path.exists(gitignore_path) and os.path.getsize(gitignore_path) > 0:
+                prefix = "\n"
+                
+            with open(gitignore_path, 'a', encoding='utf-8') as f:
+                f.write(f"{prefix}{file_path}")
+            return True, "Added to .gitignore"
+        except Exception as e:
+            return False, str(e)
