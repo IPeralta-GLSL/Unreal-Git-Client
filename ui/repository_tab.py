@@ -1390,6 +1390,26 @@ class RepositoryTab(QWidget):
         
         indicators = self.plugin_manager.get_repository_indicators(self.repo_path)
         
+        default_style = f"""
+            QPushButton {{
+                color: {theme.colors['primary']};
+                background-color: transparent;
+                border: {theme.borders['width_thin']}px solid transparent;
+                border-radius: {theme.borders['radius_md']}px;
+                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                font-size: {theme.fonts['size_md']}px;
+                font-weight: {theme.fonts['weight_bold']};
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['primary_text']};
+            }}
+        """
+        
         for indicator in indicators:
             container = QWidget()
             container_layout = QHBoxLayout(container)
@@ -1399,35 +1419,40 @@ class RepositoryTab(QWidget):
             plugin_name = indicator.get('plugin_name', 'unreal_engine')
             plugin = self.plugin_manager.get_plugin(plugin_name)
             
+            text = indicator['text']
+            if indicator.get('icon'):
+                text = f"{indicator['icon']} {text}"
+            
+            btn = QPushButton(text)
+            btn.setToolTip(indicator['tooltip'])
+            btn.setMinimumHeight(36)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            
             if plugin:
                 plugin_icon_path = plugin.get_icon()
                 if plugin_icon_path and os.path.exists(plugin_icon_path):
-                    plugin_icon_label = QLabel()
-                    plugin_pixmap = QPixmap(plugin_icon_path)
-                    plugin_icon_label.setPixmap(plugin_pixmap.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-                    plugin_icon_label.setFixedSize(24, 24)
-                    container_layout.addWidget(plugin_icon_label)
+                    btn.setIcon(QIcon(plugin_icon_path))
+                    btn.setIconSize(QSize(18, 18))
             
-            btn = QPushButton(f"{indicator['icon']} {indicator['text']}")
-            btn.setToolTip(indicator['tooltip'])
-            btn.setMinimumHeight(36)
-            btn.setMaximumHeight(36)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {indicator.get('color', theme.colors['surface'])};
-                    color: {theme.colors['text_inverse']};
-                    border: 1px solid {theme.colors['primary']};
-                    border-radius: 5px;
-                    padding: 4px 12px;
-                    font-size: 12px;
-                    font-weight: bold;
-                }}
-                QPushButton:hover {{
-                    background-color: {theme.colors['surface_hover']};
-                    border-color: {theme.colors['primary_hover']};
-                }}
-            """)
+            if indicator.get('color'):
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {indicator['color']};
+                        color: {theme.colors['text_inverse']};
+                        border: 1px solid {theme.colors['primary']};
+                        border-radius: 5px;
+                        padding: 4px 12px;
+                        font-size: 12px;
+                        font-weight: bold;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {theme.colors['surface_hover']};
+                        border-color: {theme.colors['primary_hover']};
+                    }}
+                """)
+            else:
+                btn.setStyleSheet(default_style)
+                
             btn.clicked.connect(lambda checked, ind=indicator: self.show_plugin_actions(ind))
             container_layout.addWidget(btn)
             

@@ -39,10 +39,9 @@ class Plugin(PluginInterface):
             project_name = os.path.basename(uproject).replace('.uproject', '') if uproject else 'Unreal'
             
             return {
-                'icon': '🎮',
-                'text': f'Unreal Engine: {project_name}',
+                'icon': '',
+                'text': project_name,
                 'tooltip': f'Proyecto de Unreal Engine detectado\n{project_name}',
-                'color': '#0E1128',
                 'plugin_name': 'unreal_engine'
             }
         return None
@@ -55,7 +54,7 @@ class Plugin(PluginInterface):
             {
                 'id': 'open_uproject',
                 'name': 'Abrir en Unreal Engine',
-                'icon': 'unreal-engine-svgrepo-com', # Use icon name from IconManager if possible, or emoji
+                'icon': 'unreal-engine-svgrepo-com',
                 'callback': self.open_in_unreal,
                 'requires_unreal': True
             },
