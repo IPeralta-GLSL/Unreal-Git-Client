@@ -208,7 +208,7 @@ class AccountsDialog(QDialog):
             }
         """)
         
-        section_tabs.addTab(self.create_accounts_tab(), "📋 Mis Cuentas")
+        section_tabs.addTab(self.create_accounts_tab(), self.icon_manager.get_icon("user"), "Mis Cuentas")
         section_tabs.addTab(self.create_github_tab(), self.icon_manager.get_icon("github-logo"), "GitHub")
         section_tabs.addTab(self.create_gitlab_tab(), self.icon_manager.get_icon("gitlab-logo"), "GitLab")
         section_tabs.addTab(self.create_git_tab(), self.icon_manager.get_icon("git-commit"), "Git Local")
