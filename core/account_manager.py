@@ -21,6 +21,9 @@ class AccountManager:
         
         self.github_client_id = "Iv1.b507a08c87ecfe98"
         
+        self.gitlab_client_id = "23c1e0b5c0b206b1db0f0d5973842d3eff3068280dc7c94ce8e5a2977d410d38"
+        self.gitlab_client_secret = "gloas-396983be84a9e14e0519541446f181529aa8dcf66942760d11f5051ccdd9e959"
+        
     def ensure_config_exists(self):
         self.config_dir.mkdir(exist_ok=True)
         if not self.accounts_file.exists():
@@ -164,7 +167,8 @@ class AccountManager:
     
     def gitlab_oauth_url(self, client_id, redirect_uri, gitlab_url="https://gitlab.com"):
         state = self.oauth_state
-        scopes = "api,read_user,write_repository"
+        # GitLab usa espacios para separar scopes, no comas. Usamos + para codificar el espacio.
+        scopes = "api+read_user+write_repository"
         return f"{gitlab_url}/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scopes}&state={state}"
     
     def configure_git_credentials(self, name, email):

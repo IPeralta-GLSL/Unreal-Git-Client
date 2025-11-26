@@ -12,6 +12,7 @@ import requests
 import secrets
 import os
 import platform
+import threading
 
 class AccountsDialog(QDialog):
     accounts_changed = pyqtSignal()
@@ -471,25 +472,99 @@ class AccountsDialog(QDialog):
         
         layout.addWidget(info_box)
         
-        url_layout = QHBoxLayout()
-        url_label = QLabel("URL de GitLab:")
-        url_label.setStyleSheet("font-size: 12px;")
-        self.gitlab_url_input = QLineEdit()
-        self.gitlab_url_input.setText("https://gitlab.com")
-        self.gitlab_url_input.setPlaceholderText("https://gitlab.com")
-        self.gitlab_url_input.setStyleSheet("""
-            QLineEdit {
-                background-color: palette(base);
-                border: 1px solid palette(mid);
-                border-radius: 5px;
-                padding: 8px;
-                color: palette(window-text);
+        # Contenedor principal de login
+        login_container = QWidget()
+        login_layout = QVBoxLayout(login_container)
+        login_layout.setContentsMargins(0, 10, 0, 10)
+        
+        has_internal_creds = bool(self.account_manager.gitlab_client_id and self.account_manager.gitlab_client_secret)
+        
+        if not has_internal_creds:
+            browser_info = QLabel("Para usar el login por navegador, necesitas crear una aplicación en GitLab (User Settings > Applications) con Redirect URI: http://localhost:8888/callback")
+            browser_info.setWordWrap(True)
+            browser_info.setStyleSheet("font-size: 11px; color: palette(text); margin-bottom: 10px;")
+            login_layout.addWidget(browser_info)
+            
+            form_layout = QVBoxLayout()
+            form_layout.setSpacing(10)
+            
+            url_label = QLabel("URL de GitLab:")
+            self.gitlab_url = QLineEdit()
+            self.gitlab_url.setText("https://gitlab.com")
+            self.gitlab_url.setStyleSheet("""
+                QLineEdit {
+                    background-color: palette(base);
+                    border: 1px solid palette(mid);
+                    border-radius: 5px;
+                    padding: 8px;
+                    color: palette(window-text);
+                }
+            """)
+            form_layout.addWidget(url_label)
+            form_layout.addWidget(self.gitlab_url)
+            
+            app_id_label = QLabel("Application ID:")
+            self.gitlab_app_id = QLineEdit()
+            self.gitlab_app_id.setPlaceholderText("Ingresa tu GitLab Application ID")
+            self.gitlab_app_id.setStyleSheet(self.gitlab_url.styleSheet())
+            form_layout.addWidget(app_id_label)
+            form_layout.addWidget(self.gitlab_app_id)
+            
+            app_secret_label = QLabel("Application Secret:")
+            self.gitlab_app_secret = QLineEdit()
+            self.gitlab_app_secret.setPlaceholderText("Ingresa tu GitLab Application Secret")
+            self.gitlab_app_secret.setEchoMode(QLineEdit.EchoMode.Password)
+            self.gitlab_app_secret.setStyleSheet(self.gitlab_url.styleSheet())
+            form_layout.addWidget(app_secret_label)
+            form_layout.addWidget(self.gitlab_app_secret)
+            
+            login_layout.addLayout(form_layout)
+        else:
+            # Si hay credenciales internas, simplificamos la UI
+            url_layout = QHBoxLayout()
+            url_label = QLabel("URL:")
+            self.gitlab_url = QLineEdit()
+            self.gitlab_url.setText("https://gitlab.com")
+            self.gitlab_url.setStyleSheet("""
+                QLineEdit {
+                    background-color: palette(base);
+                    border: 1px solid palette(mid);
+                    border-radius: 5px;
+                    padding: 8px;
+                    color: palette(window-text);
+                }
+            """)
+            url_layout.addWidget(url_label)
+            url_layout.addWidget(self.gitlab_url)
+            login_layout.addLayout(url_layout)
+            
+            # Campos ocultos para compatibilidad con connect_gitlab
+            self.gitlab_app_id = QLineEdit()
+            self.gitlab_app_id.setText(self.account_manager.gitlab_client_id)
+            self.gitlab_app_id.hide()
+            
+            self.gitlab_app_secret = QLineEdit()
+            self.gitlab_app_secret.setText(self.account_manager.gitlab_client_secret)
+            self.gitlab_app_secret.hide()
+
+        # Botón de Login Principal
+        connect_browser_btn = QPushButton(" Login con GitLab")
+        connect_browser_btn.setMinimumHeight(55)
+        connect_browser_btn.clicked.connect(self.connect_gitlab)
+        connect_browser_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 16px;
+                border-radius: 8px;
+                padding-left: 40px;
+                background-color: #fc6d26;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #e24329;
             }
         """)
-        url_layout.addWidget(url_label)
-        url_layout.addWidget(self.gitlab_url_input)
-        layout.addLayout(url_layout)
         
+        # Icono en el botón
         gitlab_logo_label = QLabel()
         gitlab_logo_path = "ui/Icons/gitlab-logo.svg"
         if os.path.exists(gitlab_logo_path):
@@ -501,42 +576,11 @@ class AccountsDialog(QDialog):
             painter.end()
             gitlab_logo_label.setPixmap(pixmap)
         
-        connect_btn = QPushButton(" Login con GitLab")
-        connect_btn.setProperty("class", "gitlab")
-        connect_btn.setMinimumHeight(55)
-        connect_btn.clicked.connect(self.start_gitlab_device_flow)
-        connect_btn.setStyleSheet("""
-            QPushButton {
-                font-size: 16px;
-                border-radius: 8px;
-                padding-left: 40px;
-            }
-        """)
-        
-        btn_container = QWidget()
-        btn_layout = QHBoxLayout(btn_container)
-        btn_layout.setContentsMargins(0, 0, 0, 0)
-        btn_layout.addWidget(connect_btn)
-        
-        gitlab_logo_label.setParent(connect_btn)
+        gitlab_logo_label.setParent(connect_browser_btn)
         gitlab_logo_label.move(15, 15)
         
-        layout.addWidget(btn_container)
-        
-        self.gitlab_status_label = QLabel("")
-        self.gitlab_status_label.setWordWrap(True)
-        self.gitlab_status_label.setStyleSheet("""
-            QLabel {
-                padding: 15px;
-                background-color: palette(button);
-                border: 1px solid palette(mid);
-                border-radius: 6px;
-                font-size: 13px;
-                margin-top: 10px;
-            }
-        """)
-        self.gitlab_status_label.hide()
-        layout.addWidget(self.gitlab_status_label)
+        login_layout.addWidget(connect_browser_btn)
+        layout.addWidget(login_container)
         
         separator = QLabel("━" * 80)
         separator.setStyleSheet(" margin-top: 20px; margin-bottom: 10px;")
@@ -546,61 +590,8 @@ class AccountsDialog(QDialog):
         advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(text); font-size: 12px;")
         layout.addWidget(advanced_label)
         
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(10)
-        
-        url_label = QLabel("URL de GitLab:")
-        self.gitlab_url = QLineEdit()
-        self.gitlab_url.setText("https://gitlab.com")
-        self.gitlab_url.setStyleSheet("""
-            QLineEdit {
-                background-color: palette(base);
-                border: 1px solid palette(mid);
-                border-radius: 5px;
-                padding: 8px;
-                color: palette(window-text);
-            }
-        """)
-        form_layout.addWidget(url_label)
-        form_layout.addWidget(self.gitlab_url)
-        
-        app_id_label = QLabel("Application ID:")
-        self.gitlab_app_id = QLineEdit()
-        self.gitlab_app_id.setPlaceholderText("Ingresa tu GitLab Application ID")
-        self.gitlab_app_id.setStyleSheet(self.gitlab_url.styleSheet())
-        form_layout.addWidget(app_id_label)
-        form_layout.addWidget(self.gitlab_app_id)
-        
-        app_secret_label = QLabel("Application Secret:")
-        self.gitlab_app_secret = QLineEdit()
-        self.gitlab_app_secret.setPlaceholderText("Ingresa tu GitLab Application Secret")
-        self.gitlab_app_secret.setEchoMode(QLineEdit.EchoMode.Password)
-        self.gitlab_app_secret.setStyleSheet(self.gitlab_url.styleSheet())
-        form_layout.addWidget(app_secret_label)
-        form_layout.addWidget(self.gitlab_app_secret)
-        
-        layout.addLayout(form_layout)
-        
-        connect_btn = QPushButton("Conectar con GitLab")
-        connect_btn.setIcon(self.icon_manager.get_icon("link"))
-        connect_btn.setMinimumHeight(40)
-        connect_btn.clicked.connect(self.connect_gitlab)
-        connect_btn.setStyleSheet("""
-            QPushButton {
-                background-color: palette(highlight);
-                color: palette(bright-text);
-                font-size: 14px;
-                font-weight: bold;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: palette(highlight);
-            }
-        """)
-        layout.addWidget(connect_btn)
-        
         manual_label = QLabel("O agrega manualmente un Personal Access Token:")
-        manual_label.setStyleSheet("margin-top: 20px; font-size: 12px;")
+        manual_label.setStyleSheet("margin-top: 5px; font-size: 12px;")
         layout.addWidget(manual_label)
         
         token_layout = QHBoxLayout()
@@ -612,7 +603,19 @@ class AccountsDialog(QDialog):
         
         add_token_btn = QPushButton("➕ Agregar Token")
         add_token_btn.clicked.connect(self.add_gitlab_token)
-        add_token_btn.setStyleSheet(connect_btn.styleSheet())
+        add_token_btn.setStyleSheet("""
+            QPushButton {
+                background-color: palette(highlight);
+                color: palette(bright-text);
+                font-size: 12px;
+                font-weight: bold;
+                border-radius: 5px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: palette(highlight);
+            }
+        """)
         token_layout.addWidget(add_token_btn)
         
         layout.addLayout(token_layout)
@@ -620,6 +623,9 @@ class AccountsDialog(QDialog):
         layout.addStretch()
         
         return widget
+
+    def toggle_gitlab_browser_login(self):
+        pass
     
     def create_git_tab(self):
         widget = QWidget()
@@ -1012,12 +1018,6 @@ class AccountsDialog(QDialog):
         
         webbrowser.open(auth_url)
         
-        QMessageBox.information(
-            self,
-            "Esperando autorización",
-            "Se ha abierto tu navegador.\n\nAutoriza la aplicación y luego regresa aquí."
-        )
-        
         self.wait_for_oauth('github', client_id, client_secret)
     
     def connect_gitlab(self):
@@ -1039,13 +1039,6 @@ class AccountsDialog(QDialog):
         
         webbrowser.open(auth_url)
         
-        QMessageBox.information(
-            self,
-            "Autenticación en progreso",
-            "Se abrió tu navegador para autenticar.\n\n"
-            "Autoriza la aplicación y espera a que se complete."
-        )
-        
         self.wait_for_oauth('gitlab', app_id, app_secret, gitlab_url)
     
     def wait_for_oauth(self, platform, client_id, client_secret, gitlab_url=None):
@@ -1059,11 +1052,12 @@ class AccountsDialog(QDialog):
             
             if code:
                 self.oauth_timer.stop()
-                self.account_manager.stop_oauth_server()
+                # Stop server in background thread to prevent UI freeze
+                threading.Thread(target=self.account_manager.stop_oauth_server, daemon=True).start()
                 self.exchange_code_for_token(platform, code, client_id, client_secret, gitlab_url)
             elif self.oauth_attempts >= self.max_attempts:
                 self.oauth_timer.stop()
-                self.account_manager.stop_oauth_server()
+                threading.Thread(target=self.account_manager.stop_oauth_server, daemon=True).start()
                 QMessageBox.warning(self, "Timeout", "Tiempo de espera agotado")
         
         self.oauth_timer.timeout.connect(check_oauth)
@@ -1079,7 +1073,8 @@ class AccountsDialog(QDialog):
                         'client_id': client_id,
                         'client_secret': client_secret,
                         'code': code
-                    }
+                    },
+                    timeout=10
                 )
                 
                 if response.status_code == 200:
@@ -1089,7 +1084,8 @@ class AccountsDialog(QDialog):
                     if token:
                         user_response = requests.get(
                             'https://api.github.com/user',
-                            headers={'Authorization': f'token {token}'}
+                            headers={'Authorization': f'token {token}'},
+                            timeout=10
                         )
                         
                         if user_response.status_code == 200:
@@ -1098,7 +1094,7 @@ class AccountsDialog(QDialog):
                             email = user_data.get('email')
                             
                             self.account_manager.add_account('github', username, token, email)
-                            self.account_manager.configure_git_credentials('github', username, token, email)
+                            self.account_manager.configure_git_credentials(username, email or "")
                             
                             QMessageBox.information(
                                 self,
@@ -1125,7 +1121,8 @@ class AccountsDialog(QDialog):
                         'code': code,
                         'grant_type': 'authorization_code',
                         'redirect_uri': redirect_uri
-                    }
+                    },
+                    timeout=10
                 )
                 
                 if response.status_code == 200:
@@ -1135,7 +1132,8 @@ class AccountsDialog(QDialog):
                     if token:
                         user_response = requests.get(
                             f"{gitlab_url}/api/v4/user",
-                            headers={'Authorization': f'Bearer {token}'}
+                            headers={'Authorization': f'Bearer {token}'},
+                            timeout=10
                         )
                         
                         if user_response.status_code == 200:
@@ -1144,7 +1142,7 @@ class AccountsDialog(QDialog):
                             email = user_data.get('email')
                             
                             self.account_manager.add_account('gitlab', username, token, email)
-                            self.account_manager.configure_git_credentials('gitlab', username, token, email)
+                            self.account_manager.configure_git_credentials(username, email or "")
                             
                             QMessageBox.information(
                                 self,
@@ -1183,7 +1181,7 @@ class AccountsDialog(QDialog):
                 email = user_data.get('email')
                 
                 self.account_manager.add_account('github', username, token, email)
-                self.account_manager.configure_git_credentials('github', username, token, email)
+                self.account_manager.configure_git_credentials(username, email or "")
                 
                 QMessageBox.information(
                     self,
@@ -1219,7 +1217,7 @@ class AccountsDialog(QDialog):
                 email = user_data.get('email')
                 
                 self.account_manager.add_account('gitlab', username, token, email)
-                self.account_manager.configure_git_credentials('gitlab', username, token, email)
+                self.account_manager.configure_git_credentials(username, email or "")
                 
                 QMessageBox.information(
                     self,
