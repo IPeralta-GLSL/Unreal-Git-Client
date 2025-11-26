@@ -20,9 +20,10 @@ exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
+    a.zipfiles,
     a.datas,
     [],
-    name='UnrealGitClient',
+    name='GitClient',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -35,4 +36,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='ui/Icons/git-branch.ico',
 )
