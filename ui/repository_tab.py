@@ -43,6 +43,7 @@ class RepositoryTab(QWidget):
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self.on_avatar_downloaded)
         self.icon_manager = IconManager()
+        self.large_files = []
         self.init_ui()
     
     
@@ -299,6 +300,60 @@ class RepositoryTab(QWidget):
         changes_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         changes_layout = QVBoxLayout(changes_container)
         changes_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Large files banner
+        self.large_files_banner = QFrame()
+        self.large_files_banner.setObjectName("largeFilesBanner")
+        self.large_files_banner.setStyleSheet(f"""
+            QFrame#largeFilesBanner {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-left: 3px solid {theme.colors['warning']};
+                border-radius: 4px;
+                margin-bottom: 8px;
+            }}
+        """)
+        self.large_files_banner.hide()
+        
+        # Horizontal layout for maximum compactness
+        banner_layout = QHBoxLayout(self.large_files_banner)
+        banner_layout.setContentsMargins(10, 6, 10, 6)
+        banner_layout.setSpacing(8)
+        
+        # Icon
+        warning_icon = QLabel()
+        warning_icon.setPixmap(self.icon_manager.get_icon("warning", size=14, color=theme.colors['warning']).pixmap(14, 14))
+        warning_icon.setAlignment(Qt.AlignmentFlag.AlignTop)
+        banner_layout.addWidget(warning_icon)
+        
+        # Text
+        self.large_files_label = QLabel()
+        self.large_files_label.setWordWrap(True)
+        self.large_files_label.setStyleSheet(f"color: {theme.colors['text']}; font-size: 11px;")
+        banner_layout.addWidget(self.large_files_label, 1)
+        
+        # Button
+        track_btn = QPushButton(tr('track_lfs'))
+        track_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        track_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {theme.colors['warning']};
+                border: 1px solid {theme.colors['warning']};
+                border-radius: 3px;
+                padding: 3px 8px;
+                font-weight: 600;
+                font-size: 10px;
+                min-width: 60px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['warning']}1a;
+            }}
+        """)
+        track_btn.clicked.connect(self.track_large_files)
+        banner_layout.addWidget(track_btn)
+        
+        changes_layout.addWidget(self.large_files_banner)
         
         self.changes_list = QListWidget()
         self.changes_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -760,6 +815,8 @@ class RepositoryTab(QWidget):
         status = self.git_manager.get_status()
         self.changes_list.clear()
         
+        self.large_files = []
+        
         if not status:
             item = QListWidgetItem(tr('no_changes'))
             item.setIcon(self.icon_manager.get_icon("check", size=16))
@@ -768,6 +825,7 @@ class RepositoryTab(QWidget):
             font.setBold(True)
             item.setFont(font)
             self.changes_list.addItem(item)
+            self.large_files_banner.hide()
             return
         
         for file_path, state in status.items():
@@ -778,6 +836,18 @@ class RepositoryTab(QWidget):
             is_renamed = 'R' in state
             is_untracked = '?' in state
             is_conflicted = 'U' in state
+            
+            # Check file size
+            full_path = os.path.join(self.repo_path, file_path)
+            is_large = False
+            if not is_deleted and os.path.exists(full_path):
+                try:
+                    size = os.path.getsize(full_path)
+                    if size > 100 * 1024 * 1024: # 100MB
+                        is_large = True
+                        self.large_files.append(file_path)
+                except:
+                    pass
 
             if is_conflicted:
                 icon_name = "warning"
@@ -803,6 +873,10 @@ class RepositoryTab(QWidget):
                 icon_name = "file"
                 color = "#858585" # Gray
                 tooltip = tr('untracked')
+            
+            if is_large:
+                icon_name = "warning"
+                tooltip = f"{tooltip} - LARGE FILE (>100MB)"
 
             item = QListWidgetItem(file_path)
             item.setIcon(self.icon_manager.get_icon(icon_name, size=16))
@@ -815,6 +889,20 @@ class RepositoryTab(QWidget):
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Checked)
             self.changes_list.addItem(item)
+            
+        if self.large_files:
+            self.large_files_label.setText(tr('large_files_detected', count=len(self.large_files)))
+            self.large_files_banner.show()
+        else:
+            self.large_files_banner.hide()
+
+    def track_large_files(self):
+        if not self.large_files:
+            return
+            
+        dialog = LFSTrackingDialog(self.git_manager, self.plugin_manager, self, suggested_files=self.large_files)
+        dialog.exec()
+        self.refresh_status()
             
     def on_change_double_clicked(self, item):
         original_line = item.data(Qt.ItemDataRole.UserRole)

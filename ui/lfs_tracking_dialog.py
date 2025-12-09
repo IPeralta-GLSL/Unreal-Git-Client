@@ -6,12 +6,14 @@ from PyQt6.QtGui import QFont, QCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import tr
+import os
 
 class LFSTrackingDialog(QDialog):
-    def __init__(self, git_manager, plugin_manager, parent=None):
+    def __init__(self, git_manager, plugin_manager, parent=None, suggested_files=None):
         super().__init__(parent)
         self.git_manager = git_manager
         self.plugin_manager = plugin_manager
+        self.suggested_files = suggested_files or []
         self.icon_manager = IconManager()
         self.drag_position = QPoint()
         
@@ -219,13 +221,26 @@ class LFSTrackingDialog(QDialog):
             
     def load_suggestions(self):
         self.suggestions_list.clear()
+        
+        theme = get_current_theme()
+        current_patterns = self.git_manager.get_lfs_tracked_patterns()
+        
+        # Add specific file suggestions first (high priority)
+        for file_path in self.suggested_files:
+            # Check if extension is already tracked
+            ext = "*" + os.path.splitext(file_path)[1]
+            if ext in current_patterns or file_path in current_patterns:
+                continue
+                
+            item = QListWidgetItem(file_path)
+            item.setIcon(self.icon_manager.get_icon("warning", size=14, color=theme.colors['warning']))
+            item.setToolTip(f"Large file detected. Double click to track.")
+            self.suggestions_list.addItem(item)
+
         if not self.plugin_manager:
             return
             
         suggestions = self.plugin_manager.get_all_lfs_patterns()
-        current_patterns = self.git_manager.get_lfs_tracked_patterns()
-        
-        theme = get_current_theme()
         
         for pattern in suggestions:
             if pattern in current_patterns:
