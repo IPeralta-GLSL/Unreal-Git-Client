@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QListWidget, 
                              QPushButton, QLabel, QLineEdit, QMessageBox, QWidget,
-                             QListWidgetItem)
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+                             QListWidgetItem, QFrame, QGridLayout, QScrollArea)
+from PyQt6.QtCore import Qt, QPoint, QSize
+from PyQt6.QtGui import QFont, QCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import tr
@@ -13,30 +13,96 @@ class LFSTrackingDialog(QDialog):
         self.git_manager = git_manager
         self.plugin_manager = plugin_manager
         self.icon_manager = IconManager()
-        self.setWindowTitle(tr('lfs_tracking'))
-        self.resize(500, 600)
+        self.drag_position = QPoint()
+        
+        # Frameless window setup
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.resize(700, 500)
+        
         self.setup_ui()
         self.load_patterns()
+        self.load_suggestions()
         
     def setup_ui(self):
         theme = get_current_theme()
-        self.setStyleSheet(f"background-color: {theme.colors['background']}; color: {theme.colors['text']};")
         
-        layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
+        # Main container with border and background
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
         
-        # Header
-        header_label = QLabel(tr('lfs_tracking_title'))
-        header_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
-        layout.addWidget(header_label)
+        self.container = QFrame()
+        self.container.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 10px;
+            }}
+        """)
+        self.main_layout.addWidget(self.container)
         
-        desc_label = QLabel(tr('lfs_tracking_info'))
-        desc_label.setWordWrap(True)
-        desc_label.setStyleSheet(f"color: {theme.colors['text_secondary']};")
-        layout.addWidget(desc_label)
+        self.content_layout = QVBoxLayout(self.container)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(0)
         
-        # Current Patterns List
+        # Title Bar
+        self.title_bar = QFrame()
+        self.title_bar.setFixedHeight(40)
+        self.title_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+            }}
+        """)
+        title_layout = QHBoxLayout(self.title_bar)
+        title_layout.setContentsMargins(15, 0, 10, 0)
+        
+        title_label = QLabel(tr('lfs_tracking_title'))
+        title_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        title_label.setStyleSheet("border: none; background: transparent;")
+        title_layout.addWidget(title_label)
+        
+        title_layout.addStretch()
+        
+        close_btn = QPushButton()
+        close_btn.setIcon(self.icon_manager.get_icon("x", size=16))
+        close_btn.setFixedSize(30, 30)
+        close_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 15px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['danger']};
+            }}
+        """)
+        close_btn.clicked.connect(self.accept)
+        title_layout.addWidget(close_btn)
+        
+        self.content_layout.addWidget(self.title_bar)
+        
+        # Main Content Area
+        content_area = QWidget()
+        content_area.setStyleSheet("background: transparent; border: none;")
+        main_grid = QGridLayout(content_area)
+        main_grid.setContentsMargins(20, 20, 20, 20)
+        main_grid.setSpacing(20)
+        
+        # Left Column: Tracked Patterns
+        left_col = QVBoxLayout()
+        left_col.setSpacing(10)
+        
+        tracked_label = QLabel(tr('lfs_tracking'))
+        tracked_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        left_col.addWidget(tracked_label)
+        
         self.patterns_list = QListWidget()
         self.patterns_list.setStyleSheet(f"""
             QListWidget {{
@@ -46,40 +112,58 @@ class LFSTrackingDialog(QDialog):
                 padding: 5px;
             }}
             QListWidget::item {{
-                padding: 8px;
+                padding: 6px;
                 border-bottom: 1px solid {theme.colors['border']};
+                border-radius: 3px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme.colors['surface_selected']};
             }}
         """)
-        layout.addWidget(self.patterns_list)
+        left_col.addWidget(self.patterns_list)
         
-        # Add Pattern Section
-        add_layout = QHBoxLayout()
+        main_grid.addLayout(left_col, 0, 0)
         
+        # Right Column: Add & Suggestions
+        right_col = QVBoxLayout()
+        right_col.setSpacing(15)
+        
+        # Add Section
+        add_group = QVBoxLayout()
+        add_group.setSpacing(8)
+        add_label = QLabel(tr('lfs_tracking_info'))
+        add_label.setWordWrap(True)
+        add_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px;")
+        add_group.addWidget(add_label)
+        
+        input_row = QHBoxLayout()
         self.pattern_input = QLineEdit()
-        self.pattern_input.setPlaceholderText("*.psd")
+        self.pattern_input.setPlaceholderText("*.ext")
+        self.pattern_input.setFixedHeight(32)
         self.pattern_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
                 border-radius: 5px;
-                padding: 8px;
+                padding: 0 10px;
                 color: {theme.colors['text']};
             }}
             QLineEdit:focus {{
                 border-color: {theme.colors['primary']};
             }}
         """)
-        add_layout.addWidget(self.pattern_input)
+        input_row.addWidget(self.pattern_input)
         
         self.add_btn = QPushButton(tr('add'))
-        self.add_btn.setIcon(self.icon_manager.get_icon("plus-circle", size=16))
+        self.add_btn.setFixedHeight(32)
+        self.add_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.add_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {theme.colors['primary']};
                 color: {theme.colors['text_inverse']};
                 border: none;
                 border-radius: 5px;
-                padding: 8px 15px;
+                padding: 0 15px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -87,89 +171,101 @@ class LFSTrackingDialog(QDialog):
             }}
         """)
         self.add_btn.clicked.connect(self.add_pattern)
-        add_layout.addWidget(self.add_btn)
+        input_row.addWidget(self.add_btn)
         
-        layout.addLayout(add_layout)
+        add_group.addLayout(input_row)
+        right_col.addLayout(add_group)
         
-        # Suggestions from plugins
-        if self.plugin_manager:
-            suggestions_label = QLabel(tr('suggested_patterns'))
-            suggestions_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-            suggestions_label.setStyleSheet(f"margin-top: 10px;")
-            layout.addWidget(suggestions_label)
-            
-            suggestions_layout = QVBoxLayout()
-            suggestions = self.plugin_manager.get_all_lfs_patterns()
-            
-            # Deduplicate and filter existing
-            current_patterns = self.git_manager.get_lfs_tracked_patterns()
-            
-            added_suggestions = 0
-            for pattern in suggestions:
-                if pattern in current_patterns:
-                    continue
-                    
-                added_suggestions += 1
-                btn = QPushButton(f"Track {pattern}")
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        text-align: left;
-                        background-color: {theme.colors['surface']};
-                        border: 1px solid {theme.colors['border']};
-                        border-radius: 5px;
-                        padding: 8px;
-                    }}
-                    QPushButton:hover {{
-                        border-color: {theme.colors['primary']};
-                    }}
-                """)
-                btn.clicked.connect(lambda checked, p=pattern: self.add_suggested_pattern(p))
-                suggestions_layout.addWidget(btn)
-            
-            if added_suggestions == 0:
-                no_suggestions = QLabel(tr('no_suggestions'))
-                no_suggestions.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-style: italic;")
-                suggestions_layout.addWidget(no_suggestions)
-                
-            layout.addLayout(suggestions_layout)
-            
-        # Close button
-        close_btn = QPushButton(tr('close'))
-        close_btn.setStyleSheet(f"""
-            QPushButton {{
+        # Suggestions Section
+        suggestions_label = QLabel(tr('suggested_patterns'))
+        suggestions_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        right_col.addWidget(suggestions_label)
+        
+        self.suggestions_list = QListWidget()
+        self.suggestions_list.setStyleSheet(f"""
+            QListWidget {{
                 background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
                 border-radius: 5px;
-                padding: 8px 15px;
+                padding: 5px;
             }}
-            QPushButton:hover {{
+            QListWidget::item {{
+                padding: 6px;
+                border-bottom: 1px solid {theme.colors['border']};
+                border-radius: 3px;
+            }}
+            QListWidget::item:hover {{
                 background-color: {theme.colors['surface_hover']};
             }}
         """)
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn, 0, Qt.AlignmentFlag.AlignRight)
+        self.suggestions_list.itemDoubleClicked.connect(self.add_suggestion_from_list)
+        right_col.addWidget(self.suggestions_list)
+        
+        main_grid.addLayout(right_col, 0, 1)
+        
+        # Set column stretch
+        main_grid.setColumnStretch(0, 1)
+        main_grid.setColumnStretch(1, 1)
+        
+        self.content_layout.addWidget(content_area)
         
     def load_patterns(self):
         self.patterns_list.clear()
         patterns = self.git_manager.get_lfs_tracked_patterns()
-        
         for pattern in patterns:
             item = QListWidgetItem(pattern)
-            item.setIcon(self.icon_manager.get_icon("file-code", size=16))
+            item.setIcon(self.icon_manager.get_icon("check-circle", size=14, color=get_current_theme().colors['success']))
             self.patterns_list.addItem(item)
+            
+    def load_suggestions(self):
+        self.suggestions_list.clear()
+        if not self.plugin_manager:
+            return
+            
+        suggestions = self.plugin_manager.get_all_lfs_patterns()
+        current_patterns = self.git_manager.get_lfs_tracked_patterns()
+        
+        theme = get_current_theme()
+        
+        for pattern in suggestions:
+            if pattern in current_patterns:
+                continue
+                
+            item = QListWidgetItem(pattern)
+            item.setIcon(self.icon_manager.get_icon("plus", size=14, color=theme.colors['text_secondary']))
+            item.setToolTip(f"Double click to track {pattern}")
+            self.suggestions_list.addItem(item)
             
     def add_pattern(self):
         pattern = self.pattern_input.text().strip()
         if not pattern:
             return
-            
-        self.add_suggested_pattern(pattern)
+        self.track_pattern(pattern)
         self.pattern_input.clear()
         
-    def add_suggested_pattern(self, pattern):
+    def add_suggestion_from_list(self, item):
+        self.track_pattern(item.text())
+        
+    def track_pattern(self, pattern):
         success, message = self.git_manager.lfs_track_files([pattern])
         if success:
             self.load_patterns()
-            # Refresh suggestions if needed, but simple reload is fine
+            self.load_suggestions()
         else:
             QMessageBox.warning(self, tr('error'), message)
+
+    # Window Dragging Logic
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self.title_bar.geometry().contains(event.pos()):
+                self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.MouseButton.LeftButton:
+            if not self.drag_position.isNull():
+                self.move(event.globalPosition().toPoint() - self.drag_position)
+                event.accept()
+                
+    def mouseReleaseEvent(self, event):
+        self.drag_position = QPoint()

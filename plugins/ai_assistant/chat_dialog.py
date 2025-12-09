@@ -2,7 +2,7 @@ import os
 import sys
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                              QLineEdit, QPushButton, QLabel, QProgressBar, 
-                             QWidget, QScrollArea, QFrame, QMessageBox)
+                             QWidget, QScrollArea, QFrame, QMessageBox, QSizePolicy)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
 from PyQt6.QtGui import QFont, QIcon, QTextCursor
 from ui.theme import get_current_theme
@@ -134,7 +134,7 @@ If the user speaks Spanish, reply in Spanish. If English, reply in English.
                 font-size: 14px;
             }}
         """)
-        layout.addWidget(self.chat_area)
+        layout.addWidget(self.chat_area, 1)
         
         # Status bar for model loading (Moved above input)
         self.status_bar = QLabel("Initializing...")
@@ -144,11 +144,13 @@ If the user speaks Spanish, reply in Spanish. If English, reply in English.
         # Input Area
         input_container = QFrame()
         input_container.setStyleSheet(f"background-color: {theme.colors['surface']}; border-top: 1px solid {theme.colors['border']};")
+        input_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         input_layout = QHBoxLayout(input_container)
+        input_layout.setContentsMargins(10, 10, 10, 10)
         
         self.input_field = QTextEdit()
         self.input_field.setPlaceholderText("Ask something...")
-        self.input_field.setMaximumHeight(80)
+        self.input_field.setFixedHeight(50)
         self.input_field.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {theme.colors['background_elevated']};
