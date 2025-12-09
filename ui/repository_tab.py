@@ -403,6 +403,23 @@ class RepositoryTab(QWidget):
         commit_layout = QVBoxLayout(commit_container)
         commit_layout.setContentsMargins(10, 10, 10, 10)
         
+        self.commit_summary = QLineEdit()
+        self.commit_summary.setPlaceholderText(tr('commit_summary_placeholder'))
+        self.commit_summary.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: palette(window);
+                border: 2px solid #3d3d3d;
+                border-radius: 5px;
+                padding: 8px;
+                font-size: 13px;
+                color: palette(window-text);
+            }}
+            QLineEdit:focus {{
+                border-color: {theme.colors['border_focus']};
+            }}
+        """)
+        commit_layout.addWidget(self.commit_summary)
+
         self.commit_message = QTextEdit()
         self.commit_message.setPlaceholderText(tr('commit_placeholder'))
         self.commit_message.setMaximumHeight(100)
@@ -935,14 +952,22 @@ class RepositoryTab(QWidget):
                 QMessageBox.warning(self, tr('error'), message)
                 
     def do_commit(self):
-        message = self.commit_message.toPlainText().strip()
-        if not message:
+        summary = self.commit_summary.text().strip()
+        description = self.commit_message.toPlainText().strip()
+
+        if not summary:
             QMessageBox.warning(self, tr('error'), tr('error_commit_message'))
             return
-            
+
+        if description:
+            message = f"{summary}\n\n{description}"
+        else:
+            message = summary
+
         success, result = self.git_manager.commit(message)
         if success:
             QMessageBox.information(self, tr('success'), tr('success_commit'))
+            self.commit_summary.clear()
             self.commit_message.clear()
             self.refresh_status()
             self.load_history()
@@ -1875,6 +1900,8 @@ class RepositoryTab(QWidget):
             self.unstage_btn.setToolTip(tr('remove_tooltip'))
         if hasattr(self, 'commit_message'):
             self.commit_message.setPlaceholderText(tr('commit_placeholder'))
+        if hasattr(self, 'commit_summary'):
+            self.commit_summary.setPlaceholderText(tr('commit_summary_placeholder'))
         if hasattr(self, 'commit_btn'):
             self.commit_btn.setText(f" {tr('commit_and_save')}")
             self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))

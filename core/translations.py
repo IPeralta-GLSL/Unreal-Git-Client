@@ -175,6 +175,7 @@ class TranslationManager:
                 'success_discard': 'Cambios descartados en {file}',
                 
                 'commit_placeholder': 'Describe tus cambios...',
+                'commit_summary_placeholder': 'Nombre del commit (obligatorio)',
                 'commit_and_save': 'Hacer Commit y Guardar',
                 'commit_and_save_tooltip': 'Guardar todos los cambios preparados con este mensaje',
                 
@@ -536,6 +537,7 @@ class TranslationManager:
                 'success_discard': 'Changes discarded in {file}',
                 
                 'commit_placeholder': 'Describe your changes...',
+                'commit_summary_placeholder': 'Commit name (required)',
                 'commit_and_save': 'Commit and Save',
                 'commit_and_save_tooltip': 'Save all staged changes with this message',
                 
