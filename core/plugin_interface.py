@@ -49,6 +49,13 @@ class PluginInterface(ABC):
         """
         return []
 
+    def get_sidebar_widget(self, repo_path: str) -> Optional[Any]:
+        """
+        Devuelve un widget para mostrar en la barra lateral izquierda.
+        Debe ser una instancia de QWidget.
+        """
+        return None
+
     def is_enabled_by_default(self) -> bool:
         """
         Devuelve True si el plugin debe estar activado por defecto.

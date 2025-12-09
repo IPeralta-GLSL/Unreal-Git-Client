@@ -70,15 +70,29 @@ class GitManager:
         return self.run_command(f"git merge \"{branch_name}\"")
         
     def get_status(self):
-        success, output = self.run_command("git status --porcelain")
+        # Use -uall to show all untracked files
+        success, output = self.run_command("git status --porcelain -uall")
         if not success:
             return {}
             
         status_dict = {}
         for line in output.split('\n'):
-            if line:
+            if len(line) > 3:
                 state = line[:2].strip()
                 file_path = line[3:]
+                
+                # Handle quoted paths (common with spaces/special chars)
+                if file_path.startswith('"') and file_path.endswith('"'):
+                    file_path = file_path[1:-1]
+                    # Basic unescape for common cases
+                    file_path = file_path.replace('\\"', '"').replace('\\\\', '\\')
+                
+                # Handle renames: R  old -> new
+                if '->' in file_path:
+                    parts = file_path.split(' -> ')
+                    if len(parts) == 2:
+                        file_path = parts[1]
+                
                 status_dict[file_path] = state if state else "??"
                 
         return status_dict

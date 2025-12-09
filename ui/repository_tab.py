@@ -10,6 +10,7 @@ from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
+from ui.lfs_tracking_dialog import LFSTrackingDialog
 from ui.theme import get_current_theme
 from core.translations import tr
 import os
@@ -51,6 +52,7 @@ class RepositoryTab(QWidget):
         layout.setSpacing(0)
         
         self.stacked_widget = QStackedWidget()
+        layout.addWidget(self.stacked_widget)
         
         self.home_view = HomeView(self.settings_manager)
         self.home_view.open_repo_requested.connect(self.on_home_open_repo)
@@ -76,14 +78,22 @@ class RepositoryTab(QWidget):
         
         right_panel = self.create_right_panel()
         splitter.addWidget(right_panel)
+
+        # Sidebar Container (for plugins like AI Chat) - Now inside repo splitter
+        self.sidebar_container = QWidget()
+        self.sidebar_container.setMinimumWidth(300)
+        self.sidebar_container.setMaximumWidth(400)
+        # self.sidebar_container.hide() # Visible by default
+        self.sidebar_layout = QVBoxLayout(self.sidebar_container)
+        self.sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        self.sidebar_layout.setSpacing(0)
+        splitter.addWidget(self.sidebar_container)
         
-        splitter.setSizes([350, 400, 650])
+        splitter.setSizes([350, 400, 650, 350]) # Initial size for sidebar
         splitter.setHandleWidth(2)
         
         repo_layout.addWidget(splitter)
         self.stacked_widget.addWidget(self.repo_view)
-        
-        layout.addWidget(self.stacked_widget)
         
         self.show_home_view()
         
@@ -285,11 +295,13 @@ class RepositoryTab(QWidget):
         layout.addWidget(self.changes_header)
         
         changes_container = QWidget()
+        changes_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         changes_container.setStyleSheet("background-color: palette(window); padding: 10px;")
         changes_layout = QVBoxLayout(changes_container)
         changes_layout.setContentsMargins(10, 10, 10, 10)
         
         self.changes_list = QListWidget()
+        self.changes_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.changes_list.setMinimumHeight(200)
         self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
@@ -393,7 +405,7 @@ class RepositoryTab(QWidget):
         btn_layout.addWidget(self.deselect_all_btn)
         
         changes_layout.addLayout(btn_layout)
-        layout.addWidget(changes_container)
+        layout.addWidget(changes_container, 1)
         
         self.commit_header = self.create_section_header(tr('commit_title'), tr('commit_subtitle'), "git-commit")
         layout.addWidget(self.commit_header)
@@ -711,12 +723,32 @@ class RepositoryTab(QWidget):
                 tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder", size=16))
         
         self.show_repo_view()
+        self.load_sidebar_plugins()
         self.refresh_status()
         self.update_repo_info()
         self.load_history()
         self.check_lfs_status()
         self.update_plugin_indicators()
         
+    def load_sidebar_plugins(self):
+        if not self.plugin_manager or not self.repo_path:
+            return
+            
+        # Clear existing sidebar widgets if any (optional, depending on if we want to reload)
+        # For now, we assume we append or check if exists.
+        
+        plugins = self.plugin_manager.get_all_plugins()
+        for name, plugin in plugins.items():
+            if hasattr(plugin, 'get_sidebar_widget'):
+                widget = plugin.get_sidebar_widget(self.repo_path)
+                if widget:
+                    # Check if widget is already in sidebar
+                    if self.sidebar_layout.indexOf(widget) == -1:
+                        self.sidebar_layout.addWidget(widget)
+                    
+                    if not self.sidebar_container.isVisible():
+                        self.sidebar_container.show()
+
     def refresh_status(self):
         if not self.repo_path:
             return
@@ -739,24 +771,43 @@ class RepositoryTab(QWidget):
             return
         
         for file_path, state in status.items():
-            if state in ["M", "A", "D"]:
-                state_text = {"M": tr('modified'), "A": tr('added'), "D": tr('deleted')}.get(state, state)
-                state_color = {"M": "#dcdcaa", "A": "#4ec9b0", "D": "#f48771"}.get(state, "#cccccc")
-                
-                item = QListWidgetItem(file_path)
-                if state == "M":
-                    item.setIcon(self.icon_manager.get_icon("file-text", size=16))
-                elif state == "A":
-                    item.setIcon(self.icon_manager.get_icon("file-plus", size=16))
-                elif state == "D":
-                    item.setIcon(self.icon_manager.get_icon("file-x", size=16))
-                item.setToolTip(f"{state_text}: {file_path}")
-                item.setForeground(QColor(state_color))
-            else:
-                item = QListWidgetItem(file_path)
-                item.setIcon(self.icon_manager.get_icon("file", size=16))
-                item.setToolTip(f"{tr('untracked')}: {file_path}")
-                item.setForeground(QColor("#858585"))
+            # Determine display properties based on state
+            is_modified = 'M' in state
+            is_added = 'A' in state
+            is_deleted = 'D' in state
+            is_renamed = 'R' in state
+            is_untracked = '?' in state
+            is_conflicted = 'U' in state
+
+            if is_conflicted:
+                icon_name = "warning"
+                color = "#d16969" # Reddish
+                tooltip = tr('conflicted')
+            elif is_renamed:
+                icon_name = "file-plus" # Or a rename icon if available
+                color = "#569cd6" # Blue
+                tooltip = tr('renamed')
+            elif is_added:
+                icon_name = "file-plus"
+                color = "#4ec9b0" # Greenish
+                tooltip = tr('added')
+            elif is_deleted:
+                icon_name = "file-x"
+                color = "#f48771" # Reddish
+                tooltip = tr('deleted')
+            elif is_modified:
+                icon_name = "file-text"
+                color = "#dcdcaa" # Yellowish
+                tooltip = tr('modified')
+            else: # Untracked or unknown
+                icon_name = "file"
+                color = "#858585" # Gray
+                tooltip = tr('untracked')
+
+            item = QListWidgetItem(file_path)
+            item.setIcon(self.icon_manager.get_icon(icon_name, size=16))
+            item.setToolTip(f"{tooltip}: {file_path} ({state})")
+            item.setForeground(QColor(color))
             
             font = QFont("Consolas", 11)
             item.setFont(font)
