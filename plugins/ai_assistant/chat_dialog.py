@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
 from PyQt6.QtGui import QFont, QIcon, QTextCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
+from core.translations import get_translation_manager
 
 # Try to import llama_cpp
 try:
@@ -58,7 +59,8 @@ class Worker(QThread):
             stream = self.llm.create_chat_completion(
                 messages=self.messages,
                 stream=True,
-                max_tokens=512
+                max_tokens=1024,
+                temperature=0.1
             )
             
             for output in stream:
@@ -78,27 +80,33 @@ class ChatWidget(QWidget):
         self.icon_manager = IconManager()
         self.llm = None
         
-        system_prompt = """You are a helpful AI assistant for the 'Unreal Git Client' application. 
-You are running locally on the user's machine using the TinyLlama model.
-You can answer in English or Spanish depending on the user's language.
+        # Load documentation from application root
+        app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        docs_path = os.path.join(app_root, "INSTRUCTIONS.md")
+        
+        doc_context = ""
+        if os.path.exists(docs_path):
+            try:
+                with open(docs_path, "r", encoding="utf-8") as f:
+                    doc_context += f.read() + "\n\n"
+            except:
+                pass
 
-About 'Unreal Git Client':
-- It is a Git client specifically designed for Unreal Engine projects.
-- Features:
-  - Git LFS (Large File Storage) support for binary assets.
-  - Simplified commit interface with summary and description.
-  - Branch management (create, switch, merge).
-  - Visual commit history graph.
-  - Plugin system for extensibility.
-  - Unreal Engine integration (launch editor, generate project files).
-  - Themes (Dark mode default).
-
-Your goal is to help the user with Git operations, explain features, and assist with Unreal Engine development workflows.
-If the user speaks Spanish, reply in Spanish. If English, reply in English.
-"""
-
+        # Simplified Prompting for stability
         self.messages = [
-            {"role": "system", "content": system_prompt}
+            {"role": "system", "content": f"""You are the AI Assistant for the 'Git Client' application.
+Use the following documentation to answer user questions:
+
+{doc_context}
+
+Instructions:
+- Answer concisely.
+- If the user speaks Spanish, answer in Spanish.
+- If the user speaks English, answer in English.
+- Do not invent information.
+"""},
+            {"role": "user", "content": "Who are you?"},
+            {"role": "assistant", "content": "I am the Git Client AI assistant. I help with Git operations and Unreal Engine workflows."}
         ]
         
         self.setup_ui()
@@ -191,14 +199,15 @@ If the user speaks Spanish, reply in Spanish. If English, reply in English.
             self.send_btn.setEnabled(False)
             return
 
-        model_name = "TinyLlama-1.1B-Chat-v1.0.Q4_K_M.gguf"
-        model_name_lower = "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+        # Recommended model: Qwen 1.5 4B (or Phi-3)
+        model_name = "qwen1_5-4b-chat-q3_k_m.gguf"
+        
         # Check common locations
         possible_paths = [
             os.path.join(os.getcwd(), "models", model_name),
-            os.path.join(os.getcwd(), "models", model_name_lower),
+            os.path.join(os.getcwd(), "models", "Phi-3-mini-4k-instruct.Q4_K_M.gguf"),
+            os.path.join(os.getcwd(), "models", "phi-3-mini-4k-instruct.Q4_K_M.gguf"),
             os.path.join(os.path.dirname(__file__), "models", model_name),
-            os.path.join(os.getcwd(), model_name)
         ]
         
         model_path = None
@@ -208,13 +217,14 @@ If the user speaks Spanish, reply in Spanish. If English, reply in English.
                 break
         
         if not model_path:
-            self.append_message("System", f"Model not found.\nPlease place '{model_name}' in a 'models' folder in the application root.")
+            self.append_message("System", f"Model not found.\nPlease download '{model_name}' (or Phi-3) and place it in the 'models' folder.")
+            self.append_message("System", "You can find it on HuggingFace (TheBloke or Microsoft).")
             self.status_bar.setText("Model not found")
             self.input_field.setEnabled(False)
             self.send_btn.setEnabled(False)
             return
 
-        self.status_bar.setText(f"Loading model: {model_name}...")
+        self.status_bar.setText(f"Loading model: {os.path.basename(model_path)}...")
         
         # Load model in a separate thread to not freeze UI? 
         # Llama initialization can take a few seconds.
@@ -228,7 +238,16 @@ If the user speaks Spanish, reply in Spanish. If English, reply in English.
                 verbose=False
             )
             self.status_bar.setText("Ready")
-            self.append_message("Assistant", "Hello! I'm your local AI assistant. How can I help you with Unreal Git Client today?")
+            
+            # Initial greeting based on app language
+            tm = get_translation_manager()
+            lang = tm.get_current_language()
+            
+            greeting = "Hello! I am the Git Client AI. How can I help you?"
+            if lang == 'es':
+                greeting = "¡Hola! Soy la IA de Git Client. ¿En qué puedo ayudarte?"
+                
+            self.append_message("Assistant", greeting)
         except Exception as e:
             self.status_bar.setText("Error loading model")
             self.append_message("System", f"Error loading model: {str(e)}")
