@@ -5,7 +5,7 @@ import requests
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                              QLineEdit, QPushButton, QLabel, QProgressBar, 
                              QWidget, QScrollArea, QFrame, QMessageBox, QSizePolicy)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QEvent
 from PyQt6.QtGui import QFont, QIcon, QTextCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
@@ -196,6 +196,7 @@ Instructions:
         self.input_field = QTextEdit()
         self.input_field.setPlaceholderText("Ask something...")
         self.input_field.setFixedHeight(50)
+        self.input_field.installEventFilter(self)
         self.input_field.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {theme.colors['background_elevated']};
@@ -327,6 +328,13 @@ Instructions:
         except Exception as e:
             self.status_bar.setText("Error loading model")
             self.append_message("System", f"Error loading model: {str(e)}")
+
+    def eventFilter(self, obj, event):
+        if obj == self.input_field and event.type() == QEvent.Type.KeyPress:
+            if event.key() == Qt.Key.Key_Return and not event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                self.send_message()
+                return True
+        return super().eventFilter(obj, event)
 
     def send_message(self):
         text = self.input_field.toPlainText().strip()
