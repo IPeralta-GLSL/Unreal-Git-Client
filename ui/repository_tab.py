@@ -16,6 +16,7 @@ from core.translations import tr
 import os
 import sys
 import hashlib
+import fnmatch
 
 class CloneThread(QThread):
     progress = pyqtSignal(str)
@@ -854,6 +855,7 @@ class RepositoryTab(QWidget):
         self.changes_list.clear()
         
         self.large_files = []
+        lfs_patterns = self.git_manager.get_lfs_tracked_patterns()
         
         if not status:
             item = QListWidgetItem(tr('no_changes'))
@@ -882,8 +884,18 @@ class RepositoryTab(QWidget):
                 try:
                     size = os.path.getsize(full_path)
                     if size > 100 * 1024 * 1024: # 100MB
-                        is_large = True
-                        self.large_files.append(file_path)
+                        # Check if already tracked by LFS
+                        is_lfs_tracked = False
+                        for pattern in lfs_patterns:
+                            # Check both full path and filename against pattern
+                            if (fnmatch.fnmatch(file_path, pattern) or 
+                                fnmatch.fnmatch(os.path.basename(file_path), pattern)):
+                                is_lfs_tracked = True
+                                break
+                        
+                        if not is_lfs_tracked:
+                            is_large = True
+                            self.large_files.append(file_path)
                 except:
                     pass
 
