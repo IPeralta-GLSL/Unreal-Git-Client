@@ -35,7 +35,7 @@ The project is modular:
     - `repository_tab.py`: Main repo view (history, changes).
     - `lfs_tracking_dialog.py`: LFS management.
 - **`plugins/`**: Extensions.
-    - `ai_assistant`: This chat interface (TinyLlama).
+    - `ai_assistant`: This chat interface (Qwen 1.5).
     - `unreal_engine`: UE specific tools.
 
 ## 5. Function Reference (API)
