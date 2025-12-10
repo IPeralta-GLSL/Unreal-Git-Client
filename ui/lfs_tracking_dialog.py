@@ -179,9 +179,36 @@ class LFSTrackingDialog(QDialog):
         right_col.addLayout(add_group)
         
         # Suggestions Section
+        suggestions_header = QHBoxLayout()
         suggestions_label = QLabel(tr('suggested_patterns'))
         suggestions_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-        right_col.addWidget(suggestions_label)
+        suggestions_header.addWidget(suggestions_label)
+        
+        suggestions_header.addStretch()
+        
+        self.add_all_btn = QPushButton(tr('add_all_detected'))
+        self.add_all_btn.setToolTip(tr('add_all_detected_tooltip'))
+        self.add_all_btn.setFixedHeight(24)
+        self.add_all_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.add_all_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['surface_hover']};
+                color: {theme.colors['primary']};
+                border: 1px solid {theme.colors['primary']};
+                border-radius: 4px;
+                padding: 0 10px;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+        """)
+        self.add_all_btn.clicked.connect(self.add_all_detected_files)
+        self.add_all_btn.setVisible(False) # Hidden by default, shown if there are suggestions
+        suggestions_header.addWidget(self.add_all_btn)
+        
+        right_col.addLayout(suggestions_header)
         
         self.suggestions_list = QListWidget()
         self.suggestions_list.setStyleSheet(f"""
@@ -225,6 +252,8 @@ class LFSTrackingDialog(QDialog):
         theme = get_current_theme()
         current_patterns = self.git_manager.get_lfs_tracked_patterns()
         
+        has_large_files = False
+        
         # Add specific file suggestions first (high priority)
         for file_path in self.suggested_files:
             # Check if extension is already tracked
@@ -232,10 +261,13 @@ class LFSTrackingDialog(QDialog):
             if ext in current_patterns or file_path in current_patterns:
                 continue
                 
+            has_large_files = True
             item = QListWidgetItem(file_path)
             item.setIcon(self.icon_manager.get_icon("warning", size=14, color=theme.colors['warning']))
             item.setToolTip(f"Large file detected. Double click to track.")
             self.suggestions_list.addItem(item)
+
+        self.add_all_btn.setVisible(has_large_files)
 
         if not self.plugin_manager:
             return
@@ -261,6 +293,24 @@ class LFSTrackingDialog(QDialog):
     def add_suggestion_from_list(self, item):
         self.track_pattern(item.text())
         
+    def add_all_detected_files(self):
+        current_patterns = self.git_manager.get_lfs_tracked_patterns()
+        files_to_add = []
+        
+        for file_path in self.suggested_files:
+            ext = "*" + os.path.splitext(file_path)[1]
+            if ext not in current_patterns and file_path not in current_patterns:
+                files_to_add.append(file_path)
+        
+        if files_to_add:
+            success, message = self.git_manager.lfs_track_files(files_to_add)
+            if success:
+                self.load_patterns()
+                self.load_suggestions()
+                QMessageBox.information(self, tr('success'), tr('large_files_tracked'))
+            else:
+                QMessageBox.warning(self, tr('error'), message)
+
     def track_pattern(self, pattern):
         success, message = self.git_manager.lfs_track_files([pattern])
         if success:
