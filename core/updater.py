@@ -107,6 +107,9 @@ def install_update(file_path):
     """
     if platform.system() != "Windows":
         return False, "Auto-update only supported on Windows"
+    
+    if not getattr(sys, 'frozen', False):
+        return False, "Cannot auto-update when running from source"
         
     try:
         current_exe = sys.executable

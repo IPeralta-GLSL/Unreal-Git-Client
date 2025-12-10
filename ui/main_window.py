@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
                              QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame,
-                             QSystemTrayIcon, QApplication)
+                             QSystemTrayIcon, QApplication, QProgressDialog)
 from PyQt6.QtCore import Qt, QSize, QTimer, QPoint, QRect, QEvent
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut, QCursor
 from ui.repository_tab import RepositoryTab
@@ -13,6 +13,7 @@ from core.account_manager import AccountManager
 from core.translations import tr
 from core.updater import UpdateChecker
 import os
+import sys
 import platform
 import webbrowser
 
@@ -548,8 +549,9 @@ class MainWindow(QMainWindow):
         msg.setDefaultButton(QMessageBox.StandardButton.Yes)
         
         if msg.exec() == QMessageBox.StandardButton.Yes:
-            # Check if it's a direct download link (exe)
-            if url.endswith('.exe'):
+            # Check if it's a direct download link (exe) and if we are running frozen
+            is_frozen = getattr(sys, 'frozen', False)
+            if url.endswith('.exe') and is_frozen:
                 self.start_auto_update(url)
             else:
                 webbrowser.open(url)
