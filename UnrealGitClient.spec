@@ -1,12 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files
+
+llama_datas = collect_data_files('llama_cpp')
 
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('ui/Icons', 'ui/Icons'), ('plugins', 'plugins'), ('core', 'core')],
-    hiddenimports=[],
+    datas=[('ui/Icons', 'ui/Icons'), ('plugins', 'plugins'), ('core', 'core')] + llama_datas,
+    hiddenimports=['llama_cpp'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

@@ -10,11 +10,13 @@ from ui.icon_manager import IconManager
 from core.translations import get_translation_manager
 
 # Try to import llama_cpp
+LLAMA_IMPORT_ERROR = None
 try:
     from llama_cpp import Llama
     LLAMA_AVAILABLE = True
-except ImportError:
+except Exception as e:
     LLAMA_AVAILABLE = False
+    LLAMA_IMPORT_ERROR = str(e)
 
 class ModelThread(QThread):
     response_ready = pyqtSignal(str)
@@ -30,7 +32,7 @@ class ModelThread(QThread):
         
     def run(self):
         if not LLAMA_AVAILABLE:
-            self.error.emit("llama-cpp-python is not installed. Please install it with: pip install llama-cpp-python")
+            self.error.emit(f"llama-cpp-python failed to load. Details: {LLAMA_IMPORT_ERROR}")
             return
 
         if not os.path.exists(self.model_path):
@@ -193,7 +195,7 @@ Instructions:
 
     def init_model(self):
         if not LLAMA_AVAILABLE:
-            self.append_message("System", "Error: llama-cpp-python is not installed.\nPlease run: pip install llama-cpp-python")
+            self.append_message("System", f"Error: llama-cpp-python failed to load.\nDetails: {LLAMA_IMPORT_ERROR}\nPlease run: pip install llama-cpp-python")
             self.status_bar.setText("Missing dependencies")
             self.input_field.setEnabled(False)
             self.send_btn.setEnabled(False)
