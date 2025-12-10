@@ -396,3 +396,21 @@ class GitManager:
                     return False, "File not found"
             except Exception as e:
                 return False, str(e)
+
+    def get_ahead_behind_count(self):
+        if not self.repo_path:
+            return 0, 0
+            
+        success, output = self.run_command("git rev-list --left-right --count HEAD...@{u}")
+        
+        if success and output:
+            try:
+                parts = output.split()
+                if len(parts) >= 2:
+                    ahead = int(parts[0])
+                    behind = int(parts[1])
+                    return ahead, behind
+            except:
+                pass
+                
+        return 0, 0

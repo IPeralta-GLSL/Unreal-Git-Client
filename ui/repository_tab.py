@@ -804,6 +804,37 @@ class RepositoryTab(QWidget):
                     if not self.sidebar_container.isVisible():
                         self.sidebar_container.show()
 
+    def get_action_button_style(self, highlight=False):
+        theme = get_current_theme()
+        
+        bg_color = "transparent"
+        border_color = "transparent"
+        text_color = theme.colors['primary']
+        
+        if highlight:
+            bg_color = f"{theme.colors['primary']}20" # 20% opacity
+            border_color = theme.colors['primary']
+            
+        return f"""
+            QPushButton {{
+                color: {text_color};
+                background-color: {bg_color};
+                border: {theme.borders['width_thin']}px solid {border_color};
+                border-radius: {theme.borders['radius_md']}px;
+                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
+                font-size: {theme.fonts['size_md']}px;
+                font-weight: {theme.fonts['weight_bold']};
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['primary_text']};
+            }}
+        """
+
     def refresh_status(self):
         if not self.repo_path:
             return
@@ -811,6 +842,23 @@ class RepositoryTab(QWidget):
         branch = self.git_manager.get_current_branch()
         self.branch_button.setText(branch)
         self.branch_button.setIcon(self.icon_manager.get_icon("git-branch", size=16))
+        
+        # Update Push/Pull buttons with ahead/behind counts
+        ahead, behind = self.git_manager.get_ahead_behind_count()
+        
+        if behind > 0:
+            self.pull_btn.setText(f"{tr('pull')} ({behind})")
+            self.pull_btn.setStyleSheet(self.get_action_button_style(highlight=True))
+        else:
+            self.pull_btn.setText(tr('pull'))
+            self.pull_btn.setStyleSheet(self.get_action_button_style(highlight=False))
+            
+        if ahead > 0:
+            self.push_btn.setText(f"{tr('push')} ({ahead})")
+            self.push_btn.setStyleSheet(self.get_action_button_style(highlight=True))
+        else:
+            self.push_btn.setText(tr('push'))
+            self.push_btn.setStyleSheet(self.get_action_button_style(highlight=False))
         
         status = self.git_manager.get_status()
         self.changes_list.clear()
@@ -1149,6 +1197,8 @@ class RepositoryTab(QWidget):
         success, message = self.git_manager.push()
         if success:
             QMessageBox.information(self, tr('success'), tr('success_push'))
+            self.refresh_status()
+            self.load_history()
         else:
             QMessageBox.warning(self, tr('error'), message)
             
@@ -1156,6 +1206,7 @@ class RepositoryTab(QWidget):
         success, message = self.git_manager.fetch()
         if success:
             QMessageBox.information(self, tr('success'), tr('success_fetch'))
+            self.refresh_status()
             self.load_history()
         else:
             QMessageBox.warning(self, tr('error'), message)
