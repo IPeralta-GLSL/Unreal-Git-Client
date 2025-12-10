@@ -251,6 +251,8 @@ class LFSTrackingDialog(QDialog):
         
         theme = get_current_theme()
         current_patterns = self.git_manager.get_lfs_tracked_patterns()
+        # Normalize patterns for comparison (case insensitive)
+        norm_patterns = {p.lower() for p in current_patterns}
         
         has_large_files = False
         
@@ -258,7 +260,10 @@ class LFSTrackingDialog(QDialog):
         for file_path in self.suggested_files:
             # Check if extension is already tracked
             ext = "*" + os.path.splitext(file_path)[1]
-            if ext in current_patterns or file_path in current_patterns:
+            
+            # Check if file or extension is tracked (case insensitive)
+            if (ext.lower() in norm_patterns or 
+                file_path.lower() in norm_patterns):
                 continue
                 
             has_large_files = True
@@ -275,7 +280,7 @@ class LFSTrackingDialog(QDialog):
         suggestions = self.plugin_manager.get_all_lfs_patterns()
         
         for pattern in suggestions:
-            if pattern in current_patterns:
+            if pattern.lower() in norm_patterns:
                 continue
                 
             item = QListWidgetItem(pattern)
@@ -295,11 +300,13 @@ class LFSTrackingDialog(QDialog):
         
     def add_all_detected_files(self):
         current_patterns = self.git_manager.get_lfs_tracked_patterns()
+        norm_patterns = {p.lower() for p in current_patterns}
         files_to_add = []
         
         for file_path in self.suggested_files:
             ext = "*" + os.path.splitext(file_path)[1]
-            if ext not in current_patterns and file_path not in current_patterns:
+            if (ext.lower() not in norm_patterns and 
+                file_path.lower() not in norm_patterns):
                 files_to_add.append(file_path)
         
         if files_to_add:

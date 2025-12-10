@@ -270,8 +270,22 @@ class GitManager:
             
         patterns = []
         for line in output.split('\n'):
-            if line.strip() and "Listing tracked patterns" not in line:
-                parts = line.strip().split()
+            line = line.strip()
+            if not line or "Listing tracked patterns" in line:
+                continue
+                
+            # Format is: pattern (File: .gitattributes)
+            # Find the last occurrence of " (File: " to separate pattern from source
+            r_index = line.rfind(" (File: ")
+            if r_index != -1:
+                pattern = line[:r_index]
+                # Remove surrounding quotes if present
+                if pattern.startswith('"') and pattern.endswith('"'):
+                    pattern = pattern[1:-1]
+                patterns.append(pattern)
+            else:
+                # Fallback
+                parts = line.split()
                 if parts:
                     patterns.append(parts[0])
         return patterns
