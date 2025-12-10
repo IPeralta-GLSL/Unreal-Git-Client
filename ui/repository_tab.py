@@ -1166,7 +1166,6 @@ class RepositoryTab(QWidget):
         # 3. Commit
         success, result = self.git_manager.commit(message)
         if success:
-            QMessageBox.information(self, tr('success'), tr('success_commit'))
             self.commit_summary.clear()
             self.commit_message.clear()
             self.refresh_status()
@@ -1177,7 +1176,6 @@ class RepositoryTab(QWidget):
     def do_pull(self):
         success, message = self.git_manager.pull()
         if success:
-            QMessageBox.information(self, tr('success'), tr('success_pull'))
             self.refresh_status()
             self.load_history()
         else:
@@ -1186,7 +1184,6 @@ class RepositoryTab(QWidget):
     def do_push(self):
         success, message = self.git_manager.push()
         if success:
-            QMessageBox.information(self, tr('success'), tr('success_push'))
             self.refresh_status()
             self.load_history()
         else:
@@ -1195,7 +1192,6 @@ class RepositoryTab(QWidget):
     def do_fetch(self):
         success, message = self.git_manager.fetch()
         if success:
-            QMessageBox.information(self, tr('success'), tr('success_fetch'))
             self.refresh_status()
             self.load_history()
         else:
