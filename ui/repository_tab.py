@@ -1098,11 +1098,34 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), tr('error_commit_message'))
             return
 
+        # Collect selected files
+        files_to_stage = []
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            if item.checkState() == Qt.CheckState.Checked:
+                file_path = item.data(Qt.ItemDataRole.UserRole)
+                if file_path:
+                    files_to_stage.append(file_path)
+        
+        if not files_to_stage:
+             QMessageBox.warning(self, tr('error'), tr('error_no_files_selected'))
+             return
+
         if description:
             message = f"{summary}\n\n{description}"
         else:
             message = summary
 
+        # 1. Unstage all (to ensure clean state based on selection)
+        self.git_manager.unstage_all()
+        
+        # 2. Stage selected files
+        success, result = self.git_manager.stage_files(files_to_stage)
+        if not success:
+            QMessageBox.warning(self, tr('error'), tr('error_staging_files', message=result))
+            return
+
+        # 3. Commit
         success, result = self.git_manager.commit(message)
         if success:
             QMessageBox.information(self, tr('success'), tr('success_commit'))

@@ -351,6 +351,32 @@ class GitManager:
             return True, "Added to .gitignore"
         except Exception as e:
             return False, str(e)
+
+    def stage_files(self, files):
+        if not files:
+            return True, "No files to stage"
+        
+        if isinstance(files, list):
+            # Process in chunks to avoid command line length limits
+            chunk_size = 50
+            for i in range(0, len(files), chunk_size):
+                chunk = files[i:i + chunk_size]
+                quoted_files = []
+                for f in chunk:
+                    escaped = f.replace('"', '\\"')
+                    quoted_files.append(f'"{escaped}"')
+                
+                files_str = " ".join(quoted_files)
+                success, message = self.run_command(f"git add {files_str}")
+                if not success:
+                    return False, message
+            return True, "Files staged"
+        else:
+            escaped = files.replace('"', '\\"')
+            return self.run_command(f"git add \"{escaped}\"")
+            
+    def unstage_all(self):
+        return self.run_command("git reset")
         
     def discard_file(self, file_path):
         # Check if file is tracked

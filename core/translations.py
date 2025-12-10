@@ -232,6 +232,8 @@ class TranslationManager:
                 
                 'success_all_files_added': 'Todos los archivos han sido agregados',
                 'error_commit_message': 'Debes escribir un mensaje para el commit',
+                'error_no_files_selected': 'No hay archivos seleccionados para el commit',
+                'error_staging_files': 'Error al preparar archivos: {message}',
                 'success_commit': 'Commit realizado correctamente',
                 'success_pull': 'Pull completado',
                 'success_push': 'Push completado',
@@ -602,6 +604,8 @@ class TranslationManager:
                 
                 'success_all_files_added': 'All files have been added',
                 'error_commit_message': 'You must write a commit message',
+                'error_no_files_selected': 'No files selected for commit',
+                'error_staging_files': 'Error staging files: {message}',
                 'success_commit': 'Commit completed successfully',
                 'success_pull': 'Pull completed',
                 'success_push': 'Push completed',
