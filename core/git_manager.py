@@ -12,12 +12,16 @@ class GitManager:
         
     def run_command(self, command):
         try:
+            use_shell = isinstance(command, str)
+            
             result = subprocess.run(
                 command,
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
-                shell=True
+                shell=use_shell,
+                encoding='utf-8',
+                errors='replace'
             )
             if result.returncode == 0:
                 return True, result.stdout.rstrip()
@@ -70,7 +74,6 @@ class GitManager:
         return self.run_command(f"git merge \"{branch_name}\"")
         
     def get_status(self):
-        # Use -uall to show all untracked files
         success, output = self.run_command("git status --porcelain -uall")
         if not success:
             return {}
@@ -81,13 +84,10 @@ class GitManager:
                 state = line[:2].strip()
                 file_path = line[3:]
                 
-                # Handle quoted paths (common with spaces/special chars)
                 if file_path.startswith('"') and file_path.endswith('"'):
                     file_path = file_path[1:-1]
-                    # Basic unescape for common cases
                     file_path = file_path.replace('\\"', '"').replace('\\\\', '\\')
                 
-                # Handle renames: R  old -> new
                 if '->' in file_path:
                     parts = file_path.split(' -> ')
                     if len(parts) == 2:
@@ -109,26 +109,16 @@ class GitManager:
         return "No hay diferencias para mostrar"
         
     def stage_all(self):
-        return self.run_command("git add -A")
-    
-    def stage_file(self, file_path):
-        return self.run_command(f"git add \"{file_path}\"")
-        
-    def unstage_file(self, file_path):
-        return self.run_command(f"git reset HEAD \"{file_path}\"")
-        
-    def commit(self, message):
-        escaped_message = message.replace('"', '\\"')
-        return self.run_command(f"git commit -m \"{escaped_message}\"")
+        return self.run_command(['git', 'add', '.'])
         
     def pull(self):
-        return self.run_command("git pull")
+        return self.run_command(['git', 'pull'])
         
     def push(self):
-        return self.run_command("git push")
+        return self.run_command(['git', 'push'])
         
     def fetch(self):
-        return self.run_command("git fetch")
+        return self.run_command(['git', 'fetch'])
         
     def get_repository_info(self):
         info = {}
@@ -254,7 +244,6 @@ class GitManager:
             patterns = [patterns]
             
         for pattern in patterns:
-            # Escape quotes if necessary, though simple patterns usually don't need it
             success, message = self.run_command(f"git lfs track \"{pattern}\"")
             if not success:
                 return False, f"Error al trackear {pattern}: {message}"
@@ -341,7 +330,6 @@ class GitManager:
         
         gitignore_path = os.path.join(self.repo_path, '.gitignore')
         try:
-            # Ensure newline at start if file exists and not empty
             prefix = ""
             if os.path.exists(gitignore_path) and os.path.getsize(gitignore_path) > 0:
                 prefix = "\n"
@@ -357,36 +345,30 @@ class GitManager:
             return True, "No files to stage"
         
         if isinstance(files, list):
-            # Process in chunks to avoid command line length limits
             chunk_size = 50
             for i in range(0, len(files), chunk_size):
                 chunk = files[i:i + chunk_size]
-                quoted_files = []
-                for f in chunk:
-                    escaped = f.replace('"', '\\"')
-                    quoted_files.append(f'"{escaped}"')
-                
-                files_str = " ".join(quoted_files)
-                success, message = self.run_command(f"git add {files_str}")
+                cmd = ['git', 'add', '--'] + chunk
+                success, message = self.run_command(cmd)
                 if not success:
                     return False, message
             return True, "Files staged"
         else:
-            escaped = files.replace('"', '\\"')
-            return self.run_command(f"git add \"{escaped}\"")
+            return self.run_command(['git', 'add', '--', files])
             
     def unstage_all(self):
-        return self.run_command("git reset")
+        return self.run_command(['git', 'reset'])
         
+    def commit(self, message):
+        return self.run_command(['git', 'commit', '-m', message])
+
     def discard_file(self, file_path):
-        # Check if file is tracked
         success, output = self.run_command(f"git ls-files --error-unmatch \"{file_path}\"")
         is_tracked = success
         
         if is_tracked:
             return self.run_command(f"git checkout HEAD -- \"{file_path}\"")
         else:
-            # Untracked file, just delete it
             try:
                 full_path = os.path.join(self.repo_path, file_path)
                 if os.path.exists(full_path):
@@ -396,6 +378,9 @@ class GitManager:
                     return False, "File not found"
             except Exception as e:
                 return False, str(e)
+
+    def stage_file(self, file_path):
+        return self.stage_files(file_path)
 
     def get_ahead_behind_count(self):
         if not self.repo_path:
