@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from core.version import CURRENT_VERSION
 
 class TranslationManager:
     def __init__(self):
@@ -124,11 +125,11 @@ class TranslationManager:
                 'tip_new_tab': 'Ctrl+T para nueva pestaña, Ctrl+W para cerrar',
                 'tip_git_lfs': 'Git LFS es esencial para proyectos de Unreal Engine',
                 'tip_commit_messages': 'Escribe mensajes de commit descriptivos y claros',
-                'tip_pull_before_push': 'Usa Pull antes de Push para evitar conflictos',
                 'tip_create_branches': 'Crea ramas para nuevas características',
                 'shortcuts_text': 'Atajos: Ctrl+T nueva pestaña • Ctrl+W cerrar • Ctrl+Tab cambiar',
-                'version_text': 'v1.1.0',
+                'version_text': CURRENT_VERSION,
                 
+                'current_branch_label': 'RAMA ACTUAL (clic para cambiar)',
                 'current_branch_label': 'RAMA ACTUAL (clic para cambiar)',
                 'folder_button': 'Carpeta',
                 'folder_tooltip': 'Abrir carpeta del proyecto',
@@ -371,6 +372,9 @@ class TranslationManager:
                 'error_save_config': 'Error al guardar configuración',
                 'app_minimized_to_tray': 'La aplicación se ha minimizado a la bandeja del sistema. Doble clic para restaurar.',
                 'quit': 'Salir',
+                'update_available': 'Actualización disponible',
+                'new_version_available': 'Nueva versión disponible',
+                'update_question': '¿Deseas descargarla ahora?',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -491,11 +495,11 @@ class TranslationManager:
                 'tip_new_tab': 'Ctrl+T for new tab, Ctrl+W to close',
                 'tip_git_lfs': 'Git LFS is essential for Unreal Engine projects',
                 'tip_commit_messages': 'Write descriptive and clear commit messages',
-                'tip_pull_before_push': 'Use Pull before Push to avoid conflicts',
                 'tip_create_branches': 'Create branches for new features',
                 'shortcuts_text': 'Shortcuts: Ctrl+T new tab • Ctrl+W close • Ctrl+Tab switch',
-                'version_text': 'v1.1.0',
+                'version_text': CURRENT_VERSION,
                 
+                'current_branch_label': 'CURRENT BRANCH (click to change)',
                 'current_branch_label': 'CURRENT BRANCH (click to change)',
                 'folder_button': 'Folder',
                 'folder_tooltip': 'Open project folder',
@@ -738,6 +742,9 @@ class TranslationManager:
                 'error_save_config': 'Error saving configuration',
                 'app_minimized_to_tray': 'The application has been minimized to the system tray. Double click to restore.',
                 'quit': 'Quit',
+                'update_available': 'Update available',
+                'new_version_available': 'New version available',
+                'update_question': 'Do you want to download it now?',
             }
         }
         

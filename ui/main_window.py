@@ -11,8 +11,10 @@ from core.git_manager import GitManager
 from core.settings_manager import SettingsManager
 from core.account_manager import AccountManager
 from core.translations import tr
+from core.updater import UpdateChecker
 import os
 import platform
+import webbrowser
 
 from ui.icon_manager import IconManager
 
@@ -28,6 +30,11 @@ class MainWindow(QMainWindow):
         self.border_width = 5
         self.init_ui()
         self.setup_shortcuts()
+        
+        # Auto-update check
+        self.update_checker = UpdateChecker()
+        self.update_checker.update_available.connect(self.show_update_dialog)
+        self.update_checker.start()
         
     def init_ui(self):
         self.setWindowTitle(tr('app_name'))
@@ -519,3 +526,14 @@ class MainWindow(QMainWindow):
         
         quit_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
         quit_shortcut.activated.connect(self.close)
+
+    def show_update_dialog(self, version, url, notes):
+        msg = QMessageBox(self)
+        msg.setWindowTitle(tr('update_available'))
+        msg.setText(f"{tr('new_version_available')}: {version}")
+        msg.setInformativeText(f"{tr('update_question')}\n\n{notes}")
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.setDefaultButton(QMessageBox.StandardButton.Yes)
+        
+        if msg.exec() == QMessageBox.StandardButton.Yes:
+            webbrowser.open(url)
