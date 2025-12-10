@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QFileDialog)
-from PyQt6.QtCore import Qt
+                             QLineEdit, QPushButton, QFileDialog, QFrame, QWidget)
+from PyQt6.QtCore import Qt, QPoint
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
 from core.translations import tr
@@ -11,23 +11,50 @@ class CloneDialog(QDialog):
         super().__init__(parent)
         self.icon_manager = IconManager()
         self.theme = get_current_theme()
+        self.drag_position = None
         self.init_ui()
         self.retranslate_ui()
         
     def init_ui(self):
         self.setModal(True)
-        self.setMinimumWidth(600)
-        self.setMinimumHeight(280)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        layout = QVBoxLayout(self)
+        # Main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Main frame
+        self.main_frame = QFrame()
+        self.main_frame.setObjectName("MainFrame")
+        self.main_frame.setStyleSheet(f"""
+            QFrame#MainFrame {{
+                background-color: {self.theme.colors['background']};
+                border: 1px solid {self.theme.colors['border']};
+                border-radius: 8px;
+            }}
+        """)
+        main_layout.addWidget(self.main_frame)
+        
+        # Frame layout
+        frame_layout = QVBoxLayout(self.main_frame)
+        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame_layout.setSpacing(0)
+        
+        # Title Bar
+        self.setup_title_bar(frame_layout)
+        
+        # Content Area
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
         layout.setSpacing(self.theme.spacing['md'])
-        layout.setContentsMargins(self.theme.spacing['xl'], self.theme.spacing['xl'], 
+        layout.setContentsMargins(self.theme.spacing['xl'], self.theme.spacing['md'], 
                                  self.theme.spacing['xl'], self.theme.spacing['xl'])
+        frame_layout.addWidget(content_widget)
         
+        # Content
         title_layout = QHBoxLayout()
-        icon_label = QLabel()
-        icon_label.setPixmap(self.icon_manager.get_pixmap("git-fork", 24))
-        title_layout.addWidget(icon_label)
         
         self.title_label = QLabel()
         self.title_label.setStyleSheet(self.theme.get_title_label_style())
@@ -121,10 +148,70 @@ class CloneDialog(QDialog):
         
         layout.addLayout(button_layout)
         
-        self.setStyleSheet(self.theme.get_dialog_style())
+    def setup_title_bar(self, parent_layout):
+        title_bar = QFrame()
+        title_bar.setFixedHeight(40)
+        title_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {self.theme.colors['surface']};
+                border-bottom: 1px solid {self.theme.colors['border']};
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+            }}
+        """)
+        
+        layout = QHBoxLayout(title_bar)
+        layout.setContentsMargins(15, 0, 5, 0)
+        
+        # Icon
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("git-fork", 20))
+        layout.addWidget(icon_label)
+        
+        layout.addSpacing(10)
+        
+        # Title
+        self.window_title_label = QLabel(tr('clone_repository'))
+        self.window_title_label.setStyleSheet(f"font-weight: bold; color: {self.theme.colors['text']}; font-size: 14px;")
+        layout.addWidget(self.window_title_label)
+        
+        layout.addStretch()
+        
+        # Close button
+        close_btn = QPushButton()
+        close_btn.setIcon(self.icon_manager.get_icon("x", size=16))
+        close_btn.setFixedSize(30, 30)
+        close_btn.clicked.connect(self.reject)
+        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: #e81123;
+            }}
+        """)
+        layout.addWidget(close_btn)
+        
+        parent_layout.addWidget(title_bar)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.MouseButton.LeftButton and self.drag_position:
+            self.move(event.globalPosition().toPoint() - self.drag_position)
+            event.accept()
+            
+    def mouseReleaseEvent(self, event):
+        self.drag_position = None
         
     def retranslate_ui(self):
-        self.setWindowTitle(tr('clone_repository'))
+        self.window_title_label.setText(tr('clone_repository'))
         self.title_label.setText(tr('clone_git_repository'))
         self.description_label.setText(tr('clone_description'))
         self.url_label.setText(tr('repository_url') + ":")
