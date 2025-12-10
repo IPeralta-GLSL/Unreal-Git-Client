@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
                              QSizePolicy, QMenu, QInputDialog, QApplication, QDialog,
                              QTableWidget, QTableWidgetItem, QHeaderView, QGridLayout)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl, QTimer
 from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from ui.home_view import HomeView
@@ -17,6 +17,7 @@ import os
 import sys
 import hashlib
 import fnmatch
+import time
 
 class CloneThread(QThread):
     progress = pyqtSignal(str)
@@ -31,6 +32,37 @@ class CloneThread(QThread):
     def run(self):
         success, message = self.git_manager.clone_repository(self.url, self.path)
         self.finished.emit(success, message)
+
+class GitOperationThread(QThread):
+    finished = pyqtSignal(bool, str)
+    progress = pyqtSignal(str)
+    
+    def __init__(self, operation_func, *args):
+        super().__init__()
+        self.operation_func = operation_func
+        self.args = args
+        self.start_time = 0
+        
+    def run(self):
+        self.start_time = time.time()
+        self.progress.emit("Starting operation...")
+        
+        # Simulate progress for indeterminate operations or wrap if possible
+        # For now, we just run the blocking operation
+        try:
+            result = self.operation_func(*self.args)
+            elapsed = time.time() - self.start_time
+            
+            if isinstance(result, tuple) and len(result) == 2:
+                success, message = result
+                # Add timing info to success message if successful
+                if success:
+                    message = f"{message} (Time: {elapsed:.2f}s)"
+                self.finished.emit(success, message)
+            else:
+                self.finished.emit(True, f"Operation completed in {elapsed:.2f}s")
+        except Exception as e:
+            self.finished.emit(False, str(e))
 
 class RepositoryTab(QWidget):
     def __init__(self, git_manager, settings_manager=None, parent_window=None, plugin_manager=None):
@@ -1196,23 +1228,30 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, title, message)
 
     def do_pull(self):
-        success, message = self.git_manager.pull()
-        if success:
-            self.refresh_status()
-            self.load_history()
-        else:
-            self.handle_git_error(tr('error'), message)
+        self.run_git_operation(self.git_manager.pull, "Pulling changes...")
             
     def do_push(self):
-        success, message = self.git_manager.push()
-        if success:
-            self.refresh_status()
-            self.load_history()
-        else:
-            self.handle_git_error(tr('error'), message)
+        self.run_git_operation(self.git_manager.push, "Pushing changes...")
             
     def do_fetch(self):
-        success, message = self.git_manager.fetch()
+        self.run_git_operation(self.git_manager.fetch, "Fetching changes...")
+
+    def run_git_operation(self, operation, status_message):
+        if self.parent_window:
+            self.parent_window.status_label.setText(status_message)
+            self.parent_window.progress_label.setText("...")
+            
+        self.git_thread = GitOperationThread(operation)
+        self.git_thread.finished.connect(self.on_git_operation_finished)
+        self.git_thread.start()
+        
+    def on_git_operation_finished(self, success, message):
+        if self.parent_window:
+            self.parent_window.status_label.setText(tr('ready'))
+            self.parent_window.progress_label.setText(message if success else "Failed")
+            # Clear progress message after 5 seconds
+            QTimer.singleShot(5000, self.parent_window.progress_label.clear)
+            
         if success:
             self.refresh_status()
             self.load_history()

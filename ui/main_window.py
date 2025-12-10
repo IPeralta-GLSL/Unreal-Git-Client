@@ -48,6 +48,22 @@ class MainWindow(QMainWindow):
         
         self.apply_styles()
 
+    def setup_statusbar(self):
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        
+        # Widgets for status bar (all on the left)
+        self.status_label = QLabel(tr('ready'))
+        self.status_label.setStyleSheet("padding-right: 15px; font-weight: bold;")
+        self.status_bar.addWidget(self.status_label)
+        
+        self.progress_label = QLabel()
+        self.progress_label.setStyleSheet("padding-right: 15px; color: #4ec9b0;")
+        self.status_bar.addWidget(self.progress_label)
+
+    def update_status_bar(self):
+        pass # Removed branch update logic
+
     def setup_tray_icon(self):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self.icon_manager.get_icon("git-branch"))
@@ -324,11 +340,7 @@ class MainWindow(QMainWindow):
         elif edges == Qt.Edge.LeftEdge or edges == Qt.Edge.RightEdge:
             self.setCursor(Qt.CursorShape.SizeHorCursor)
         
-    def setup_statusbar(self):
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage(tr('ready'))
-        
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.update_new_tab_button_position()
