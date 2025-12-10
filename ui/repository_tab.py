@@ -1173,13 +1173,23 @@ class RepositoryTab(QWidget):
         else:
             QMessageBox.warning(self, tr('error'), result)
             
+    def handle_git_error(self, title, message):
+        if "502" in message and "Bad Gateway" in message:
+            QMessageBox.warning(self, title, tr('git_error_502'))
+        elif "unable to access" in message or "Could not resolve host" in message:
+            QMessageBox.warning(self, title, f"{tr('git_error_connection')}\n\n{message}")
+        elif "Authentication failed" in message or "403" in message:
+            QMessageBox.warning(self, title, f"{tr('git_error_auth')}\n\n{message}")
+        else:
+            QMessageBox.warning(self, title, message)
+
     def do_pull(self):
         success, message = self.git_manager.pull()
         if success:
             self.refresh_status()
             self.load_history()
         else:
-            QMessageBox.warning(self, tr('error'), message)
+            self.handle_git_error(tr('error'), message)
             
     def do_push(self):
         success, message = self.git_manager.push()
@@ -1187,7 +1197,7 @@ class RepositoryTab(QWidget):
             self.refresh_status()
             self.load_history()
         else:
-            QMessageBox.warning(self, tr('error'), message)
+            self.handle_git_error(tr('error'), message)
             
     def do_fetch(self):
         success, message = self.git_manager.fetch()
@@ -1195,7 +1205,7 @@ class RepositoryTab(QWidget):
             self.refresh_status()
             self.load_history()
         else:
-            QMessageBox.warning(self, tr('error'), message)
+            self.handle_git_error(tr('error'), message)
             
     def update_repo_info(self):
         if not self.repo_path:

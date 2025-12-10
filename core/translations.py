@@ -242,6 +242,9 @@ class TranslationManager:
                 'success_lfs_pull': 'LFS Pull completado',
                 'success_clone': 'Repositorio clonado en',
                 'error_clone': 'Error al clonar',
+                'git_error_502': 'Error del servidor remoto (502 Bad Gateway). El servicio puede estar caído temporalmente.',
+                'git_error_connection': 'No se pudo conectar al repositorio remoto. Verifica tu conexión a internet.',
+                'git_error_auth': 'Error de autenticación. Verifica tus credenciales.',
                 
                 'cloning_repository': 'Clonando repositorio...',
                 'cloning': 'Clonando',
@@ -614,6 +617,9 @@ class TranslationManager:
                 'success_lfs_pull': 'LFS Pull completed',
                 'success_clone': 'Repository cloned at',
                 'error_clone': 'Error cloning',
+                'git_error_502': 'Remote server error (502 Bad Gateway). The service may be temporarily down.',
+                'git_error_connection': 'Could not connect to remote repository. Check your internet connection.',
+                'git_error_auth': 'Authentication error. Check your credentials.',
                 
                 'cloning_repository': 'Cloning repository...',
                 'cloning': 'Cloning',
