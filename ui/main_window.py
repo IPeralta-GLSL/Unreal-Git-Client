@@ -548,7 +548,39 @@ class MainWindow(QMainWindow):
         msg.setDefaultButton(QMessageBox.StandardButton.Yes)
         
         if msg.exec() == QMessageBox.StandardButton.Yes:
-            webbrowser.open(url)
+            # Check if it's a direct download link (exe)
+            if url.endswith('.exe'):
+                self.start_auto_update(url)
+            else:
+                webbrowser.open(url)
+
+    def start_auto_update(self, url):
+        from core.updater import UpdateDownloader, install_update
+        
+        self.progress_dialog = QProgressDialog(tr('downloading_update'), tr('cancel'), 0, 100, self)
+        self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        self.progress_dialog.setAutoClose(False)
+        self.progress_dialog.show()
+        
+        self.downloader = UpdateDownloader(url, "update_temp.exe")
+        self.downloader.progress.connect(self.progress_dialog.setValue)
+        self.downloader.finished.connect(self.on_update_downloaded)
+        self.downloader.error.connect(self.on_update_error)
+        self.downloader.start()
+        
+    def on_update_downloaded(self, file_path):
+        from core.updater import install_update
+        self.progress_dialog.close()
+        
+        success, message = install_update(file_path)
+        if success:
+            QApplication.quit()
+        else:
+            QMessageBox.critical(self, tr('error'), f"Update failed: {message}")
+            
+    def on_update_error(self, error_message):
+        self.progress_dialog.close()
+        QMessageBox.critical(self, tr('error'), f"Download failed: {error_message}")
 
     def changeEvent(self, event):
         if event.type() == QEvent.Type.ActivationChange:

@@ -98,6 +98,9 @@ class TranslationManager:
                 'account_not_found': 'Cuenta no encontrada',
                 'account_not_found_msg': 'No existe una cuenta con el usuario',
                 
+                'downloading_update': 'Descargando actualización...',
+                'cancel': 'Cancelar',
+                
                 'success': 'Éxito',
                 'github_account_added': 'Cuenta de GitHub agregada correctamente',
                 'gitlab_account_added': 'Cuenta de GitLab agregada correctamente',

@@ -2,10 +2,45 @@ import requests
 import platform
 import logging
 import webbrowser
+import os
+import sys
+import subprocess
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 from core.version import CURRENT_VERSION
 
 logger = logging.getLogger(__name__)
+
+class UpdateDownloader(QThread):
+    progress = pyqtSignal(int)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, url, dest_path):
+        super().__init__()
+        self.url = url
+        self.dest_path = dest_path
+
+    def run(self):
+        try:
+            response = requests.get(self.url, stream=True)
+            response.raise_for_status()
+            
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 8192
+            downloaded = 0
+            
+            with open(self.dest_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=block_size):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            percent = int((downloaded / total_size) * 100)
+                            self.progress.emit(percent)
+                            
+            self.finished.emit(self.dest_path)
+        except Exception as e:
+            self.error.emit(str(e))
 
 class UpdateChecker(QThread):
     update_available = pyqtSignal(str, str, str) # version, url, release_notes
@@ -65,3 +100,34 @@ class UpdateChecker(QThread):
                 return asset["browser_download_url"]
             
         return data["html_url"]
+
+def install_update(file_path):
+    """
+    Creates a batch file to replace the current executable with the new one and restart it.
+    """
+    if platform.system() != "Windows":
+        return False, "Auto-update only supported on Windows"
+        
+    try:
+        current_exe = sys.executable
+        
+        # If running from python source, we can't really 'update' the exe in the same way
+        # But for the sake of the feature, we assume we are replacing the running executable
+        # or if running from source, maybe we are replacing a standalone exe that launched it?
+        # Let's assume standard frozen application behavior.
+        
+        batch_script = f"""
+@echo off
+timeout /t 2 /nobreak >nul
+move /y "{file_path}" "{current_exe}"
+start "" "{current_exe}"
+del "%~f0"
+"""
+        batch_file = "update_installer.bat"
+        with open(batch_file, "w") as f:
+            f.write(batch_script)
+            
+        subprocess.Popen([batch_file], shell=True)
+        return True, "Update started"
+    except Exception as e:
+        return False, str(e)
