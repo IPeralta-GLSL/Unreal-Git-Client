@@ -20,7 +20,7 @@ class GitManager:
                 shell=True
             )
             if result.returncode == 0:
-                return True, result.stdout.strip()
+                return True, result.stdout.rstrip()
             else:
                 return False, result.stderr.strip()
         except Exception as e:

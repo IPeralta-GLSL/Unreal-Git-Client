@@ -537,3 +537,11 @@ class MainWindow(QMainWindow):
         
         if msg.exec() == QMessageBox.StandardButton.Yes:
             webbrowser.open(url)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.Type.ActivationChange:
+            if self.isActiveWindow():
+                current_widget = self.tab_widget.currentWidget()
+                if isinstance(current_widget, RepositoryTab):
+                    current_widget.refresh_status()
+        super().changeEvent(event)

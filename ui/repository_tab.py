@@ -262,16 +262,6 @@ class RepositoryTab(QWidget):
         self.fetch_btn.clicked.connect(self.do_fetch)
         layout.addWidget(self.fetch_btn)
         
-        self.refresh_btn = QPushButton(tr('refresh'))
-        self.refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
-        self.refresh_btn.setMinimumSize(85, 36)
-        self.refresh_btn.setMaximumSize(110, 36)
-        self.refresh_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.refresh_btn.setStyleSheet(button_style)
-        self.refresh_btn.setToolTip(tr('refresh_tooltip'))
-        self.refresh_btn.clicked.connect(self.refresh_status)
-        layout.addWidget(self.refresh_btn)
-        
         layout.addStretch()
         
     def create_left_panel(self):
