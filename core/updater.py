@@ -121,8 +121,13 @@ def install_update(file_path):
         
         batch_script = f"""
 @echo off
-timeout /t 2 /nobreak >nul
-move /y "{file_path}" "{current_exe}"
+:loop
+move /y "{file_path}" "{current_exe}" > nul 2>&1
+if errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto loop
+)
+timeout /t 3 /nobreak >nul
 start "" "{current_exe}"
 del "%~f0"
 """
