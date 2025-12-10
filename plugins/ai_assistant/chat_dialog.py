@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 import requests
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                              QLineEdit, QPushButton, QLabel, QProgressBar, 
@@ -237,7 +238,11 @@ Instructions:
 
         model_name = "qwen1_5-4b-chat-q3_k_m.gguf"
         
+        config_dir = Path.home() / '.unreal-git-client'
+        models_dir = config_dir / 'models'
+
         possible_paths = [
+            str(models_dir / model_name),
             os.path.join(os.getcwd(), "models", model_name),
             os.path.join(os.path.dirname(__file__), "models", model_name),
         ]
@@ -267,7 +272,9 @@ Instructions:
 
     def download_model(self, model_name):
         url = "https://huggingface.co/Qwen/Qwen1.5-4B-Chat-GGUF/resolve/main/qwen1_5-4b-chat-q3_k_m.gguf?download=true"
-        dest_path = os.path.join(os.getcwd(), "models", model_name)
+        config_dir = Path.home() / '.unreal-git-client'
+        models_dir = config_dir / 'models'
+        dest_path = str(models_dir / model_name)
         
         self.download_btn.setEnabled(False)
         self.download_btn.setText("Downloading...")
