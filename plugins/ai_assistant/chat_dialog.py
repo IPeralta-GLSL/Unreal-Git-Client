@@ -1,5 +1,6 @@
 import os
 import sys
+import requests
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                              QLineEdit, QPushButton, QLabel, QProgressBar, 
                              QWidget, QScrollArea, QFrame, QMessageBox, QSizePolicy)
@@ -17,6 +18,39 @@ try:
 except Exception as e:
     LLAMA_AVAILABLE = False
     LLAMA_IMPORT_ERROR = str(e)
+
+class DownloadThread(QThread):
+    progress = pyqtSignal(int)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, url, dest_path):
+        super().__init__()
+        self.url = url
+        self.dest_path = dest_path
+
+    def run(self):
+        try:
+            response = requests.get(self.url, stream=True)
+            response.raise_for_status()
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 8192
+            downloaded = 0
+
+            os.makedirs(os.path.dirname(self.dest_path), exist_ok=True)
+
+            with open(self.dest_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=block_size):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            percent = int((downloaded / total_size) * 100)
+                            self.progress.emit(percent)
+            
+            self.finished.emit(self.dest_path)
+        except Exception as e:
+            self.error.emit(str(e))
 
 class ModelThread(QThread):
     response_ready = pyqtSignal(str)
@@ -201,14 +235,10 @@ Instructions:
             self.send_btn.setEnabled(False)
             return
 
-        # Recommended model: Qwen 1.5 4B (or Phi-3)
         model_name = "qwen1_5-4b-chat-q3_k_m.gguf"
         
-        # Check common locations
         possible_paths = [
             os.path.join(os.getcwd(), "models", model_name),
-            os.path.join(os.getcwd(), "models", "Phi-3-mini-4k-instruct.Q4_K_M.gguf"),
-            os.path.join(os.getcwd(), "models", "phi-3-mini-4k-instruct.Q4_K_M.gguf"),
             os.path.join(os.path.dirname(__file__), "models", model_name),
         ]
         
@@ -219,19 +249,57 @@ Instructions:
                 break
         
         if not model_path:
-            self.append_message("System", f"Model not found.\nPlease download '{model_name}' (or Phi-3) and place it in the 'models' folder.")
-            self.append_message("System", "You can find it on HuggingFace (TheBloke or Microsoft).")
+            self.append_message("System", f"Model '{model_name}' not found.")
             self.status_bar.setText("Model not found")
             self.input_field.setEnabled(False)
             self.send_btn.setEnabled(False)
+            
+            self.download_btn = QPushButton("Download Model (2.6 GB)")
+            self.download_btn.clicked.connect(lambda: self.download_model(model_name))
+            self.layout().addWidget(self.download_btn)
+            
+            self.progress_bar = QProgressBar()
+            self.progress_bar.setVisible(False)
+            self.layout().addWidget(self.progress_bar)
             return
 
-        self.status_bar.setText(f"Loading model: {os.path.basename(model_path)}...")
+        self.load_model(model_path)
+
+    def download_model(self, model_name):
+        url = "https://huggingface.co/Qwen/Qwen1.5-4B-Chat-GGUF/resolve/main/qwen1_5-4b-chat-q3_k_m.gguf?download=true"
+        dest_path = os.path.join(os.getcwd(), "models", model_name)
         
-        # Load model in a separate thread to not freeze UI? 
-        # Llama initialization can take a few seconds.
-        # For simplicity in this snippet, I'll do it here but ideally it should be threaded.
-        # Since QThread cannot easily return the object, we'll just do it and hope it's fast enough for 1.1B model.
+        self.download_btn.setEnabled(False)
+        self.download_btn.setText("Downloading...")
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
+        
+        self.download_thread = DownloadThread(url, dest_path)
+        self.download_thread.progress.connect(self.on_download_progress)
+        self.download_thread.finished.connect(self.on_download_finished)
+        self.download_thread.error.connect(self.on_download_error)
+        self.download_thread.start()
+
+    def on_download_progress(self, percent):
+        self.progress_bar.setValue(percent)
+
+    def on_download_finished(self, path):
+        self.progress_bar.setVisible(False)
+        self.download_btn.setVisible(False)
+        self.append_message("System", "Download complete. Loading model...")
+        self.load_model(path)
+
+    def on_download_error(self, error):
+        self.progress_bar.setVisible(False)
+        self.download_btn.setEnabled(True)
+        self.download_btn.setText("Retry Download")
+        self.append_message("System", f"Download error: {error}")
+
+    def load_model(self, model_path):
+        self.status_bar.setText(f"Loading model: {os.path.basename(model_path)}...")
+        self.input_field.setEnabled(True)
+        self.send_btn.setEnabled(True)
+        
         try:
             self.llm = Llama(
                 model_path=model_path,
@@ -241,7 +309,6 @@ Instructions:
             )
             self.status_bar.setText("Ready")
             
-            # Initial greeting based on app language
             tm = get_translation_manager()
             lang = tm.get_current_language()
             
