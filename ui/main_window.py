@@ -174,6 +174,7 @@ class MainWindow(QMainWindow):
         icon_manager = IconManager()
         
         container = QWidget()
+        container.setObjectName("appCorner")
         layout = QHBoxLayout(container)
         layout.setContentsMargins(10, 0, 5, 0)
         layout.setSpacing(0)
@@ -191,6 +192,7 @@ class MainWindow(QMainWindow):
         theme = get_current_theme()
         
         container = QWidget()
+        container.setObjectName("windowControls")
         layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -473,6 +475,25 @@ class MainWindow(QMainWindow):
             QTabWidget {{
                 border: none;
                 background-color: {theme.colors['background']};
+            }}
+            QTabWidget::left-corner, QTabWidget::right-corner {{
+                background-color: {theme.colors['background']};
+                border: none;
+            }}
+            QWidget#appCorner {{
+                background-color: {theme.colors['background']};
+                border: none;
+            }}
+            QWidget#windowControls {{
+                background-color: {theme.colors['background']};
+                border: none;
+            }}
+            QWidget#windowControls QPushButton {{
+                background-color: transparent;
+                border: none;
+            }}
+            QWidget#windowControls QPushButton:focus {{
+                border: none;
             }}
             QTabWidget::pane {{
                 border: none;
