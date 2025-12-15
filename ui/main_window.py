@@ -463,21 +463,26 @@ class MainWindow(QMainWindow):
         theme = get_current_theme()
         self.setStyleSheet(f"""
             QMainWindow {{
-                background-color: palette(window);
-                border: 1px solid {theme.colors['border']};
+                background-color: {theme.colors['background']};
+                border: none;
+            }}
+            QWidget#centralWidget {{
+                background-color: {theme.colors['background']};
+                border: none;
             }}
             QTabWidget {{
                 border: none;
+                background-color: {theme.colors['background']};
             }}
             QTabWidget::pane {{
                 border: none;
-                background-color: palette(base);
+                background-color: {theme.colors['background']};
             }}
             QTabWidget::tab-bar {{
                 left: 5px;
             }}
             QTabBar {{
-                background-color: transparent;
+                background-color: {theme.colors['background']};
                 qproperty-drawBase: 0;
                 border-bottom: none;
             }}
@@ -493,9 +498,9 @@ class MainWindow(QMainWindow):
                 max-width: 200px;
             }}
             QTabBar::tab:selected {{
-                background-color: palette(base);
+                background-color: {theme.colors['surface']};
                 color: {theme.colors['primary']};
-                border-bottom: 2px solid palette(base);
+                border-bottom: 2px solid {theme.colors['surface']};
             }}
             QTabBar::tab:hover:!selected {{
                 background-color: {theme.colors['surface_hover']};

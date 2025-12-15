@@ -121,24 +121,24 @@ class GitManager:
                     ['git', 'push', '--progress'],
                     cwd=self.repo_path,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
                     text=True,
                     encoding='utf-8',
                     errors='replace',
                     bufsize=1
                 )
                 
-                stderr_output = []
+                output_lines = []
                 while True:
-                    line = process.stderr.readline()
+                    line = process.stdout.readline() if process.stdout else ''
                     if not line and process.poll() is not None:
                         break
                     if line:
-                        stderr_output.append(line)
+                        output_lines.append(line)
                         progress_callback(line.strip())
                 
                 process.wait()
-                full_output = ''.join(stderr_output)
+                full_output = ''.join(output_lines)
                 
                 if process.returncode == 0:
                     return True, full_output or "Push completed successfully"

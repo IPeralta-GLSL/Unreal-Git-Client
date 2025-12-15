@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QListWidget, QTextEdit, QPushButton, QLabel,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
+                             QProgressBar,
                              QSizePolicy, QMenu, QInputDialog, QApplication, QDialog,
                              QTableWidget, QTableWidgetItem, QHeaderView, QGridLayout)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl, QTimer
@@ -76,6 +77,81 @@ class PushThread(QThread):
     def run(self):
         success, message = self.git_manager.push(progress_callback=self.progress.emit)
         self.finished.emit(success, message)
+
+
+class PushProgressDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        theme = get_current_theme()
+
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setModal(True)
+        self.resize(560, 160)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        self.container = QFrame()
+        self.container.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 10px;
+            }}
+        """)
+        outer.addWidget(self.container)
+
+        layout = QVBoxLayout(self.container)
+        layout.setContentsMargins(16, 14, 16, 16)
+        layout.setSpacing(10)
+
+        title = QLabel(tr('push'))
+        title.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        title.setStyleSheet(f"color: {theme.colors['text']};")
+        layout.addWidget(title)
+
+        self.message_label = QLabel(tr('pushing_changes'))
+        self.message_label.setStyleSheet(f"color: {theme.colors['text_secondary']};")
+        layout.addWidget(self.message_label)
+
+        self.details_label = QLabel("")
+        self.details_label.setStyleSheet(f"color: {theme.colors['text']};")
+        self.details_label.setWordWrap(True)
+        layout.addWidget(self.details_label)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 0)
+        self.progress_bar.setFixedHeight(18)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setStyleSheet(f"""
+            QProgressBar {{
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+                text-align: center;
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['text']};
+            }}
+            QProgressBar::chunk {{
+                background-color: {theme.colors['primary']};
+                border-radius: 5px;
+            }}
+        """)
+        layout.addWidget(self.progress_bar)
+
+    def set_details(self, text: str):
+        self.details_label.setText(text or "")
+
+    def set_percent(self, percent: int | None):
+        if percent is None:
+            if self.progress_bar.maximum() != 0:
+                self.progress_bar.setRange(0, 0)
+            return
+
+        percent = max(0, min(100, int(percent)))
+        if self.progress_bar.maximum() != 100:
+            self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(percent)
 
 class RepositoryTab(QWidget):
     def __init__(self, git_manager, settings_manager=None, parent_window=None, plugin_manager=None):
@@ -1244,38 +1320,7 @@ class RepositoryTab(QWidget):
         self.run_git_operation(self.git_manager.pull, "Pulling changes...")
             
     def do_push(self):
-        from ui.theme import get_current_theme
-        theme = get_current_theme()
-        
-        self.push_dialog = QProgressDialog(self)
-        self.push_dialog.setWindowTitle(tr('push'))
-        self.push_dialog.setLabelText(tr('pushing_changes'))
-        self.push_dialog.setCancelButton(None)
-        self.push_dialog.setRange(0, 0)
-        self.push_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.push_dialog.setMinimumWidth(500)
-        self.push_dialog.setStyleSheet(f"""
-            QProgressDialog {{
-                background-color: {theme.colors['background']};
-                color: {theme.colors['text']};
-            }}
-            QLabel {{
-                color: {theme.colors['text']};
-                font-size: 12px;
-                padding: 10px;
-            }}
-            QProgressBar {{
-                border: 1px solid {theme.colors['border']};
-                border-radius: 5px;
-                text-align: center;
-                background-color: {theme.colors['surface']};
-                color: {theme.colors['text']};
-            }}
-            QProgressBar::chunk {{
-                background-color: {theme.colors['primary']};
-                border-radius: 4px;
-            }}
-        """)
+        self.push_dialog = PushProgressDialog(self)
         self.push_dialog.show()
         
         self.push_thread = PushThread(self.git_manager)
@@ -1299,20 +1344,21 @@ class RepositoryTab(QWidget):
         if hasattr(self, 'push_dialog') and self.push_dialog:
             speed_match = re.search(r'([\d.]+\s*[KMG]iB/s)', line)
             percent_match = re.search(r'(\d+)%', line)
-            bytes_match = re.search(r'([\d.]+\s*[KMG]iB)', line)
+            bytes_match = re.search(r'([\d.]+\s*[KMG]iB)(?!/s)', line)
             
             info_parts = []
             if percent_match:
+                self.push_dialog.set_percent(int(percent_match.group(1)))
                 info_parts.append(f"{percent_match.group(1)}%")
+            else:
+                self.push_dialog.set_percent(None)
             if bytes_match:
                 info_parts.append(f"{bytes_match.group(1)}")
             if speed_match:
-                info_parts.append(f"⚡ {speed_match.group(1)}")
+                info_parts.append(f"{speed_match.group(1)}")
             
             if info_parts:
-                self.push_dialog.setLabelText(f"{tr('pushing_changes')}\n{' | '.join(info_parts)}")
-            elif line:
-                self.push_dialog.setLabelText(f"{tr('pushing_changes')}\n{line}")
+                self.push_dialog.set_details(' | '.join(info_parts))
     
     def on_push_finished(self, success, message):
         if hasattr(self, 'push_dialog') and self.push_dialog:
