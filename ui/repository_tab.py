@@ -18,6 +18,7 @@ import sys
 import hashlib
 import fnmatch
 import time
+import re
 
 class CloneThread(QThread):
     progress = pyqtSignal(str)
@@ -63,6 +64,18 @@ class GitOperationThread(QThread):
                 self.finished.emit(True, f"Operation completed in {elapsed:.2f}s")
         except Exception as e:
             self.finished.emit(False, str(e))
+
+class PushThread(QThread):
+    finished = pyqtSignal(bool, str)
+    progress = pyqtSignal(str)
+    
+    def __init__(self, git_manager):
+        super().__init__()
+        self.git_manager = git_manager
+        
+    def run(self):
+        success, message = self.git_manager.push(progress_callback=self.progress.emit)
+        self.finished.emit(success, message)
 
 class RepositoryTab(QWidget):
     def __init__(self, git_manager, settings_manager=None, parent_window=None, plugin_manager=None):
@@ -1231,7 +1244,44 @@ class RepositoryTab(QWidget):
         self.run_git_operation(self.git_manager.pull, "Pulling changes...")
             
     def do_push(self):
-        self.run_git_operation(self.git_manager.push, "Pushing changes...")
+        from ui.theme import get_current_theme
+        theme = get_current_theme()
+        
+        self.push_dialog = QProgressDialog(self)
+        self.push_dialog.setWindowTitle(tr('push'))
+        self.push_dialog.setLabelText(tr('pushing_changes'))
+        self.push_dialog.setCancelButton(None)
+        self.push_dialog.setRange(0, 0)
+        self.push_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        self.push_dialog.setMinimumWidth(500)
+        self.push_dialog.setStyleSheet(f"""
+            QProgressDialog {{
+                background-color: {theme.colors['background']};
+                color: {theme.colors['text']};
+            }}
+            QLabel {{
+                color: {theme.colors['text']};
+                font-size: 12px;
+                padding: 10px;
+            }}
+            QProgressBar {{
+                border: 1px solid {theme.colors['border']};
+                border-radius: 5px;
+                text-align: center;
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['text']};
+            }}
+            QProgressBar::chunk {{
+                background-color: {theme.colors['primary']};
+                border-radius: 4px;
+            }}
+        """)
+        self.push_dialog.show()
+        
+        self.push_thread = PushThread(self.git_manager)
+        self.push_thread.progress.connect(self.on_push_progress)
+        self.push_thread.finished.connect(self.on_push_finished)
+        self.push_thread.start()
             
     def do_fetch(self):
         self.run_git_operation(self.git_manager.fetch, "Fetching changes...")
@@ -1245,11 +1295,46 @@ class RepositoryTab(QWidget):
         self.git_thread.finished.connect(self.on_git_operation_finished)
         self.git_thread.start()
         
+    def on_push_progress(self, line):
+        if hasattr(self, 'push_dialog') and self.push_dialog:
+            speed_match = re.search(r'([\d.]+\s*[KMG]iB/s)', line)
+            percent_match = re.search(r'(\d+)%', line)
+            bytes_match = re.search(r'([\d.]+\s*[KMG]iB)', line)
+            
+            info_parts = []
+            if percent_match:
+                info_parts.append(f"{percent_match.group(1)}%")
+            if bytes_match:
+                info_parts.append(f"{bytes_match.group(1)}")
+            if speed_match:
+                info_parts.append(f"⚡ {speed_match.group(1)}")
+            
+            if info_parts:
+                self.push_dialog.setLabelText(f"{tr('pushing_changes')}\n{' | '.join(info_parts)}")
+            elif line:
+                self.push_dialog.setLabelText(f"{tr('pushing_changes')}\n{line}")
+    
+    def on_push_finished(self, success, message):
+        if hasattr(self, 'push_dialog') and self.push_dialog:
+            self.push_dialog.close()
+            self.push_dialog = None
+        
+        if self.parent_window:
+            self.parent_window.status_label.setText(tr('ready'))
+            self.parent_window.progress_label.setText(message if success else "Failed")
+            QTimer.singleShot(5000, self.parent_window.progress_label.clear)
+            
+        if success:
+            self.refresh_status()
+            self.load_history()
+            QMessageBox.information(self, tr('success'), tr('push_success'))
+        else:
+            self.handle_git_error(tr('error'), message)
+    
     def on_git_operation_finished(self, success, message):
         if self.parent_window:
             self.parent_window.status_label.setText(tr('ready'))
             self.parent_window.progress_label.setText(message if success else "Failed")
-            # Clear progress message after 5 seconds
             QTimer.singleShot(5000, self.parent_window.progress_label.clear)
             
         if success:

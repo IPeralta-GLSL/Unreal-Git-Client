@@ -114,8 +114,40 @@ class GitManager:
     def pull(self):
         return self.run_command(['git', 'pull'])
         
-    def push(self):
-        return self.run_command(['git', 'push'])
+    def push(self, progress_callback=None):
+        if progress_callback:
+            try:
+                process = subprocess.Popen(
+                    ['git', 'push', '--progress'],
+                    cwd=self.repo_path,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace',
+                    bufsize=1
+                )
+                
+                stderr_output = []
+                while True:
+                    line = process.stderr.readline()
+                    if not line and process.poll() is not None:
+                        break
+                    if line:
+                        stderr_output.append(line)
+                        progress_callback(line.strip())
+                
+                process.wait()
+                full_output = ''.join(stderr_output)
+                
+                if process.returncode == 0:
+                    return True, full_output or "Push completed successfully"
+                else:
+                    return False, full_output or "Push failed"
+            except Exception as e:
+                return False, str(e)
+        else:
+            return self.run_command(['git', 'push'])
         
     def fetch(self):
         return self.run_command(['git', 'fetch'])
@@ -242,16 +274,95 @@ class GitManager:
             
         if isinstance(patterns, str):
             patterns = [patterns]
+
+        def _normalize_pattern(value: str) -> str:
+            value = (value or "").strip()
+            value = value.replace('[[space]]', ' ')
+            if not value:
+                return value
+
+            repo_root = os.path.abspath(self.repo_path)
+            candidate = value
+            try:
+                if os.path.isabs(candidate):
+                    abs_candidate = os.path.abspath(candidate)
+                    if os.path.commonpath([repo_root, abs_candidate]) == repo_root:
+                        candidate = os.path.relpath(abs_candidate, repo_root)
+                    else:
+                        return ""
+            except Exception:
+                pass
+
+            candidate = candidate.replace('\\', '/')
+            while candidate.startswith('./'):
+                candidate = candidate[2:]
+            return candidate
             
-        for pattern in patterns:
-            success, message = self.run_command(f"git lfs track \"{pattern}\"")
+        def _looks_like_glob(value: str) -> bool:
+            return any(ch in value for ch in ['*', '?', '[', ']'])
+
+        normalized = []
+        for raw in patterns:
+            p = _normalize_pattern(raw)
+            if p:
+                normalized.append(p)
+
+        if not normalized:
+            return False, "No se encontraron patrones/archivos válidos para LFS en este repositorio"
+
+        gitattributes_path = os.path.join(self.repo_path, '.gitattributes')
+        
+        existing_patterns = set()
+        if os.path.exists(gitattributes_path):
+            try:
+                with open(gitattributes_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and 'filter=lfs' in line:
+                            pattern = line.split()[0]
+                            existing_patterns.add(pattern)
+            except Exception:
+                pass
+
+        new_entries = []
+        for pattern in normalized:
+            if pattern not in existing_patterns:
+                new_entries.append(f"{pattern} filter=lfs diff=lfs merge=lfs -text\n")
+
+        if new_entries:
+            try:
+                with open(gitattributes_path, 'a', encoding='utf-8') as f:
+                    f.writelines(new_entries)
+            except Exception as e:
+                return False, f"Error al escribir .gitattributes: {str(e)}"
+
+        if os.path.exists(gitattributes_path):
+            success, message = self.run_command(['git', 'add', '.gitattributes'])
             if not success:
-                return False, f"Error al trackear {pattern}: {message}"
-                
-        success, message = self.run_command("git add .gitattributes")
-        if not success:
-            return False, f"Error al agregar .gitattributes: {message}"
-            
+                return False, f"Error al agregar .gitattributes: {message}"
+
+        files_to_readd = []
+        for pattern in normalized:
+            if _looks_like_glob(pattern):
+                continue
+
+            abs_path = os.path.join(self.repo_path, pattern)
+            if not os.path.exists(abs_path) or os.path.isdir(abs_path):
+                continue
+
+            tracked, _ = self.run_command(['git', 'ls-files', '--error-unmatch', '--', pattern])
+            if tracked:
+                success, message = self.run_command(['git', 'rm', '--cached', '--', pattern])
+                if not success:
+                    return False, f"Error al preparar {pattern} para LFS: {message}"
+
+            files_to_readd.append(pattern)
+
+        if files_to_readd:
+            success, message = self.stage_files(files_to_readd)
+            if not success:
+                return False, message
+
         return True, "Archivos configurados correctamente"
         
     def lfs_pull(self):

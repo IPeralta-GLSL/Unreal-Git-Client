@@ -50,6 +50,8 @@ class TranslationManager:
                 
                 'pull': 'Pull',
                 'push': 'Push',
+                'pushing_changes': 'Subiendo cambios...',
+                'push_success': 'Push completado exitosamente',
                 'fetch': 'Fetch',
                 
                 'stage': 'Preparar',
@@ -428,6 +430,8 @@ class TranslationManager:
                 'delete_branch': 'Delete Branch',
                 'checkout_branch': 'Checkout Branch',
                 
+                'pushing_changes': 'Pushing changes...',
+                'push_success': 'Push completed successfully',
                 'pull': 'Pull',
                 'push': 'Push',
                 'fetch': 'Fetch',
