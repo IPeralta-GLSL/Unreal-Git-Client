@@ -40,4 +40,12 @@ class Plugin(PluginInterface):
     def get_sidebar_widget(self, repo_path):
         if not self.chat_widget:
             self.chat_widget = ChatWidget(repo_path)
+            return self.chat_widget
+
+        if repo_path and getattr(self.chat_widget, 'repo_path', None) != repo_path:
+            try:
+                self.chat_widget.set_repo_path(repo_path)
+            except Exception:
+                pass
+
         return self.chat_widget

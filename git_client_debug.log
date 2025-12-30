@@ -268,3 +268,59 @@
 2025-12-15 12:23:13,041 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2025-12-15 12:23:13,603 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
 2025-12-15 12:23:13,604 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-15 14:59:50,938 - core.updater - INFO - Checking for updates...
+2025-12-15 14:59:50,970 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-15 14:59:51,538 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-15 14:59:51,538 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-15 15:00:16,198 - core.updater - INFO - Checking for updates...
+2025-12-15 15:00:16,227 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-15 15:00:16,793 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-15 15:00:16,793 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-19 17:58:13,788 - core.updater - INFO - Checking for updates...
+2025-12-19 17:58:13,815 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-19 17:58:14,461 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-19 17:58:14,463 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-22 15:26:54,896 - core.updater - INFO - Checking for updates...
+2025-12-22 15:26:54,933 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-22 15:26:55,577 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-22 15:26:55,578 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-29 10:38:11,447 - core.updater - INFO - Checking for updates...
+2025-12-29 10:38:11,484 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-29 10:38:12,104 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-29 10:38:12,105 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 15:15:15,137 - core.updater - INFO - Checking for updates...
+2025-12-30 15:15:15,166 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 15:15:15,809 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 15:15:15,810 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 15:18:06,454 - core.updater - INFO - Checking for updates...
+2025-12-30 15:18:06,485 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 15:18:07,069 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 15:18:07,069 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 15:20:07,764 - core.updater - INFO - Checking for updates...
+2025-12-30 15:20:07,802 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 15:20:08,388 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 None
+2025-12-30 15:20:08,389 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 16:47:51,561 - core.updater - INFO - Checking for updates...
+2025-12-30 16:47:51,599 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 16:47:52,202 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 16:47:52,203 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 16:53:29,407 - core.updater - INFO - Checking for updates...
+2025-12-30 16:53:29,442 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 16:53:30,105 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 16:53:30,106 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 16:54:24,692 - core.updater - INFO - Checking for updates...
+2025-12-30 16:54:24,725 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 16:54:25,364 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 16:54:25,365 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 17:00:00,639 - core.updater - INFO - Checking for updates...
+2025-12-30 17:00:00,674 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 17:00:01,256 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 17:00:01,256 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 17:05:40,130 - core.updater - INFO - Checking for updates...
+2025-12-30 17:05:40,161 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 17:05:40,736 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 17:05:40,737 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2025-12-30 17:13:36,041 - core.updater - INFO - Checking for updates...
+2025-12-30 17:13:36,073 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2025-12-30 17:13:36,659 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2025-12-30 17:13:36,660 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8

@@ -1,5 +1,9 @@
 import os
 import sys
+import json
+import re
+import subprocess
+import time
 from pathlib import Path
 import requests
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
@@ -10,6 +14,7 @@ from PyQt6.QtGui import QFont, QIcon, QTextCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import get_translation_manager
+from PyQt6.QtWidgets import QApplication
 
 # Try to import llama_cpp
 LLAMA_IMPORT_ERROR = None
@@ -116,6 +121,10 @@ class ChatWidget(QWidget):
         self.repo_path = repo_path
         self.icon_manager = IconManager()
         self.llm = None
+
+        self._repo_context_index = None
+        self._repo_context_cache = None
+        self._repo_context_cache_time = 0.0
         
         # Load documentation from application root
         app_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -129,22 +138,34 @@ class ChatWidget(QWidget):
             except:
                 pass
 
-        # Simplified Prompting for stability
+        repo_context = self._build_repo_context(include_size=False)
+
+        app_name = self._get_application_name()
+        repo_name, repo_remote = self._get_repo_info(repo_path)
+
+        instructions = (
+            "Use the following documentation to answer user questions:\n\n"
+            f"{doc_context}\n\n"
+            "Instructions:\n"
+            "- Answer concisely.\n"
+            "- If the user speaks Spanish, answer in Spanish.\n"
+            "- If the user speaks English, answer in English.\n"
+            "- Do not invent information.\n"
+            "- If the question is about the currently opened repository, use the repository context provided.\n"
+        )
+
+        self._instructions = instructions
+
+        system_intro = f"You are the AI Assistant for the '{app_name}' application. Current repository: {repo_name} ({repo_remote or 'no remote'})"
+
         self.messages = [
-            {"role": "system", "content": f"""You are the AI Assistant for the 'Git Client' application.
-Use the following documentation to answer user questions:
-
-{doc_context}
-
-Instructions:
-- Answer concisely.
-- If the user speaks Spanish, answer in Spanish.
-- If the user speaks English, answer in English.
-- Do not invent information.
-"""},
+            {"role": "system", "content": system_intro + "\n\n" + instructions},
+            {"role": "system", "content": repo_context},
             {"role": "user", "content": "Who are you?"},
-            {"role": "assistant", "content": "I am the Git Client AI assistant. I help with Git operations and Unreal Engine workflows."}
+            {"role": "assistant", "content": f"I am the {app_name} AI assistant. I help with Git operations and Unreal Engine workflows. Working on repository: {repo_name}."}
         ]
+
+        self._repo_context_index = 1
         
         self.setup_ui()
         self.init_model()
@@ -319,11 +340,10 @@ Instructions:
             
             tm = get_translation_manager()
             lang = tm.get_current_language()
-            
-            greeting = "Hello! I am the Git Client AI. How can I help you?"
+            app_name = self._get_application_name()
+            greeting = f"Hello! I am the {app_name} AI. How can I help you?"
             if lang == 'es':
-                greeting = "¡Hola! Soy la IA de Git Client. ¿En qué puedo ayudarte?"
-                
+                greeting = f"¡Hola! Soy la IA de {app_name}. ¿En qué puedo ayudarte?"
             self.append_message("Assistant", greeting)
         except Exception as e:
             self.status_bar.setText("Error loading model")
@@ -340,18 +360,85 @@ Instructions:
         text = self.input_field.toPlainText().strip()
         if not text:
             return
-        
+        lower = text.lower()
+
+        # Handle a few direct repo queries by asking the LLM with repo metadata when available
+        def try_llm_with_metadata(user_question: str) -> bool:
+            meta = None
+            try:
+                meta = self._get_repo_metadata(self.repo_path)
+            except Exception:
+                meta = None
+
+            if not LLAMA_AVAILABLE or not self.llm:
+                return False
+
+            system_msg = {
+                "role": "system",
+                "content": (
+                    "You are an assistant that answers user questions using only the provided repository metadata. "
+                    "Use the metadata to give a concise, factual answer. Do not invent information. "
+                    "If the user speaks Spanish, answer in Spanish; otherwise answer in English.\n\n"
+                    f"Repository metadata:\n{json.dumps(meta, ensure_ascii=False, indent=2)}"
+                )
+            }
+            messages = [system_msg, {"role": "user", "content": user_question}]
+
+            self._start_worker_with_messages(messages)
+            return True
+
+        if any(k in lower for k in ["como se llama", "cómo se llama", "nombre del repo", "como se llama este repo", "cómo se llama este repo"]):
+            if try_llm_with_metadata(text):
+                self.append_message("You", text)
+                self.input_field.clear()
+                return
+            self.append_message("You", text)
+            self.input_field.clear()
+            self.append_message("Assistant", "No puedo responder: el modelo local no está cargado.")
+            return
+
+        if any(k in lower for k in ["pesa", "peso", "cuanto pesa", "cuánto pesa", "tamaño", "tamano"]):
+            if try_llm_with_metadata(text):
+                self.append_message("You", text)
+                self.input_field.clear()
+                return
+            self.append_message("You", text)
+            self.input_field.clear()
+            self.append_message("Assistant", "No puedo responder: el modelo local no está cargado.")
+            return
+
+        if any(k in lower for k in ["version de unreal", "versión de unreal", "que version de unreal", "qué versión de unreal", "unreal version", "ue version"]):
+            if try_llm_with_metadata(text):
+                self.append_message("You", text)
+                self.input_field.clear()
+                return
+            self.append_message("You", text)
+            self.input_field.clear()
+            self.append_message("Assistant", "No puedo responder: el modelo local no está cargado.")
+            return
+
+        if any(k in lower for k in ["es un repo de un proyecto de unreal", "es repo de unreal", "es un proyecto de unreal", "proyecto de unreal"]):
+            if try_llm_with_metadata(text):
+                self.append_message("You", text)
+                self.input_field.clear()
+                return
+            self.append_message("You", text)
+            self.input_field.clear()
+            self.append_message("Assistant", "No puedo responder: el modelo local no está cargado.")
+            return
+
+        # Fallback to LLM
+        self._maybe_refresh_repo_context_for_query(text)
         self.append_message("You", text)
         self.input_field.clear()
         self.messages.append({"role": "user", "content": text})
-        
+
         self.status_bar.setText("Thinking...")
-        
+
         self.worker = Worker(self.llm, self.messages)
         self.worker.text_received.connect(self.on_text_received)
         self.worker.finished.connect(self.on_generation_finished)
-        
-        # Prepare UI for streaming response
+
         self.current_response = ""
         self.chat_area.append(f"<b>Assistant:</b> ")
         self.worker.start()
@@ -375,3 +462,435 @@ Instructions:
         
         self.chat_area.append(f"<b style='color:{color}'>{sender}:</b> {text}")
         self.chat_area.append("")
+
+    def _get_application_name(self) -> str:
+        try:
+            app = QApplication.instance()
+            if app:
+                name = app.applicationName()
+                if name:
+                    return name
+        except Exception:
+            pass
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.basename(root) or "Git Client"
+
+    def _get_repo_info(self, repo_path: str) -> tuple[str, str | None]:
+        if not repo_path:
+            return ("unknown", None)
+        name = os.path.basename(repo_path.rstrip(os.sep))
+        remote = None
+        try:
+            result = subprocess.run([
+                "git", "-C", repo_path, "remote", "get-url", "origin"
+            ], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                remote = result.stdout.strip()
+        except Exception:
+            pass
+        return (name, remote)
+
+    def _get_repo_metadata(self, repo_path: str) -> dict:
+        repo_name, repo_remote = self._get_repo_info(repo_path)
+        uproject = self._find_uproject(repo_path)
+        engine_assoc = None
+        engine_ver = None
+        plugins = []
+        if uproject:
+            try:
+                with open(uproject, 'r', encoding='utf-8') as f:
+                    j = json.load(f)
+                engine_assoc = j.get('EngineAssociation')
+                engine_ver = j.get('EngineVersion')
+                for p in (j.get('Plugins') or []):
+                    if p.get('Name'):
+                        plugins.append({'name': p.get('Name'), 'enabled': bool(p.get('Enabled'))})
+            except Exception:
+                pass
+
+        ray = self._detect_raytracing(repo_path)
+        size = None
+        try:
+            size = self._get_repo_size_summary(repo_path)
+        except Exception:
+            size = None
+
+        return {
+            'path': repo_path,
+            'name': repo_name,
+            'remote': repo_remote,
+            'uproject': uproject,
+            'engine_association': engine_assoc,
+            'engine_version': engine_ver,
+            'plugins': plugins,
+            'raytracing': ray,
+            'size': size,
+        }
+
+    def _start_worker_with_messages(self, messages: list):
+        if not LLAMA_AVAILABLE or not self.llm:
+            return
+        try:
+            self.status_bar.setText("Thinking...")
+            self.worker = Worker(self.llm, messages)
+            self.worker.text_received.connect(self.on_text_received)
+            self.worker.finished.connect(self.on_generation_finished)
+            self.current_response = ""
+            self.chat_area.append(f"<b>Assistant:</b> ")
+            self.worker.start()
+        except Exception:
+            pass
+
+    def _write_repo_metadata(self, repo_path: str, include_size: bool = False):
+        if not repo_path or not os.path.isdir(repo_path):
+            return
+        uproject = self._find_uproject(repo_path)
+        is_unreal = bool(uproject)
+        engine_assoc = None
+        engine_ver = None
+        plugins = []
+        try:
+            if uproject:
+                with open(uproject, 'r', encoding='utf-8') as f:
+                    j = json.load(f)
+                engine_assoc = j.get('EngineAssociation')
+                engine_ver = j.get('EngineVersion')
+                p = j.get('Plugins') or []
+                for it in p:
+                    name = it.get('Name')
+                    if name:
+                        plugins.append({'name': name, 'enabled': bool(it.get('Enabled'))})
+        except Exception:
+            pass
+
+        repo_name, repo_remote = self._get_repo_info(repo_path)
+        ray = self._detect_raytracing(repo_path)
+        size = None
+        if include_size:
+            try:
+                size = self._get_repo_size_summary(repo_path)
+            except Exception:
+                size = None
+
+        config_dir = Path.home() / '.unreal-git-client'
+        try:
+            os.makedirs(config_dir, exist_ok=True)
+            out = {
+                'path': repo_path,
+                'name': repo_name,
+                'remote': repo_remote,
+                'is_unreal': is_unreal,
+                'uproject': uproject,
+                'engine_association': engine_assoc,
+                'engine_version': engine_ver,
+                'plugins': plugins,
+                'raytracing': ray,
+                'size': size,
+            }
+            dest = config_dir / 'current_repo.json'
+            with open(dest, 'w', encoding='utf-8') as f:
+                json.dump(out, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def set_repo_path(self, repo_path: str):
+        self.repo_path = repo_path
+        repo_context = self._build_repo_context(include_size=False)
+        repo_name, repo_remote = self._get_repo_info(repo_path)
+        system_intro = f"You are the AI Assistant for the '{self._get_application_name()}' application. Current repository: {repo_name} ({repo_remote or 'no remote'})"
+        if self._repo_context_index is None:
+            self.messages.insert(1, {"role": "system", "content": repo_context})
+            self._repo_context_index = 1
+        else:
+            if 0 <= self._repo_context_index < len(self.messages):
+                self.messages[self._repo_context_index]["content"] = repo_context
+            else:
+                self.messages.insert(1, {"role": "system", "content": repo_context})
+                self._repo_context_index = 1
+
+        if self.messages and len(self.messages) > 0:
+            self.messages[0]["content"] = system_intro + "\n\n" + (getattr(self, "_instructions", ""))
+        try:
+            self._write_repo_metadata(repo_path, include_size=False)
+        except Exception:
+            pass
+
+    def _maybe_refresh_repo_context_for_query(self, user_text: str):
+        if not self.repo_path or not os.path.isdir(self.repo_path):
+            return
+
+        text = (user_text or "").lower()
+
+        wants_unreal_info = any(k in text for k in [
+            "unreal", "uproject", "ue", "engine", "version", "versión", "raytracing", "ray tracing",
+            "plugins", "plug-ins", "plugin", "rtx"
+        ])
+        wants_size = any(k in text for k in [
+            "pesa", "peso", "tamaño", "tamano", "size", "meg", "gb", "gigas"
+        ]) and any(k in text for k in ["repo", "repositorio", "project", "proyecto", "carpeta", "folder"])
+
+        if not (wants_unreal_info or wants_size):
+            return
+
+        include_size = bool(wants_size)
+
+        now = time.monotonic()
+        cache_ttl = 30.0
+        if self._repo_context_cache and (now - self._repo_context_cache_time) < cache_ttl and (not include_size):
+            self._set_repo_context_message(self._repo_context_cache)
+            return
+
+        context = self._build_repo_context(include_size=include_size)
+        if not include_size:
+            self._repo_context_cache = context
+            self._repo_context_cache_time = now
+        self._set_repo_context_message(context)
+        try:
+            self._write_repo_metadata(self.repo_path, include_size=include_size)
+        except Exception:
+            pass
+
+    def _set_repo_context_message(self, content: str):
+        if self._repo_context_index is None:
+            self.messages.insert(1, {"role": "system", "content": content})
+            self._repo_context_index = 1
+            return
+
+        if 0 <= self._repo_context_index < len(self.messages):
+            self.messages[self._repo_context_index]["content"] = content
+        else:
+            self.messages.insert(1, {"role": "system", "content": content})
+            self._repo_context_index = 1
+
+    def _build_repo_context(self, include_size: bool) -> str:
+        repo_path = self.repo_path
+        if not repo_path or not os.path.isdir(repo_path):
+            return "Repository context: (no repository opened)"
+
+        uproject_path = self._find_uproject(repo_path)
+        is_unreal = uproject_path is not None
+
+        engine_assoc = None
+        plugin_names = []
+        plugin_enabled = []
+        if uproject_path:
+            try:
+                with open(uproject_path, "r", encoding="utf-8") as f:
+                    uproject = json.load(f)
+                engine_assoc = uproject.get("EngineAssociation")
+                plugins = uproject.get("Plugins") or []
+                for p in plugins:
+                    name = p.get("Name")
+                    if not name:
+                        continue
+                    plugin_names.append(name)
+                    if p.get("Enabled") is True:
+                        plugin_enabled.append(name)
+            except Exception:
+                pass
+
+        raytracing = self._detect_raytracing(repo_path)
+
+        size_summary = ""
+        if include_size:
+            size_summary = self._get_repo_size_summary(repo_path)
+
+        unreal_summary = "Unreal project: No"
+        if is_unreal:
+            unreal_summary = f"Unreal project: Yes ({os.path.basename(uproject_path)})"
+
+        engine_summary = "Unreal Engine version: Unknown"
+        if engine_assoc:
+            engine_summary = f"Unreal Engine version (EngineAssociation): {engine_assoc}"
+
+        plugins_summary = "Unreal plugins: Unknown"
+        if is_unreal:
+            if plugin_names:
+                enabled_note = ""
+                if plugin_enabled and len(plugin_enabled) != len(plugin_names):
+                    enabled_note = f" (enabled: {', '.join(sorted(plugin_enabled))})"
+                plugins_summary = f"Unreal plugins ({len(plugin_names)}): {', '.join(sorted(plugin_names))}{enabled_note}"
+            else:
+                plugins_summary = "Unreal plugins: None listed in .uproject"
+
+        ray_summary = "RayTracing: Unknown"
+        if raytracing is True:
+            ray_summary = "RayTracing: Enabled (found in Config/DefaultEngine.ini)"
+        elif raytracing is False:
+            ray_summary = "RayTracing: Not enabled (no enabling setting found)"
+
+        lines = [
+            "Repository context (auto-detected):",
+            f"- Path: {repo_path}",
+            f"- {unreal_summary}",
+            f"- {engine_summary}",
+            f"- {plugins_summary}",
+            f"- {ray_summary}",
+        ]
+
+        if size_summary:
+            lines.append(f"- Local size: {size_summary}")
+
+        return "\n".join(lines)
+
+    def _find_uproject(self, repo_path: str) -> str | None:
+        try:
+            for entry in os.scandir(repo_path):
+                if entry.is_file() and entry.name.lower().endswith(".uproject"):
+                    return entry.path
+        except Exception:
+            pass
+
+        try:
+            for root, dirs, files in os.walk(repo_path):
+                for f in files:
+                    if f.lower().endswith('.uproject'):
+                        return os.path.join(root, f)
+        except Exception:
+            return None
+
+        return None
+
+    def _detect_raytracing(self, repo_path: str) -> bool | None:
+        ini_path = os.path.join(repo_path, "Config", "DefaultEngine.ini")
+        if not os.path.exists(ini_path):
+            return None
+
+        try:
+            with open(ini_path, "r", encoding="utf-8", errors="ignore") as f:
+                data = f.read()
+        except Exception:
+            return None
+
+        patterns_true = [
+            r"(?im)^\s*r\.raytracing\s*=\s*1\s*$",
+            r"(?im)^\s*r\.raytracing\s*=\s*true\s*$",
+            r"(?im)^\s*r\.supportraytracing\s*=\s*1\s*$",
+            r"(?im)^\s*r\.supportraytracing\s*=\s*true\s*$",
+            r"(?im)^\s*benableraytracing\s*=\s*true\s*$",
+            r"(?im)^\s*benableraytracing\s*=\s*1\s*$",
+        ]
+        patterns_false = [
+            r"(?im)^\s*r\.raytracing\s*=\s*0\s*$",
+            r"(?im)^\s*r\.raytracing\s*=\s*false\s*$",
+            r"(?im)^\s*benableraytracing\s*=\s*false\s*$",
+            r"(?im)^\s*benableraytracing\s*=\s*0\s*$",
+        ]
+
+        for p in patterns_true:
+            if re.search(p, data):
+                return True
+        for p in patterns_false:
+            if re.search(p, data):
+                return False
+
+        return False
+
+    def _get_repo_size_summary(self, repo_path: str) -> str:
+        git_dir_size = None
+        worktree_size = None
+
+        try:
+            result = subprocess.run(
+                ["git", "-C", repo_path, "rev-parse", "--is-inside-work-tree"],
+                capture_output=True,
+                text=True,
+                timeout=3,
+            )
+            is_git = result.returncode == 0 and "true" in (result.stdout or "").lower()
+        except Exception:
+            is_git = False
+
+        if is_git:
+            try:
+                result = subprocess.run(
+                    ["git", "-C", repo_path, "rev-parse", "--git-dir"],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
+                )
+                if result.returncode == 0:
+                    git_dir = result.stdout.strip()
+                    if not os.path.isabs(git_dir):
+                        git_dir = os.path.join(repo_path, git_dir)
+                    git_dir_size = self._safe_directory_size(git_dir, time_limit_s=5.0, file_limit=200000)
+                # Try to get git object size estimate via git count-objects
+                try:
+                    co = subprocess.run(["git", "-C", repo_path, "count-objects", "-vH"], capture_output=True, text=True, timeout=2)
+                    if co.returncode == 0 and co.stdout:
+                        for line in co.stdout.splitlines():
+                            if line.lower().startswith("size-pack:") or line.lower().startswith("size:"):
+                                pack_est = line.split(':', 1)[1].strip()
+                                git_dir_size = git_dir_size or 0
+                                git_dir_size = f"{pack_est} (git objects estimate)"
+                                break
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+        try:
+            worktree_size = self._safe_directory_size(repo_path, time_limit_s=5.0, file_limit=200000, exclude_dirs={".git"})
+        except Exception:
+            pass
+
+        parts = []
+        if worktree_size is not None:
+            if isinstance(worktree_size, str):
+                parts.append(f"working tree ~{worktree_size}")
+            else:
+                parts.append(f"working tree ~{self._format_bytes(worktree_size)}")
+        if git_dir_size is not None:
+            if isinstance(git_dir_size, str):
+                parts.append(f".git ~{git_dir_size}")
+            else:
+                parts.append(f".git ~{self._format_bytes(git_dir_size)}")
+
+        if parts:
+            return ", ".join(parts) + " (best-effort estimate)"
+        return "Unknown"
+
+    def _safe_directory_size(
+        self,
+        root: str,
+        time_limit_s: float = 1.0,
+        file_limit: int = 200000,
+        exclude_dirs: set[str] | None = None,
+    ) -> int | None:
+        exclude_dirs = exclude_dirs or set()
+        start = time.monotonic()
+        total = 0
+        files_seen = 0
+
+        for dirpath, dirnames, filenames in os.walk(root):
+            if (time.monotonic() - start) > time_limit_s:
+                break
+
+            dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
+
+            for name in filenames:
+                files_seen += 1
+                if files_seen > file_limit:
+                    return total
+
+                path = os.path.join(dirpath, name)
+                try:
+                    total += os.path.getsize(path)
+                except Exception:
+                    continue
+
+            if (time.monotonic() - start) > time_limit_s:
+                break
+
+        return total
+
+    def _format_bytes(self, size: int) -> str:
+        units = ["B", "KB", "MB", "GB", "TB"]
+        value = float(size)
+        for unit in units:
+            if value < 1024.0 or unit == units[-1]:
+                if unit == "B":
+                    return f"{int(value)} {unit}"
+                return f"{value:.2f} {unit}"
+            value /= 1024.0
+
