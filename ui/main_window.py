@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QTabWidget, QToolBar, QStatusBar,
                              QFileDialog, QMessageBox, QLabel, QMenuBar, QMenu, QFrame,
-                             QSystemTrayIcon, QApplication, QProgressDialog)
+                             QSystemTrayIcon, QApplication, QProgressDialog, QToolButton, QTabBar)
 from PyQt6.QtCore import Qt, QSize, QTimer, QPoint, QRect, QEvent
 from PyQt6.QtGui import QAction, QIcon, QKeySequence, QShortcut, QCursor
 from ui.repository_tab import RepositoryTab
@@ -18,6 +18,41 @@ import platform
 import webbrowser
 
 from ui.icon_manager import IconManager
+
+
+class PlusTabBar(QTabBar):
+    def __init__(self, icon_manager, add_callback):
+        super().__init__()
+        self.icon_manager = icon_manager
+        self.add_callback = add_callback
+        self.plus_button = QToolButton(self)
+        self.plus_button.setIcon(self.icon_manager.get_icon("file-plus", size=18))
+        self.plus_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.plus_button.setAutoRaise(True)
+        self.plus_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
+        self.plus_button.clicked.connect(self.add_callback)
+        self.plus_button.resize(28, 24)
+        self.setMovable(True)
+        self.setTabsClosable(True)
+        self._margin = 8
+
+    def _position_plus(self):
+        if self.count() > 0:
+            last_rect = self.tabRect(self.count() - 1)
+            x = last_rect.right() + self._margin
+        else:
+            x = self._margin
+        x = min(x, self.width() - self.plus_button.width() - self._margin)
+        y = (self.height() - self.plus_button.height()) // 2
+        self.plus_button.move(max(self._margin, x), max(0, y))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._position_plus()
+
+    def tabLayoutChange(self):
+        super().tabLayoutChange()
+        self._position_plus()
 
 class MainWindow(QMainWindow):
     def __init__(self, plugin_manager=None):
@@ -127,6 +162,8 @@ class MainWindow(QMainWindow):
         layout.setSpacing(0)
         
         self.tab_widget = QTabWidget()
+        plus_tab_bar = PlusTabBar(self.icon_manager, self.add_empty_tab)
+        self.tab_widget.setTabBar(plus_tab_bar)
         self.tab_widget.setTabsClosable(True)
         self.tab_widget.setMovable(True)
         self.tab_widget.setDocumentMode(True)
@@ -140,39 +177,9 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(self.tab_widget)
         
-        from ui.icon_manager import IconManager
-        theme = get_current_theme()
-        icon_manager = IconManager()
-        
-        self.new_tab_button = QPushButton(self.tab_widget)
-        self.new_tab_button.setIcon(icon_manager.get_icon("file-plus", size=18))
-        self.new_tab_button.setFixedSize(32, 32)
-        self.new_tab_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
-        self.new_tab_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.new_tab_button.clicked.connect(self.add_empty_tab)
-        self.new_tab_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                color: {theme.colors['primary']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 4px;
-                padding: 6px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['surface_hover']};
-                border: 1px solid {theme.colors['primary']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['primary']};
-            }}
-        """)
-        
         self.add_empty_tab()
 
     def create_app_icon(self):
-        from ui.icon_manager import IconManager
-        icon_manager = IconManager()
-        
         container = QWidget()
         container.setObjectName("appCorner")
         layout = QHBoxLayout(container)
@@ -180,15 +187,13 @@ class MainWindow(QMainWindow):
         layout.setSpacing(0)
         
         app_icon = QLabel()
-        app_icon.setPixmap(icon_manager.get_pixmap("git-branch", size=20))
+        app_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=20))
         layout.addWidget(app_icon)
         
         return container
 
     def create_window_controls(self):
-        from ui.icon_manager import IconManager
         from ui.theme import get_current_theme
-        icon_manager = IconManager()
         theme = get_current_theme()
         
         container = QWidget()
@@ -198,7 +203,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(0)
         
         self.settings_button = QPushButton()
-        self.settings_button.setIcon(icon_manager.get_icon("gear-six", size=18))
+        self.settings_button.setIcon(self.icon_manager.get_icon("gear-six", size=18))
         self.settings_button.setFixedSize(46, 32)
         self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_button.setToolTip(tr('settings'))
@@ -216,7 +221,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.settings_button)
         
         min_button = QPushButton()
-        min_button.setIcon(icon_manager.get_icon("window-minimize-symbolic-svgrepo-com", size=16))
+        min_button.setIcon(self.icon_manager.get_icon("window-minimize-symbolic-svgrepo-com", size=16))
         min_button.setFixedSize(46, 32)
         min_button.setCursor(Qt.CursorShape.PointingHandCursor)
         min_button.clicked.connect(self.showMinimized)
@@ -233,7 +238,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(min_button)
         
         self.max_button = QPushButton()
-        self.max_button.setIcon(icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
+        self.max_button.setIcon(self.icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
         self.max_button.setFixedSize(46, 32)
         self.max_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.max_button.clicked.connect(self.toggle_maximize)
@@ -250,7 +255,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.max_button)
         
         close_button = QPushButton()
-        close_button.setIcon(icon_manager.get_icon("x-square", size=16))
+        close_button.setIcon(self.icon_manager.get_icon("x-square", size=16))
         close_button.setFixedSize(46, 32)
         close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         close_button.clicked.connect(self.close)
@@ -344,31 +349,10 @@ class MainWindow(QMainWindow):
             self.setCursor(Qt.CursorShape.SizeHorCursor)
         
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.update_new_tab_button_position()
-    
-    def update_new_tab_button_position(self):
-        tab_bar = self.tab_widget.tabBar()
-        if tab_bar and self.tab_widget.count() > 0:
-            last_tab_rect = tab_bar.tabRect(self.tab_widget.count() - 1)
-            
-            tab_bar_pos = tab_bar.pos()
-            
-            button_x = tab_bar_pos.x() + last_tab_rect.right() + 5
-            
-            tab_bar_height = tab_bar.height()
-            button_y = tab_bar_pos.y() + (tab_bar_height - self.new_tab_button.height()) // 2
-            
-            self.new_tab_button.move(button_x, button_y)
-            self.new_tab_button.raise_()
-    
     def add_empty_tab(self):
         repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
         index = self.tab_widget.addTab(repo_tab, self.icon_manager.get_icon("house-line"), tr('home'))
         self.tab_widget.setCurrentIndex(index)
-        # Reposicionar el botón después de agregar la pestaña
-        QTimer.singleShot(0, self.update_new_tab_button_position)
         
     def open_repository(self):
         folder = QFileDialog.getExistingDirectory(
@@ -410,8 +394,6 @@ class MainWindow(QMainWindow):
         
         if self.tab_widget.count() == 0:
             self.add_empty_tab()
-        else:
-            QTimer.singleShot(0, self.update_new_tab_button_position)
             
     def close_current_tab(self):
         current_index = self.tab_widget.currentIndex()
@@ -456,7 +438,9 @@ class MainWindow(QMainWindow):
     def update_translations(self):
         self.status_bar.showMessage(tr('ready'))
         self.settings_button.setToolTip(tr('settings'))
-        self.new_tab_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
+        tab_bar = self.tab_widget.tabBar()
+        if isinstance(tab_bar, PlusTabBar):
+            tab_bar.plus_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
     
     def on_accounts_changed(self):
         self.status_bar.showMessage("Cuentas actualizadas", 3000)
