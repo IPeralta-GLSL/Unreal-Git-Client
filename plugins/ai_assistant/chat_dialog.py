@@ -15,6 +15,7 @@ from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import get_translation_manager
 from PyQt6.QtWidgets import QApplication
+from llama_cpp import llama_cpp
 
 # Try to import llama_cpp
 LLAMA_IMPORT_ERROR = None
@@ -330,13 +331,55 @@ class ChatWidget(QWidget):
         self.send_btn.setEnabled(True)
         
         try:
-            self.llm = Llama(
-                model_path=model_path,
-                n_ctx=2048,
-                n_threads=4,
-                verbose=False
-            )
-            self.status_bar.setText("Ready")
+            def _supports_gpu_offload():
+                try:
+                    fn = getattr(llama_cpp, "llama_supports_gpu_offload", None)
+                    if callable(fn):
+                        return bool(fn())
+                except Exception:
+                    pass
+                return False
+
+            def _get_gpu_layers(llm_obj):
+                for attr in ("context_params", "_context_params", "_params"):
+                    obj = getattr(llm_obj, attr, None)
+                    if obj is not None and hasattr(obj, "n_gpu_layers"):
+                        try:
+                            return int(getattr(obj, "n_gpu_layers"))
+                        except Exception:
+                            continue
+                return None
+
+            tried_gpu = False
+            if _supports_gpu_offload():
+                try_gpu = {
+                    "model_path": model_path,
+                    "n_ctx": 2048,
+                    "n_threads": 4,
+                    "verbose": False,
+                    "n_gpu_layers": -1,
+                    "main_gpu": 0,
+                    "n_batch": 512,
+                }
+                try:
+                    self.llm = Llama(**try_gpu)
+                    tried_gpu = True
+                except Exception:
+                    tried_gpu = False
+
+            if not tried_gpu:
+                self.llm = Llama(
+                    model_path=model_path,
+                    n_ctx=2048,
+                    n_threads=4,
+                    verbose=False
+                )
+
+            layers = _get_gpu_layers(self.llm)
+            if layers and layers > 0:
+                self.status_bar.setText(f"Ready (GPU layers: {layers})")
+            else:
+                self.status_bar.setText("Ready (CPU)")
             
             tm = get_translation_manager()
             lang = tm.get_current_language()

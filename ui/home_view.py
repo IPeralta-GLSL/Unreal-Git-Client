@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QSizePolicy, QScrollArea, QGraphicsDropShadowEffect)
-from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty
+from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty, QPointF
 from PyQt6.QtGui import QFont, QColor
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
@@ -407,13 +407,48 @@ class HomeView(QWidget):
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['surface_hover']};
-                transform: translateY(-2px);
             }}
             QPushButton:pressed {{
                 background-color: {theme.colors['primary']};
                 color: white;
             }}
         """)
+
+        shadow = QGraphicsDropShadowEffect(btn)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        shadow.setBlurRadius(16)
+        shadow.setOffset(QPointF(0, 3))
+        btn.setGraphicsEffect(shadow)
+
+        btn._hover_blur_anim = QPropertyAnimation(shadow, b"blurRadius", btn)
+        btn._hover_blur_anim.setDuration(180)
+        btn._hover_blur_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        btn._hover_offset_anim = QPropertyAnimation(shadow, b"offset", btn)
+        btn._hover_offset_anim.setDuration(180)
+        btn._hover_offset_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        def animate_shadow(blur_end: float, offset_end: QPointF):
+            btn._hover_blur_anim.stop()
+            btn._hover_blur_anim.setStartValue(shadow.blurRadius())
+            btn._hover_blur_anim.setEndValue(blur_end)
+            btn._hover_blur_anim.start()
+
+            btn._hover_offset_anim.stop()
+            btn._hover_offset_anim.setStartValue(shadow.offset())
+            btn._hover_offset_anim.setEndValue(offset_end)
+            btn._hover_offset_anim.start()
+
+        def on_enter(event):
+            animate_shadow(26.0, QPointF(0, 8))
+            super(QPushButton, btn).enterEvent(event)
+
+        def on_leave(event):
+            animate_shadow(16.0, QPointF(0, 3))
+            super(QPushButton, btn).leaveEvent(event)
+
+        btn.enterEvent = on_enter
+        btn.leaveEvent = on_leave
         
         btn_layout = QVBoxLayout()
         btn_layout.setSpacing(4)
