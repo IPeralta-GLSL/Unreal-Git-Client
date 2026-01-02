@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl, QTimer
 from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from concurrent.futures import ThreadPoolExecutor
 from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
@@ -18,7 +19,6 @@ import os
 import sys
 import hashlib
 import fnmatch
-import time
 import re
 
 class CloneThread(QThread):
@@ -35,37 +35,6 @@ class CloneThread(QThread):
         success, message = self.git_manager.clone_repository(self.url, self.path)
         self.finished.emit(success, message)
 
-class GitOperationThread(QThread):
-    finished = pyqtSignal(bool, str)
-    progress = pyqtSignal(str)
-    
-    def __init__(self, operation_func, *args):
-        super().__init__()
-        self.operation_func = operation_func
-        self.args = args
-        self.start_time = 0
-        
-    def run(self):
-        self.start_time = time.time()
-        self.progress.emit("Starting operation...")
-        
-        # Simulate progress for indeterminate operations or wrap if possible
-        # For now, we just run the blocking operation
-        try:
-            result = self.operation_func(*self.args)
-            elapsed = time.time() - self.start_time
-            
-            if isinstance(result, tuple) and len(result) == 2:
-                success, message = result
-                # Add timing info to success message if successful
-                if success:
-                    message = f"{message} (Time: {elapsed:.2f}s)"
-                self.finished.emit(success, message)
-            else:
-                self.finished.emit(True, f"Operation completed in {elapsed:.2f}s")
-        except Exception as e:
-            self.finished.emit(False, str(e))
-
 class PushThread(QThread):
     finished = pyqtSignal(bool, str)
     progress = pyqtSignal(str)
@@ -77,40 +46,6 @@ class PushThread(QThread):
     def run(self):
         success, message = self.git_manager.push(progress_callback=self.progress.emit)
         self.finished.emit(success, message)
-
-
-class StatusWorker(QThread):
-    finished = pyqtSignal(dict)
-    error = pyqtSignal(str)
-
-    def __init__(self, git_manager, include_sizes=False):
-        super().__init__()
-        self.git_manager = git_manager
-        self.include_sizes = include_sizes
-
-    def run(self):
-        try:
-            result = self.git_manager.get_status_summary(include_sizes=self.include_sizes)
-            self.finished.emit(result)
-        except Exception as e:
-            self.error.emit(str(e))
-
-
-class HistoryWorker(QThread):
-    finished = pyqtSignal(list, str)
-    error = pyqtSignal(str)
-
-    def __init__(self, git_manager, branch):
-        super().__init__()
-        self.git_manager = git_manager
-        self.branch = branch
-
-    def run(self):
-        try:
-            history = self.git_manager.get_commit_history(50)
-            self.finished.emit(history, self.branch)
-        except Exception as e:
-            self.error.emit(str(e))
 
 
 class PushProgressDialog(QDialog):
@@ -211,7 +146,29 @@ class RepositoryTab(QWidget):
         self.scan_large_files = False
         self.current_branch_name = ""
         self.last_status_summary = {}
+        self.status_future = None
+        self.history_future = None
+        self.history_branch_requested = ""
+        self.git_op_future = None
+        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.busy_timer = QTimer(self)
+        self.busy_timer.setSingleShot(True)
+        self.busy_timer.setInterval(300)
+        self.busy_timer.timeout.connect(self._show_busy)
+        self.busy_message = ""
         self.init_ui()
+
+    def _show_busy(self):
+        if self.parent_window and self.busy_message:
+            self.parent_window.status_label.setText(self.busy_message)
+            self.parent_window.progress_label.setText("...")
+
+    def _stop_busy(self):
+        if self.parent_window:
+            self.parent_window.status_label.setText(tr('ready'))
+            self.parent_window.progress_label.clear()
+        self.busy_timer.stop()
+        self.busy_message = ""
     
     
     def init_ui(self):
@@ -1014,25 +971,26 @@ class RepositoryTab(QWidget):
     def _start_status_worker(self):
         if not self.repo_path:
             return
-        if self.status_worker and self.status_worker.isRunning():
+        if self.status_future and not self.status_future.done():
             self.status_worker_pending = True
             return
         self.status_worker_pending = False
-        self.status_worker = StatusWorker(self.git_manager, include_sizes=self.scan_large_files)
-        self.status_worker.finished.connect(self.on_status_finished)
-        self.status_worker.error.connect(self.on_status_error)
-        self.status_worker.start()
+        self.busy_message = "Loading status..."
+        self.busy_timer.start()
+        def task():
+            return self.git_manager.get_status_summary(self.scan_large_files)
+        self.status_future = self.executor.submit(task)
+        self.status_future.add_done_callback(lambda f: QTimer.singleShot(0, lambda: self._on_status_future(f)))
 
-    def on_status_error(self, message):
-        self.status_worker = None
-        if self.status_worker_pending:
-            self.status_refresh_timer.start(50)
-
-    def on_status_finished(self, summary):
-        self.status_worker = None
+    def _on_status_future(self, future):
+        try:
+            summary = future.result()
+        except Exception:
+            summary = {}
         self.last_status_summary = summary or {}
         self.current_branch_name = self.last_status_summary.get('branch', '')
         self.apply_status_summary()
+        self._stop_busy()
         if self.status_worker_pending:
             self.status_refresh_timer.start(50)
 
@@ -1403,13 +1361,15 @@ class RepositoryTab(QWidget):
         self.run_git_operation(self.git_manager.fetch, "Fetching changes...")
 
     def run_git_operation(self, operation, status_message):
+        if self.git_op_future and not self.git_op_future.done():
+            return
         if self.parent_window:
             self.parent_window.status_label.setText(status_message)
             self.parent_window.progress_label.setText("...")
-            
-        self.git_thread = GitOperationThread(operation)
-        self.git_thread.finished.connect(self.on_git_operation_finished)
-        self.git_thread.start()
+        self.busy_message = status_message
+        self.busy_timer.start()
+        self.git_op_future = self.executor.submit(operation)
+        self.git_op_future.add_done_callback(lambda f: QTimer.singleShot(0, lambda: self._on_git_future(f)))
         
     def on_push_progress(self, line):
         if hasattr(self, 'push_dialog') and self.push_dialog:
@@ -1459,6 +1419,18 @@ class RepositoryTab(QWidget):
             self.load_history()
         else:
             self.handle_git_error(tr('error'), message)
+
+    def _on_git_future(self, future):
+        try:
+            result = future.result()
+        except Exception as e:
+            result = (False, str(e))
+        if isinstance(result, tuple) and len(result) == 2:
+            success, message = result
+        else:
+            success, message = True, "Done"
+        self._stop_busy()
+        self.on_git_operation_finished(success, message)
             
     def update_repo_info(self):
         if not self.repo_path:
@@ -1477,26 +1449,27 @@ class RepositoryTab(QWidget):
     def load_history(self):
         if not self.repo_path:
             return
-        if self.history_worker and self.history_worker.isRunning():
+        if self.history_future and not self.history_future.done():
             self.history_worker_pending = True
             return
-
         branch = self.current_branch_name or self.git_manager.get_current_branch()
+        self.history_branch_requested = branch
         self.history_worker_pending = False
-        self.history_worker = HistoryWorker(self.git_manager, branch)
-        self.history_worker.finished.connect(self.on_history_finished)
-        self.history_worker.error.connect(self.on_history_error)
-        self.history_worker.start()
+        self.busy_message = "Loading history..."
+        self.busy_timer.start()
+        def task():
+            return self.git_manager.get_commit_history(50)
+        self.history_future = self.executor.submit(task)
+        self.history_future.add_done_callback(lambda f: QTimer.singleShot(0, lambda: self._on_history_future(f)))
 
-    def on_history_error(self, message):
-        self.history_worker = None
-        if self.history_worker_pending:
-            self.load_history()
-
-    def on_history_finished(self, history, branch):
-        self.history_worker = None
+    def _on_history_future(self, future):
+        try:
+            history = future.result()
+        except Exception:
+            history = []
 
         if not history:
+            self._stop_busy()
             if self.history_worker_pending:
                 self.load_history()
             return
@@ -1509,7 +1482,7 @@ class RepositoryTab(QWidget):
                 'author': commit['author'],
                 'email': commit.get('email', ''),
                 'date': commit['date'],
-                'branch': branch
+                'branch': self.history_branch_requested
             }
             formatted_commits.append(formatted_commit)
 
@@ -1518,6 +1491,7 @@ class RepositoryTab(QWidget):
                 self.download_gravatar(email, commit['author'])
 
         self.commit_graph.set_commits(formatted_commits)
+        self._stop_busy()
 
         if self.history_worker_pending:
             self.load_history()
