@@ -350,7 +350,7 @@ class MainWindow(QMainWindow):
         
 
     def add_empty_tab(self):
-        repo_tab = RepositoryTab(self.git_manager, self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
+        repo_tab = RepositoryTab(GitManager(), self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
         index = self.tab_widget.addTab(repo_tab, self.icon_manager.get_icon("house-line"), tr('home'))
         self.tab_widget.setCurrentIndex(index)
         
