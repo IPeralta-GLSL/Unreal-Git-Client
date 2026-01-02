@@ -79,6 +79,40 @@ class PushThread(QThread):
         self.finished.emit(success, message)
 
 
+class StatusWorker(QThread):
+    finished = pyqtSignal(dict)
+    error = pyqtSignal(str)
+
+    def __init__(self, git_manager, include_sizes=False):
+        super().__init__()
+        self.git_manager = git_manager
+        self.include_sizes = include_sizes
+
+    def run(self):
+        try:
+            result = self.git_manager.get_status_summary(include_sizes=self.include_sizes)
+            self.finished.emit(result)
+        except Exception as e:
+            self.error.emit(str(e))
+
+
+class HistoryWorker(QThread):
+    finished = pyqtSignal(list, str)
+    error = pyqtSignal(str)
+
+    def __init__(self, git_manager, branch):
+        super().__init__()
+        self.git_manager = git_manager
+        self.branch = branch
+
+    def run(self):
+        try:
+            history = self.git_manager.get_commit_history(50)
+            self.finished.emit(history, self.branch)
+        except Exception as e:
+            self.error.emit(str(e))
+
+
 class PushProgressDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -166,6 +200,17 @@ class RepositoryTab(QWidget):
         self.network_manager.finished.connect(self.on_avatar_downloaded)
         self.icon_manager = IconManager()
         self.large_files = []
+        self.status_worker = None
+        self.status_worker_pending = False
+        self.history_worker = None
+        self.history_worker_pending = False
+        self.status_refresh_timer = QTimer(self)
+        self.status_refresh_timer.setSingleShot(True)
+        self.status_refresh_timer.setInterval(120)
+        self.status_refresh_timer.timeout.connect(self._start_status_worker)
+        self.scan_large_files = False
+        self.current_branch_name = ""
+        self.last_status_summary = {}
         self.init_ui()
     
     
@@ -323,6 +368,16 @@ class RepositoryTab(QWidget):
         self.lfs_btn.setToolTip(tr('lfs_title'))
         self.lfs_btn.clicked.connect(self.show_lfs_menu)
         layout.addWidget(self.lfs_btn)
+
+        self.scan_btn = QPushButton("Scan size")
+        self.scan_btn.setCheckable(True)
+        self.scan_btn.setMinimumSize(100, 36)
+        self.scan_btn.setMaximumSize(130, 36)
+        self.scan_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.scan_btn.setStyleSheet(button_style)
+        self.scan_btn.setToolTip("Detect large files")
+        self.scan_btn.clicked.connect(self.on_scan_toggle)
+        layout.addWidget(self.scan_btn)
 
         self.open_folder_btn = QPushButton(tr('folder_button'))
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
@@ -947,38 +1002,69 @@ class RepositoryTab(QWidget):
             }}
         """
 
+    def on_scan_toggle(self):
+        self.scan_large_files = self.scan_btn.isChecked()
+        self.refresh_status()
+
     def refresh_status(self):
         if not self.repo_path:
             return
-            
-        branch = self.git_manager.get_current_branch()
+        self.status_refresh_timer.start()
+
+    def _start_status_worker(self):
+        if not self.repo_path:
+            return
+        if self.status_worker and self.status_worker.isRunning():
+            self.status_worker_pending = True
+            return
+        self.status_worker_pending = False
+        self.status_worker = StatusWorker(self.git_manager, include_sizes=self.scan_large_files)
+        self.status_worker.finished.connect(self.on_status_finished)
+        self.status_worker.error.connect(self.on_status_error)
+        self.status_worker.start()
+
+    def on_status_error(self, message):
+        self.status_worker = None
+        if self.status_worker_pending:
+            self.status_refresh_timer.start(50)
+
+    def on_status_finished(self, summary):
+        self.status_worker = None
+        self.last_status_summary = summary or {}
+        self.current_branch_name = self.last_status_summary.get('branch', '')
+        self.apply_status_summary()
+        if self.status_worker_pending:
+            self.status_refresh_timer.start(50)
+
+    def apply_status_summary(self):
+        summary = self.last_status_summary or {}
+
+        branch = summary.get('branch', 'unknown')
         self.branch_button.setText(branch)
         self.branch_button.setIcon(self.icon_manager.get_icon("git-branch", size=16))
-        
-        # Update Push/Pull buttons with ahead/behind counts
-        ahead, behind = self.git_manager.get_ahead_behind_count()
-        
+
+        ahead = summary.get('ahead', 0)
+        behind = summary.get('behind', 0)
+
         if behind > 0:
             self.pull_btn.setText(f"{tr('pull')} ({behind})")
             self.pull_btn.setStyleSheet(self.get_action_button_style(highlight=True))
         else:
             self.pull_btn.setText(tr('pull'))
             self.pull_btn.setStyleSheet(self.get_action_button_style(highlight=False))
-            
+
         if ahead > 0:
             self.push_btn.setText(f"{tr('push')} ({ahead})")
             self.push_btn.setStyleSheet(self.get_action_button_style(highlight=True))
         else:
             self.push_btn.setText(tr('push'))
             self.push_btn.setStyleSheet(self.get_action_button_style(highlight=False))
-        
-        status = self.git_manager.get_status()
+
         self.changes_list.clear()
-        
-        self.large_files = []
-        lfs_patterns = self.git_manager.get_lfs_tracked_patterns()
-        
-        if not status:
+        entries = summary.get('entries', [])
+        self.large_files = summary.get('large_files', [])
+
+        if not entries:
             item = QListWidgetItem(tr('no_changes'))
             item.setIcon(self.icon_manager.get_icon("check", size=16))
             item.setForeground(QColor("#4ec9b0"))
@@ -988,63 +1074,48 @@ class RepositoryTab(QWidget):
             self.changes_list.addItem(item)
             self.large_files_banner.hide()
             return
-        
-        for file_path, state in status.items():
-            # Determine display properties based on state
+
+        for entry in entries:
+            file_path = entry.get('path', '')
+            state = entry.get('state', '??')
+            is_large = entry.get('large', False)
+
             is_modified = 'M' in state
             is_added = 'A' in state
             is_deleted = 'D' in state
             is_renamed = 'R' in state
             is_untracked = '?' in state
             is_conflicted = 'U' in state
-            
-            # Check file size
-            full_path = os.path.join(self.repo_path, file_path)
-            is_large = False
-            if not is_deleted and os.path.exists(full_path):
-                try:
-                    size = os.path.getsize(full_path)
-                    if size > 100 * 1024 * 1024: # 100MB
-                        # Check if already tracked by LFS
-                        is_lfs_tracked = False
-                        for pattern in lfs_patterns:
-                            # Check both full path and filename against pattern
-                            if (fnmatch.fnmatch(file_path, pattern) or 
-                                fnmatch.fnmatch(os.path.basename(file_path), pattern)):
-                                is_lfs_tracked = True
-                                break
-                        
-                        if not is_lfs_tracked:
-                            is_large = True
-                            self.large_files.append(file_path)
-                except:
-                    pass
 
             if is_conflicted:
                 icon_name = "warning"
-                color = "#d16969" # Reddish
+                color = "#d16969"
                 tooltip = tr('conflicted')
             elif is_renamed:
-                icon_name = "file-plus" # Or a rename icon if available
-                color = "#569cd6" # Blue
+                icon_name = "file-plus"
+                color = "#569cd6"
                 tooltip = tr('renamed')
             elif is_added:
                 icon_name = "file-plus"
-                color = "#4ec9b0" # Greenish
+                color = "#4ec9b0"
                 tooltip = tr('added')
             elif is_deleted:
                 icon_name = "file-x"
-                color = "#f48771" # Reddish
+                color = "#f48771"
                 tooltip = tr('deleted')
             elif is_modified:
                 icon_name = "file-text"
-                color = "#dcdcaa" # Yellowish
+                color = "#dcdcaa"
                 tooltip = tr('modified')
-            else: # Untracked or unknown
+            elif is_untracked:
                 icon_name = "file"
-                color = "#858585" # Gray
+                color = "#858585"
                 tooltip = tr('untracked')
-            
+            else:
+                icon_name = "file"
+                color = "#858585"
+                tooltip = tr('untracked')
+
             if is_large:
                 icon_name = "warning"
                 tooltip = f"{tooltip} - LARGE FILE (>100MB)"
@@ -1053,14 +1124,14 @@ class RepositoryTab(QWidget):
             item.setIcon(self.icon_manager.get_icon(icon_name, size=16))
             item.setToolTip(f"{tooltip}: {file_path} ({state})")
             item.setForeground(QColor(color))
-            
+
             font = QFont("Consolas", 11)
             item.setFont(font)
             item.setData(Qt.ItemDataRole.UserRole, file_path)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Checked)
             self.changes_list.addItem(item)
-            
+
         if self.large_files:
             self.large_files_label.setText(tr('large_files_detected', count=len(self.large_files)))
             self.large_files_banner.show()
@@ -1406,14 +1477,30 @@ class RepositoryTab(QWidget):
     def load_history(self):
         if not self.repo_path:
             return
-            
-        history = self.git_manager.get_commit_history(50)
-        
-        if not history:
+        if self.history_worker and self.history_worker.isRunning():
+            self.history_worker_pending = True
             return
-        
-        branch = self.git_manager.get_current_branch()
-        
+
+        branch = self.current_branch_name or self.git_manager.get_current_branch()
+        self.history_worker_pending = False
+        self.history_worker = HistoryWorker(self.git_manager, branch)
+        self.history_worker.finished.connect(self.on_history_finished)
+        self.history_worker.error.connect(self.on_history_error)
+        self.history_worker.start()
+
+    def on_history_error(self, message):
+        self.history_worker = None
+        if self.history_worker_pending:
+            self.load_history()
+
+    def on_history_finished(self, history, branch):
+        self.history_worker = None
+
+        if not history:
+            if self.history_worker_pending:
+                self.load_history()
+            return
+
         formatted_commits = []
         for commit in history:
             formatted_commit = {
@@ -1425,12 +1512,15 @@ class RepositoryTab(QWidget):
                 'branch': branch
             }
             formatted_commits.append(formatted_commit)
-            
+
             email = commit.get('email', '')
             if email and email not in self.avatar_cache:
                 self.download_gravatar(email, commit['author'])
-        
+
         self.commit_graph.set_commits(formatted_commits)
+
+        if self.history_worker_pending:
+            self.load_history()
             
     def on_graph_commit_clicked(self, commit_hash):
         if commit_hash:

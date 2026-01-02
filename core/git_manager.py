@@ -1,14 +1,20 @@
 import subprocess
 import os
+import time
+import fnmatch
 from pathlib import Path
 import re
 
 class GitManager:
     def __init__(self):
         self.repo_path = None
+        self._lfs_cache = []
+        self._lfs_cache_ts = 0.0
         
     def set_repository(self, path):
         self.repo_path = path
+        self._lfs_cache = []
+        self._lfs_cache_ts = 0.0
         
     def run_command(self, command):
         try:
@@ -35,6 +41,9 @@ class GitManager:
         return os.path.exists(git_dir)
         
     def get_current_branch(self):
+        summary = self.get_status_summary(include_sizes=False)
+        if summary.get('branch'):
+            return summary['branch']
         success, output = self.run_command("git branch --show-current")
         return output if success else "unknown"
     
@@ -74,28 +83,113 @@ class GitManager:
         return self.run_command(f"git merge \"{branch_name}\"")
         
     def get_status(self):
-        success, output = self.run_command("git status --porcelain -uall")
-        if not success:
-            return {}
-            
-        status_dict = {}
-        for line in output.split('\n'):
-            if len(line) > 3:
-                state = line[:2].strip()
-                file_path = line[3:]
-                
-                if file_path.startswith('"') and file_path.endswith('"'):
-                    file_path = file_path[1:-1]
-                    file_path = file_path.replace('\\"', '"').replace('\\\\', '\\')
-                
-                if '->' in file_path:
-                    parts = file_path.split(' -> ')
-                    if len(parts) == 2:
-                        file_path = parts[1]
-                
-                status_dict[file_path] = state if state else "??"
-                
-        return status_dict
+        summary = self.get_status_summary(include_sizes=False)
+        result = {}
+        for entry in summary.get('entries', []):
+            result[entry['path']] = entry['state']
+        return result
+    
+    def get_status_summary(self, include_sizes=False, size_threshold=100 * 1024 * 1024):
+        if not self.repo_path:
+            return {
+                'branch': 'unknown',
+                'ahead': 0,
+                'behind': 0,
+                'entries': [],
+                'large_files': []
+            }
+        success, output = self.run_command("git status --branch --porcelain=v1 -uall")
+        if not success or output is None:
+            return {
+                'branch': 'unknown',
+                'ahead': 0,
+                'behind': 0,
+                'entries': [],
+                'large_files': []
+            }
+
+        branch = 'unknown'
+        ahead = 0
+        behind = 0
+        entries = []
+        large_files = []
+        lfs_patterns = []
+
+        if include_sizes:
+            lfs_patterns = self.get_lfs_tracked_patterns()
+
+        lines = output.split('\n')
+        for line in lines:
+            if not line:
+                continue
+            if line.startswith('##'):
+                status_line = line[2:].strip()
+                branch_part = status_line
+                if '...' in status_line:
+                    branch_part = status_line.split('...')[0]
+                if branch_part:
+                    branch = branch_part.split()[0]
+
+                meta_start = status_line.find('[')
+                meta_end = status_line.find(']')
+                if meta_start != -1 and meta_end != -1 and meta_end > meta_start:
+                    meta = status_line[meta_start + 1:meta_end]
+                    ahead_match = re.search(r'ahead (\d+)', meta)
+                    behind_match = re.search(r'behind (\d+)', meta)
+                    if ahead_match:
+                        ahead = int(ahead_match.group(1))
+                    if behind_match:
+                        behind = int(behind_match.group(1))
+                continue
+
+            if len(line) <= 3:
+                continue
+
+            state = line[:2].strip()
+            file_path = line[3:]
+
+            if file_path.startswith('"') and file_path.endswith('"'):
+                file_path = file_path[1:-1]
+                file_path = file_path.replace('\\"', '"').replace('\\\\', '\\')
+
+            if '->' in file_path:
+                parts = file_path.split(' -> ')
+                if len(parts) == 2:
+                    file_path = parts[1]
+
+            is_large = False
+            if include_sizes and not state.startswith('D'):
+                full_path = os.path.join(self.repo_path, file_path)
+                if os.path.exists(full_path) and not os.path.isdir(full_path):
+                    try:
+                        size = os.path.getsize(full_path)
+                        if size > size_threshold:
+                            tracked = False
+                            for pattern in lfs_patterns:
+                                if fnmatch.fnmatch(file_path, pattern) or fnmatch.fnmatch(os.path.basename(file_path), pattern):
+                                    tracked = True
+                                    break
+                            if not tracked:
+                                is_large = True
+                    except Exception:
+                        pass
+
+            entries.append({
+                'path': file_path,
+                'state': state or '??',
+                'large': is_large
+            })
+
+            if is_large:
+                large_files.append(file_path)
+
+        return {
+            'branch': branch,
+            'ahead': ahead,
+            'behind': behind,
+            'entries': entries,
+            'large_files': large_files
+        }
         
     def get_file_diff(self, file_path):
         success, output = self.run_command(f"git diff HEAD -- \"{file_path}\"")
@@ -363,6 +457,8 @@ class GitManager:
             if not success:
                 return False, message
 
+        self._lfs_cache = []
+        self._lfs_cache_ts = 0.0
         return True, "Archivos configurados correctamente"
         
     def lfs_pull(self):
@@ -374,6 +470,10 @@ class GitManager:
     def get_lfs_tracked_patterns(self):
         if not self.repo_path:
             return []
+
+        now = time.time()
+        if self._lfs_cache and now - self._lfs_cache_ts < 10.0:
+            return list(self._lfs_cache)
         
         success, output = self.run_command("git lfs track")
         if not success:
@@ -399,6 +499,8 @@ class GitManager:
                 parts = line.split()
                 if parts:
                     patterns.append(parts[0])
+        self._lfs_cache = patterns
+        self._lfs_cache_ts = now
         return patterns
 
     def get_lfs_locks(self):
@@ -508,19 +610,5 @@ class GitManager:
         return self.stage_files(file_path)
 
     def get_ahead_behind_count(self):
-        if not self.repo_path:
-            return 0, 0
-            
-        success, output = self.run_command("git rev-list --left-right --count HEAD...@{u}")
-        
-        if success and output:
-            try:
-                parts = output.split()
-                if len(parts) >= 2:
-                    ahead = int(parts[0])
-                    behind = int(parts[1])
-                    return ahead, behind
-            except:
-                pass
-                
-        return 0, 0
+        summary = self.get_status_summary(include_sizes=False)
+        return summary.get('ahead', 0), summary.get('behind', 0)
