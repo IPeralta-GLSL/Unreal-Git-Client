@@ -440,28 +440,47 @@ class ChatWidget(QWidget):
         self.worker.finished.connect(self.on_generation_finished)
 
         self.current_response = ""
-        self.chat_area.append(f"<b>Assistant:</b> ")
         self.worker.start()
         
     def on_text_received(self, text):
         self.current_response += text
-        cursor = self.chat_area.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        cursor.insertText(text)
-        self.chat_area.setTextCursor(cursor)
-        self.chat_area.ensureCursorVisible()
         
     def on_generation_finished(self):
         self.messages.append({"role": "assistant", "content": self.current_response})
         self.status_bar.setText("Ready")
-        self.chat_area.append("") # New line
+        if self.current_response:
+            self.append_message("Assistant", self.current_response)
+        self.current_response = ""
         
     def append_message(self, sender, text):
-        color = "#4ade80" if sender == "You" else "#60a5fa"
-        if sender == "System": color = "#ef4444"
-        
-        self.chat_area.append(f"<b style='color:{color}'>{sender}:</b> {text}")
-        self.chat_area.append("")
+        theme = get_current_theme()
+        bg = theme.colors['surface'] if sender == "You" else theme.colors['surface_hover']
+        label_color = "#4ade80" if sender == "You" else "#60a5fa"
+        if sender == "System":
+            bg = theme.colors['danger'] + "20"
+            label_color = theme.colors['danger']
+
+        body = self._escape_html(text)
+        html = (
+            f"<div style='margin:10px 0; padding:10px 12px; border-radius:12px; "
+            f"background:{bg}; color:{theme.colors['text']}; border:none;'>"
+            f"<div style='font-weight:700; margin-bottom:6px; color:{label_color}; text-transform:uppercase; font-size:11px;'>{sender}</div>"
+            f"<div style='white-space:pre-wrap; line-height:1.5; font-size:13px;'>{body}</div>"
+            "</div>"
+        )
+        self.chat_area.append(html)
+        self.chat_area.moveCursor(QTextCursor.MoveOperation.End)
+        self.chat_area.ensureCursorVisible()
+
+    def _escape_html(self, text: str) -> str:
+        if text is None:
+            return ""
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\n", "<br>")
+        )
 
     def _get_application_name(self) -> str:
         try:
