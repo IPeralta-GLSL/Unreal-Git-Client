@@ -14,7 +14,7 @@ ChatWidget = chat_dialog_module.ChatWidget
 
 class Plugin(PluginInterface):
     def __init__(self):
-        self.chat_widget = None
+        self.chat_widgets = {}
 
     def get_name(self):
         return "AI Assistant"
@@ -38,14 +38,7 @@ class Plugin(PluginInterface):
         return []
     
     def get_sidebar_widget(self, repo_path):
-        if not self.chat_widget:
-            self.chat_widget = ChatWidget(repo_path)
-            return self.chat_widget
-
-        if repo_path and getattr(self.chat_widget, 'repo_path', None) != repo_path:
-            try:
-                self.chat_widget.set_repo_path(repo_path)
-            except Exception:
-                pass
-
-        return self.chat_widget
+        widget = ChatWidget(repo_path)
+        key = f"{repo_path or '__no_repo__'}-{id(widget)}"
+        self.chat_widgets[key] = widget
+        return widget
