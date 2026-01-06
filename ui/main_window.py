@@ -238,7 +238,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(min_button)
         
         self.max_button = QPushButton()
-        self.max_button.setIcon(self.icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
         self.max_button.setFixedSize(46, 32)
         self.max_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.max_button.clicked.connect(self.toggle_maximize)
@@ -271,6 +270,7 @@ class MainWindow(QMainWindow):
         """)
         layout.addWidget(close_button)
         
+        self.update_window_control_icons()
         return container
 
     def eventFilter(self, obj, event):
@@ -294,6 +294,16 @@ class MainWindow(QMainWindow):
             self.showNormal()
         else:
             self.showMaximized()
+        self.update_window_control_icons()
+
+    def update_window_control_icons(self):
+        if hasattr(self, "max_button"):
+            if self.isMaximized():
+                self.max_button.setIcon(self.icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
+                self.max_button.setToolTip("Restore")
+            else:
+                self.max_button.setIcon(self.icon_manager.get_icon("window-maximize-symbolic-svgrepo-com", size=16))
+                self.max_button.setToolTip("Maximize")
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and not self.isMaximized():
@@ -353,6 +363,7 @@ class MainWindow(QMainWindow):
         repo_tab = RepositoryTab(GitManager(), self.settings_manager, parent_window=self, plugin_manager=self.plugin_manager)
         index = self.tab_widget.addTab(repo_tab, self.icon_manager.get_icon("house-line"), tr('home'))
         self.tab_widget.setCurrentIndex(index)
+        self._set_tab_close_button(index)
         
     def open_repository(self):
         folder = QFileDialog.getExistingDirectory(
@@ -441,6 +452,17 @@ class MainWindow(QMainWindow):
         tab_bar = self.tab_widget.tabBar()
         if isinstance(tab_bar, PlusTabBar):
             tab_bar.plus_button.setToolTip(f"{tr('new_tab')} (Ctrl+T)")
+        for i in range(self.tab_widget.count()):
+            self._set_tab_close_button(i)
+
+    def _set_tab_close_button(self, index):
+        tab_bar = self.tab_widget.tabBar()
+        button = QToolButton(tab_bar)
+        button.setIcon(self.icon_manager.get_icon("x-square", size=14))
+        button.setAutoRaise(True)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.clicked.connect(lambda _, b=button, tb=tab_bar: self.close_tab(tb.tabAt(b.pos())))
+        tab_bar.setTabButton(index, QTabBar.ButtonPosition.RightSide, button)
     
     def on_accounts_changed(self):
         self.status_bar.showMessage("Cuentas actualizadas", 3000)
@@ -600,4 +622,6 @@ class MainWindow(QMainWindow):
                 current_widget = self.tab_widget.currentWidget()
                 if isinstance(current_widget, RepositoryTab):
                     current_widget.refresh_status()
+        if event.type() == QEvent.Type.WindowStateChange:
+            self.update_window_control_icons()
         super().changeEvent(event)

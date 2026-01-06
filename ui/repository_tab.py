@@ -139,6 +139,7 @@ class RepositoryTab(QWidget):
         self.status_worker_pending = False
         self.history_worker = None
         self.history_worker_pending = False
+        self.repo_splitter = None
         self.status_refresh_timer = QTimer(self)
         self.status_refresh_timer.setSingleShot(True)
         self.status_refresh_timer.setInterval(120)
@@ -194,6 +195,7 @@ class RepositoryTab(QWidget):
         repo_layout.addWidget(self.top_bar)
         
         splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.repo_splitter = splitter
         
         left_panel = self.create_left_panel()
         splitter.addWidget(left_panel)
@@ -208,13 +210,13 @@ class RepositoryTab(QWidget):
         self.sidebar_container = QWidget()
         self.sidebar_container.setMinimumWidth(300)
         self.sidebar_container.setMaximumWidth(400)
-        # self.sidebar_container.hide() # Visible by default
+        self.sidebar_container.hide()
         self.sidebar_layout = QVBoxLayout(self.sidebar_container)
         self.sidebar_layout.setContentsMargins(0, 0, 0, 0)
         self.sidebar_layout.setSpacing(0)
         splitter.addWidget(self.sidebar_container)
         
-        splitter.setSizes([350, 400, 650, 350]) # Initial size for sidebar
+        splitter.setSizes([350, 400, 650, 0])
         splitter.setHandleWidth(2)
         
         repo_layout.addWidget(splitter)
@@ -236,7 +238,7 @@ class RepositoryTab(QWidget):
         
         layout = QHBoxLayout(self.top_bar)
         layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setSpacing(12)
         
         branch_container = QWidget()
         branch_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -318,9 +320,9 @@ class RepositoryTab(QWidget):
         
         self.lfs_btn = QPushButton(" LFS")
         self.lfs_btn.setIcon(self.icon_manager.get_icon("lfs-icon", size=18))
-        self.lfs_btn.setMinimumSize(85, 36)
-        self.lfs_btn.setMaximumSize(110, 36)
-        self.lfs_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.lfs_btn.setMinimumHeight(36)
+        self.lfs_btn.setMinimumWidth(90)
+        self.lfs_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.lfs_btn.setStyleSheet(button_style)
         self.lfs_btn.setToolTip(tr('lfs_title'))
         self.lfs_btn.clicked.connect(self.show_lfs_menu)
@@ -328,9 +330,9 @@ class RepositoryTab(QWidget):
 
         self.scan_btn = QPushButton("Scan size")
         self.scan_btn.setCheckable(True)
-        self.scan_btn.setMinimumSize(100, 36)
-        self.scan_btn.setMaximumSize(130, 36)
-        self.scan_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.scan_btn.setMinimumHeight(36)
+        self.scan_btn.setMinimumWidth(100)
+        self.scan_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.scan_btn.setStyleSheet(button_style)
         self.scan_btn.setToolTip("Detect large files")
         self.scan_btn.clicked.connect(self.on_scan_toggle)
@@ -338,9 +340,9 @@ class RepositoryTab(QWidget):
 
         self.open_folder_btn = QPushButton(tr('folder_button'))
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
-        self.open_folder_btn.setMinimumSize(100, 36)
-        self.open_folder_btn.setMaximumSize(130, 36)
-        self.open_folder_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.open_folder_btn.setMinimumHeight(36)
+        self.open_folder_btn.setMinimumWidth(100)
+        self.open_folder_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.open_folder_btn.setStyleSheet(button_style)
         self.open_folder_btn.setToolTip(tr('folder_tooltip'))
         self.open_folder_btn.clicked.connect(self.open_project_folder)
@@ -348,9 +350,9 @@ class RepositoryTab(QWidget):
         
         self.open_terminal_btn = QPushButton(tr('terminal_button'))
         self.open_terminal_btn.setIcon(self.icon_manager.get_icon("terminal", size=18))
-        self.open_terminal_btn.setMinimumSize(100, 36)
-        self.open_terminal_btn.setMaximumSize(130, 36)
-        self.open_terminal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.open_terminal_btn.setMinimumHeight(36)
+        self.open_terminal_btn.setMinimumWidth(100)
+        self.open_terminal_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.open_terminal_btn.setStyleSheet(button_style)
         self.open_terminal_btn.setToolTip(tr('terminal_tooltip'))
         self.open_terminal_btn.clicked.connect(self.open_terminal)
@@ -368,9 +370,9 @@ class RepositoryTab(QWidget):
         
         self.pull_btn = QPushButton(tr('pull'))
         self.pull_btn.setIcon(self.icon_manager.get_icon("download", size=18))
-        self.pull_btn.setMinimumSize(85, 36)
-        self.pull_btn.setMaximumSize(110, 36)
-        self.pull_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.pull_btn.setMinimumHeight(36)
+        self.pull_btn.setMinimumWidth(90)
+        self.pull_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.pull_btn.setStyleSheet(button_style)
         self.pull_btn.setToolTip(tr('pull_tooltip'))
         self.pull_btn.clicked.connect(self.do_pull)
@@ -378,9 +380,9 @@ class RepositoryTab(QWidget):
         
         self.push_btn = QPushButton(tr('push'))
         self.push_btn.setIcon(self.icon_manager.get_icon("git-pull-request", size=18))
-        self.push_btn.setMinimumSize(85, 36)
-        self.push_btn.setMaximumSize(110, 36)
-        self.push_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.push_btn.setMinimumHeight(36)
+        self.push_btn.setMinimumWidth(90)
+        self.push_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.push_btn.setStyleSheet(button_style)
         self.push_btn.setToolTip(tr('push_tooltip'))
         self.push_btn.clicked.connect(self.do_push)
@@ -388,9 +390,9 @@ class RepositoryTab(QWidget):
         
         self.fetch_btn = QPushButton(tr('fetch'))
         self.fetch_btn.setIcon(self.icon_manager.get_icon("git-diff", size=18))
-        self.fetch_btn.setMinimumSize(85, 36)
-        self.fetch_btn.setMaximumSize(110, 36)
-        self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.fetch_btn.setMinimumHeight(36)
+        self.fetch_btn.setMinimumWidth(90)
+        self.fetch_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.fetch_btn.setStyleSheet(button_style)
         self.fetch_btn.setToolTip(tr('fetch_tooltip'))
         self.fetch_btn.clicked.connect(self.do_fetch)
@@ -792,8 +794,6 @@ class RepositoryTab(QWidget):
         layout.setSpacing(0)
         
         self.info_header = self.create_section_header(tr('info_title'), tr('info_subtitle'), "folder")
-        layout.addWidget(self.info_header)
-        
         info_container = QWidget()
         info_container.setStyleSheet("background-color: palette(base); padding: 15px;")
         info_container.setMinimumHeight(100)
@@ -927,6 +927,11 @@ class RepositoryTab(QWidget):
                     
                     if not self.sidebar_container.isVisible():
                         self.sidebar_container.show()
+                        if self.repo_splitter:
+                            sizes = self.repo_splitter.sizes()
+                            if len(sizes) >= 4:
+                                sizes[-1] = max(sizes[-1], 320)
+                                self.repo_splitter.setSizes(sizes)
 
     def get_action_button_style(self, highlight=False):
         theme = get_current_theme()

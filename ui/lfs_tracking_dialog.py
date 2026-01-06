@@ -72,7 +72,7 @@ class LFSTrackingDialog(QDialog):
         title_layout.addStretch()
         
         close_btn = QPushButton()
-        close_btn.setIcon(self.icon_manager.get_icon("x", size=16))
+        close_btn.setIcon(self.icon_manager.get_icon("x-square", size=16))
         close_btn.setFixedSize(30, 30)
         close_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         close_btn.setStyleSheet(f"""

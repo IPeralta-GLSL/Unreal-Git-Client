@@ -179,7 +179,7 @@ class CloneDialog(QDialog):
         
         # Close button
         close_btn = QPushButton()
-        close_btn.setIcon(self.icon_manager.get_icon("x", size=16))
+        close_btn.setIcon(self.icon_manager.get_icon("x-square", size=16))
         close_btn.setFixedSize(30, 30)
         close_btn.clicked.connect(self.reject)
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)

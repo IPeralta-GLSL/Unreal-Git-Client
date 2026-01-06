@@ -72,7 +72,8 @@ class AccountsDialog(QDialog):
         button_layout.addStretch()
         
         self.close_button = QPushButton(tr("close"))
-        self.close_button.setMinimumWidth(100)
+        self.close_button.setIcon(self.icon_manager.get_icon("x-square", size=14))
+        self.close_button.setMinimumWidth(120)
         self.close_button.clicked.connect(self.accept)
         button_layout.addWidget(self.close_button)
         
