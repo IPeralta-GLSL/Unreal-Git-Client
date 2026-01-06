@@ -331,14 +331,20 @@ class ChatWidget(QWidget):
         self.send_btn.setEnabled(True)
         
         try:
-            def _supports_gpu_offload():
+            def _backend_info():
+                backend = None
+                try:
+                    backend = getattr(llama_cpp, "llama_backend", None)
+                except Exception:
+                    backend = None
+                supports_offload = False
                 try:
                     fn = getattr(llama_cpp, "llama_supports_gpu_offload", None)
                     if callable(fn):
-                        return bool(fn())
+                        supports_offload = bool(fn())
                 except Exception:
-                    pass
-                return False
+                    supports_offload = False
+                return backend, supports_offload
 
             def _get_gpu_layers(llm_obj):
                 for attr in ("context_params", "_context_params", "_params"):
@@ -350,8 +356,14 @@ class ChatWidget(QWidget):
                             continue
                 return None
 
+            backend, supports_offload = _backend_info()
+            prefer_env = os.getenv("LLAMA_BACKEND", "").strip().lower()
+            force_cpu = prefer_env == "cpu"
+            prefer_gpu = not force_cpu and supports_offload
+
             tried_gpu = False
-            if _supports_gpu_offload():
+            gpu_error = None
+            if prefer_gpu:
                 try_gpu = {
                     "model_path": model_path,
                     "n_ctx": 2048,
@@ -364,7 +376,8 @@ class ChatWidget(QWidget):
                 try:
                     self.llm = Llama(**try_gpu)
                     tried_gpu = True
-                except Exception:
+                except Exception as exc:
+                    gpu_error = str(exc)
                     tried_gpu = False
 
             if not tried_gpu:
@@ -376,10 +389,16 @@ class ChatWidget(QWidget):
                 )
 
             layers = _get_gpu_layers(self.llm)
+            backend_label = backend or "unknown"
             if layers and layers > 0:
-                self.status_bar.setText(f"Ready (GPU layers: {layers})")
+                self.status_bar.setText(f"Ready (GPU layers: {layers}, backend: {backend_label})")
             else:
-                self.status_bar.setText("Ready (CPU)")
+                note = "GPU not available in this build" if not supports_offload else "using CPU"
+                self.status_bar.setText(f"Ready (CPU, backend: {backend_label}, {note})")
+                if gpu_error:
+                    self.append_message("System", f"GPU load failed, fell back to CPU: {gpu_error}")
+                elif not supports_offload:
+                    self.append_message("System", "This llama-cpp-python build has no GPU offload; install a GPU-enabled wheel (CUDA/OpenCL/Metal) to use GPU.")
             
             tm = get_translation_manager()
             lang = tm.get_current_language()
