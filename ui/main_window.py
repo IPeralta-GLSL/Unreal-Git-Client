@@ -182,12 +182,14 @@ class MainWindow(QMainWindow):
     def create_app_icon(self):
         container = QWidget()
         container.setObjectName("appCorner")
+        container.setFixedHeight(32)
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(10, 0, 5, 0)
-        layout.setSpacing(0)
+        layout.setContentsMargins(8, 0, 6, 0)
+        layout.setSpacing(4)
         
         app_icon = QLabel()
-        app_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=20))
+        app_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=18))
+        app_icon.setFixedSize(22, 22)
         layout.addWidget(app_icon)
         
         return container
@@ -204,7 +206,7 @@ class MainWindow(QMainWindow):
         
         self.settings_button = QPushButton()
         self.settings_button.setIcon(self.icon_manager.get_icon("gear-six", size=18))
-        self.settings_button.setFixedSize(46, 32)
+        self.settings_button.setFixedSize(42, 32)
         self.settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_button.setToolTip(tr('settings'))
         self.settings_button.clicked.connect(self.open_settings)
@@ -222,7 +224,7 @@ class MainWindow(QMainWindow):
         
         min_button = QPushButton()
         min_button.setIcon(self.icon_manager.get_icon("window-minimize-symbolic-svgrepo-com", size=16))
-        min_button.setFixedSize(46, 32)
+        min_button.setFixedSize(42, 32)
         min_button.setCursor(Qt.CursorShape.PointingHandCursor)
         min_button.clicked.connect(self.showMinimized)
         min_button.setStyleSheet(f"""
@@ -239,6 +241,7 @@ class MainWindow(QMainWindow):
         
         self.max_button = QPushButton()
         self.max_button.setFixedSize(46, 32)
+        self.max_button.setFixedSize(42, 32)
         self.max_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.max_button.clicked.connect(self.toggle_maximize)
         self.max_button.setStyleSheet(f"""
@@ -255,7 +258,7 @@ class MainWindow(QMainWindow):
         
         close_button = QPushButton()
         close_button.setIcon(self.icon_manager.get_icon("x-square", size=16))
-        close_button.setFixedSize(46, 32)
+        close_button.setFixedSize(42, 32)
         close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         close_button.clicked.connect(self.close)
         close_button.setStyleSheet(f"""
@@ -461,8 +464,15 @@ class MainWindow(QMainWindow):
         button.setIcon(self.icon_manager.get_icon("x-square", size=14))
         button.setAutoRaise(True)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
-        button.clicked.connect(lambda _, b=button, tb=tab_bar: self.close_tab(tb.tabAt(b.pos())))
+        button.clicked.connect(lambda _, btn=button: self._on_tab_close_button_clicked(btn))
         tab_bar.setTabButton(index, QTabBar.ButtonPosition.RightSide, button)
+
+    def _on_tab_close_button_clicked(self, button):
+        tab_bar = self.tab_widget.tabBar()
+        for i in range(tab_bar.count()):
+            if tab_bar.tabButton(i, QTabBar.ButtonPosition.RightSide) is button:
+                self.close_tab(i)
+                break
     
     def on_accounts_changed(self):
         self.status_bar.showMessage("Cuentas actualizadas", 3000)

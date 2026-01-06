@@ -227,7 +227,7 @@ class RepositoryTab(QWidget):
     def create_top_bar(self):
         theme = get_current_theme()
         self.top_bar = QFrame()
-        self.top_bar.setMinimumHeight(120)
+        self.top_bar.setMinimumHeight(88)
         self.top_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.top_bar.setStyleSheet(f"""
             QFrame {{
@@ -237,8 +237,8 @@ class RepositoryTab(QWidget):
         """)
         
         layout = QHBoxLayout(self.top_bar)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(12)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(10)
         
         branch_container = QWidget()
         branch_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -286,6 +286,7 @@ class RepositoryTab(QWidget):
         self.plugin_indicators_layout = QHBoxLayout(self.plugin_indicators_container)
         self.plugin_indicators_layout.setContentsMargins(0, 0, 0, 0)
         self.plugin_indicators_layout.setSpacing(8)
+        self.plugin_indicators_container.hide()
         layout.addWidget(self.plugin_indicators_container)
         
         layout.addSpacing(10)
@@ -318,7 +319,7 @@ class RepositoryTab(QWidget):
             }}
         """
         
-        self.lfs_btn = QPushButton(" LFS")
+        self.lfs_btn = QPushButton("LFS")
         self.lfs_btn.setIcon(self.icon_manager.get_icon("lfs-icon", size=18))
         self.lfs_btn.setMinimumHeight(36)
         self.lfs_btn.setMinimumWidth(90)
@@ -1942,6 +1943,11 @@ class RepositoryTab(QWidget):
             container_layout.addWidget(btn)
             
             self.plugin_indicators_layout.addWidget(container)
+
+        if indicators:
+            self.plugin_indicators_container.show()
+        else:
+            self.plugin_indicators_container.hide()
         
         if hasattr(self, 'lfs_track_btn'):
             # Check if any plugin wants to show LFS track button or similar
