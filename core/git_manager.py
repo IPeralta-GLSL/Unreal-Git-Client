@@ -383,21 +383,54 @@ class GitManager:
     def checkout_commit(self, commit_hash):
         return self.run_command(f"git checkout {commit_hash}")
         
-    def clone_repository(self, url, path):
+    def clone_repository(self, url, path, progress_callback=None):
         try:
             repo_name = url.rstrip('/').split('/')[-1].replace('.git', '')
             target_path = os.path.join(path, repo_name)
             
-            result = subprocess.run(
-                ['git', 'clone', url, target_path],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode == 0:
-                return True, target_path
+            if progress_callback:
+                if progress_callback: progress_callback(f"Cloning into {target_path}...")
+                process = subprocess.Popen(
+                    ['git', 'clone', '--progress', url, target_path],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace',
+                    bufsize=1
+                )
+                
+                output_lines = []
+                while True:
+                    line = process.stdout.readline() if process.stdout else ''
+                    if not line and process.poll() is not None:
+                        break
+                    if line:
+                        output_lines.append(line)
+                        if progress_callback:
+                            progress_callback(line.strip())
+                
+                process.wait()
+                
+                if process.returncode == 0:
+                    return True, target_path
+                else:
+                    return False, ''.join(output_lines)
             else:
-                return False, result.stderr
+                result = subprocess.run(
+                    ['git', 'clone', url, target_path],
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                if result.returncode == 0:
+                    return True, target_path
+                else:
+                    return False, result.stderr
+        except Exception as e:
+            return False, str(e)
         except Exception as e:
             return False, str(e)
             

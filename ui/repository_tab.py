@@ -38,7 +38,11 @@ class CloneThread(QThread):
         self.path = path
         
     def run(self):
-        success, message = self.git_manager.clone_repository(self.url, self.path)
+        success, message = self.git_manager.clone_repository(
+            self.url, 
+            self.path, 
+            progress_callback=self.progress.emit
+        )
         self.finished.emit(success, message)
 
 class PushThread(QThread):
@@ -193,6 +197,10 @@ class RepositoryTab(QWidget):
         self.home_view.open_recent_repo.connect(self.load_repository)
         self.stacked_widget.addWidget(self.home_view)
         
+        # Loading View
+        self.loading_view = self.create_loading_view()
+        self.stacked_widget.addWidget(self.loading_view)
+
         self.repo_view = QWidget()
         repo_layout = QVBoxLayout(self.repo_view)
         repo_layout.setContentsMargins(0, 0, 0, 0)
@@ -231,6 +239,65 @@ class RepositoryTab(QWidget):
         
         self.show_home_view()
         
+    def create_loading_view(self):
+        theme = get_current_theme()
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(20)
+        
+        # Loading Icon
+        icon_label = QLabel()
+        icon = self.icon_manager.get_icon("git-branch") 
+        pixmap = icon.pixmap(64, 64)
+        icon_label.setPixmap(pixmap)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
+        
+        # Status Label
+        self.loading_label = QLabel(tr('loading'))
+        self.loading_label.setFont(QFont("Segoe UI", 12))
+        self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.loading_label.setStyleSheet(f"color: {theme.colors['text']};")
+        layout.addWidget(self.loading_label)
+        
+        # Details Label
+        self.loading_details = QLabel("")
+        self.loading_details.setFont(QFont("Segoe UI", 10))
+        self.loading_details.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.loading_details.setStyleSheet(f"color: {theme.colors['text_secondary']};")
+        layout.addWidget(self.loading_details)
+        
+        # Progress Bar
+        self.loading_progress = QProgressBar()
+        self.loading_progress.setFixedWidth(400)
+        self.loading_progress.setTextVisible(False)
+        self.loading_progress.setFixedHeight(4)
+        self.loading_progress.setStyleSheet(f"""
+            QProgressBar {{
+                border: none;
+                background-color: {theme.colors['surface']};
+                border-radius: 2px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {theme.colors['primary']};
+                border-radius: 2px;
+            }}
+        """)
+        layout.addWidget(self.loading_progress)
+        
+        return container
+
+    def show_loading(self, title, details="", is_indeterminate=True):
+        self.loading_label.setText(title)
+        self.loading_details.setText(details)
+        if is_indeterminate:
+            self.loading_progress.setRange(0, 0)
+        else:
+            self.loading_progress.setRange(0, 100)
+            self.loading_progress.setValue(0)
+        self.stacked_widget.setCurrentWidget(self.loading_view)
+
     def create_top_bar(self):
         theme = get_current_theme()
         self.top_bar = QFrame()
@@ -905,6 +972,9 @@ class RepositoryTab(QWidget):
             self.parent_window.clone_repository()
     
     def load_repository(self, path):
+        self.show_loading(tr('loading_repository'), path)
+        QApplication.processEvents()
+        
         self.repo_path = path
         self.git_manager.set_repository(path)
         
@@ -919,15 +989,20 @@ class RepositoryTab(QWidget):
             current_index = tab_widget.indexOf(self)
             if current_index >= 0:
                 tab_widget.setTabText(current_index, f" {repo_name}")
-                tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder", size=16))
+                tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder-open", size=16))
         
-        self.show_repo_view()
         if not self.auto_refresh_timer.isActive():
             self.auto_refresh_timer.start()
+        
         self.load_sidebar_plugins()
         self.refresh_status()
         self._start_status_worker()
         self.update_repo_info()
+        self.load_history()
+        
+        # Switch to repo view after a short delay to allow async tasks to start
+        # and give a smoother transition
+        QTimer.singleShot(1000, self.show_repo_view)
         self.load_history()
         self.check_lfs_status()
         self.update_plugin_indicators()
@@ -2307,18 +2382,17 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), tr('lfs_prune_error', message=message))
             
     def clone_repository(self, url, path):
-        self.progress_dialog = QProgressDialog(tr('cloning_repository'), tr('cancel'), 0, 0, self)
-        self.progress_dialog.setWindowTitle(tr('cloning'))
-        self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progress_dialog.show()
+        self.show_loading(tr('cloning_repository'), f"{url}\n-> {path}")
         
         self.clone_thread = CloneThread(self.git_manager, url, path)
         self.clone_thread.finished.connect(self.on_clone_finished)
+        self.clone_thread.progress.connect(self.on_clone_progress)
         self.clone_thread.start()
+
+    def on_clone_progress(self, line):
+        self.loading_details.setText(line)
         
     def on_clone_finished(self, success, message):
-        self.progress_dialog.close()
-        
         if success:
             repo_path = message
             self.load_repository(repo_path)
@@ -2328,10 +2402,9 @@ class RepositoryTab(QWidget):
                 index = tab_widget.indexOf(self)
                 repo_name = os.path.basename(repo_path)
                 tab_widget.setTabText(index, repo_name)
-                
-            QMessageBox.information(self, tr('success'), f"{tr('success_clone')}:\n{repo_path}")
         else:
-            QMessageBox.warning(self, tr('error'), f"{tr('error_clone')}:\n{message}")
+            self.show_home_view()
+            QMessageBox.critical(self, tr('error'), f"{tr('clone_failed')}:\n{message}")
             
     def apply_left_panel_styles(self):
         style = """
