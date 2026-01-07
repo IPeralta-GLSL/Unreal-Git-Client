@@ -182,14 +182,14 @@ class MainWindow(QMainWindow):
     def create_app_icon(self):
         container = QWidget()
         container.setObjectName("appCorner")
-        container.setFixedHeight(32)
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(8, 0, 6, 0)
-        layout.setSpacing(4)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(8, 8, 6, 0)
+        layout.setSpacing(0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         
         app_icon = QLabel()
-        app_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=18))
-        app_icon.setFixedSize(22, 22)
+        app_icon.setPixmap(self.icon_manager.get_pixmap("git-tree", size=18))
+        app_icon.setFixedSize(18, 18)
         layout.addWidget(app_icon)
         
         return container

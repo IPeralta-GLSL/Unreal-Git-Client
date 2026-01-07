@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Top Leaf (Main) -->
+  <circle cx="12" cy="5" r="2.5" fill="#16a34a" stroke="none" />
+  
+  <!-- Outer Leaves -->
+  <circle cx="5" cy="12" r="2" fill="#16a34a" stroke="none" />
+  <circle cx="19" cy="12" r="2" fill="#16a34a" stroke="none" />
+  
+  <!-- Inner Leaves -->
+  <circle cx="8.5" cy="9" r="1.5" fill="#16a34a" stroke="none" />
+  <circle cx="15.5" cy="9" r="1.5" fill="#16a34a" stroke="none" />
+
+  <!-- Trunk -->
+  <path d="M12 21V11" />
+  
+  <!-- Branches -->
+  <!-- Outer curving up to leaves -->
+  <path d="M12 18C8 18 5 15 5 12" />
+  <path d="M12 18C16 18 19 15 19 12" />
+  
+  <!-- Inner curving -->
+  <path d="M12 14C10 14 8.5 12 8.5 9" />
+  <path d="M12 14C14 14 15.5 12 15.5 9" />
+  
+  <!-- Connection to top -->
+  <path d="M12 11V7.5" />
+</svg>
