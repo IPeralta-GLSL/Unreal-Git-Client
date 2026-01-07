@@ -552,3 +552,19 @@
 2026-01-07 11:48:03,415 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2026-01-07 11:48:04,183 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
 2026-01-07 11:48:04,184 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2026-01-07 11:50:11,719 - core.updater - INFO - Checking for updates...
+2026-01-07 11:50:11,752 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-07 11:50:12,783 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2026-01-07 11:50:12,784 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2026-01-07 11:52:43,613 - core.updater - INFO - Checking for updates...
+2026-01-07 11:52:43,635 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-07 11:52:44,343 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2026-01-07 11:52:44,344 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2026-01-07 11:56:15,702 - core.updater - INFO - Checking for updates...
+2026-01-07 11:56:15,723 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-07 11:56:16,466 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2026-01-07 11:56:16,467 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8
+2026-01-07 11:58:05,933 - core.updater - INFO - Checking for updates...
+2026-01-07 11:58:05,961 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-07 11:58:06,835 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 823
+2026-01-07 11:58:06,836 - core.updater - INFO - Latest version: 1.2.7, Current version: v1.2.8

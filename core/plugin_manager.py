@@ -83,15 +83,17 @@ class PluginManager:
         if name in self.plugins:
             self.plugins[name]['enabled'] = False
     
-    def get_plugin_actions(self, context='repository'):
+    def get_plugin_actions(self, context='repository', repo_path=None):
         actions = []
         for name, data in self.plugins.items():
             if data['enabled']:
                 plugin = data['instance']
                 if hasattr(plugin, 'get_actions'):
-                    plugin_actions = plugin.get_actions(context)
+                    try:
+                        plugin_actions = plugin.get_actions(context, repo_path=repo_path)
+                    except TypeError:
+                        plugin_actions = plugin.get_actions(context)
                     if plugin_actions:
-                        # Inject plugin name into actions for filtering
                         for action in plugin_actions:
                             action['plugin_name'] = name
                         actions.extend(plugin_actions)

@@ -1032,7 +1032,12 @@ class RepositoryTab(QWidget):
     def _auto_refresh_tick(self):
         if self.repo_path and self.stacked_widget.currentWidget() == self.repo_view:
             self.refresh_status()
-            self.update_plugin_indicators()
+            if not hasattr(self, '_indicator_tick_count'):
+                self._indicator_tick_count = 0
+            self._indicator_tick_count += 1
+            if self._indicator_tick_count >= 3:
+                self._indicator_tick_count = 0
+                self.update_plugin_indicators()
             if not self.history_future or self.history_future.done():
                 if not self.commit_graph.commits:
                     self.load_history()
@@ -2095,7 +2100,7 @@ class RepositoryTab(QWidget):
         if not self.plugin_manager or not self.repo_path:
             return
         
-        actions = self.plugin_manager.get_plugin_actions('repository')
+        actions = self.plugin_manager.get_plugin_actions('repository', repo_path=self.repo_path)
         
         if not actions:
             return

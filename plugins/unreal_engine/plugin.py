@@ -59,7 +59,7 @@ class Plugin(PluginInterface):
                     'text': project_name,
                     'tooltip': f'Unreal Engine ABIERTO\n{project_name}',
                     'plugin_name': 'unreal_engine',
-                    'color': '#e06c75'
+                    'color': '#2d5a3d'
                 }
             else:
                 return {
@@ -70,18 +70,29 @@ class Plugin(PluginInterface):
                 }
         return None
     
+    _unreal_status_cache = {}
+    _unreal_status_cache_time = {}
+    
     def is_unreal_running(self, repo_path):
-        """Check if Unreal Engine is running"""
+        """Check if Unreal Engine is running with this specific project (cached)"""
         import subprocess
+        import time
+        
         uproject = self.get_uproject_file(repo_path)
         if not uproject:
             return False, None
         
         project_name = os.path.basename(uproject).replace('.uproject', '')
+        cache_key = repo_path
+        
+        now = time.time()
+        if cache_key in self._unreal_status_cache:
+            if now - self._unreal_status_cache_time.get(cache_key, 0) < 5:
+                return self._unreal_status_cache[cache_key], project_name
         
         try:
             result = subprocess.run(
-                ['tasklist', '/FI', 'IMAGENAME eq UnrealEditor.exe', '/NH'],
+                ['tasklist', '/FI', f'WINDOWTITLE eq {project_name}*'],
                 capture_output=True,
                 text=True,
                 encoding='utf-8',
@@ -89,10 +100,13 @@ class Plugin(PluginInterface):
                 timeout=2
             )
             
-            if 'UnrealEditor.exe' in result.stdout:
-                return True, project_name
-            return False, None
+            is_running = 'UnrealEditor.exe' in result.stdout
+            self._unreal_status_cache[cache_key] = is_running
+            self._unreal_status_cache_time[cache_key] = now
+            return is_running, project_name
         except Exception:
+            self._unreal_status_cache[cache_key] = False
+            self._unreal_status_cache_time[cache_key] = now
             return False, None
     
     def close_unreal(self, repo_path):
@@ -116,32 +130,43 @@ class Plugin(PluginInterface):
         time.sleep(2)
         return self.open_in_unreal(repo_path)
     
-    def get_actions(self, context='repository'):
+    def get_actions(self, context='repository', repo_path=None):
         if context != 'repository':
             return []
         
-        return [
-            {
+        is_running = False
+        if repo_path:
+            is_running, _ = self.is_unreal_running(repo_path)
+        
+        actions = []
+        
+        if is_running:
+            actions.extend([
+                {
+                    'id': 'close_unreal',
+                    'name': 'Cerrar Unreal Engine',
+                    'icon': 'x-square',
+                    'callback': self.close_unreal,
+                    'requires_unreal': True
+                },
+                {
+                    'id': 'restart_unreal',
+                    'name': 'Reiniciar Unreal Engine',
+                    'icon': 'refresh',
+                    'callback': self.restart_unreal,
+                    'requires_unreal': True
+                },
+            ])
+        else:
+            actions.append({
                 'id': 'open_uproject',
                 'name': 'Abrir en Unreal Engine',
                 'icon': 'unreal-engine-svgrepo-com',
                 'callback': self.open_in_unreal,
                 'requires_unreal': True
-            },
-            {
-                'id': 'close_unreal',
-                'name': 'Cerrar Unreal Engine',
-                'icon': 'x-square',
-                'callback': self.close_unreal,
-                'requires_unreal': True
-            },
-            {
-                'id': 'restart_unreal',
-                'name': 'Reiniciar Unreal Engine',
-                'icon': 'refresh',
-                'callback': self.restart_unreal,
-                'requires_unreal': True
-            },
+            })
+        
+        actions.extend([
             {
                 'id': 'configure_lfs',
                 'name': 'Configurar LFS para Unreal',
@@ -163,7 +188,9 @@ class Plugin(PluginInterface):
                 'callback': self.show_engine_info,
                 'requires_unreal': True
             }
-        ]
+        ])
+        
+        return actions
     
     def open_in_unreal(self, repo_path):
         uproject = self.get_uproject_file(repo_path)
