@@ -336,16 +336,6 @@ class RepositoryTab(QWidget):
         self.lfs_btn.clicked.connect(self.show_lfs_menu)
         layout.addWidget(self.lfs_btn)
 
-        self.scan_btn = QPushButton("Scan size")
-        self.scan_btn.setCheckable(True)
-        self.scan_btn.setMinimumHeight(36)
-        self.scan_btn.setMinimumWidth(100)
-        self.scan_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        self.scan_btn.setStyleSheet(button_style)
-        self.scan_btn.setToolTip("Detect large files")
-        self.scan_btn.clicked.connect(self.on_scan_toggle)
-        layout.addWidget(self.scan_btn)
-
         self.open_folder_btn = QPushButton(tr('folder_button'))
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         self.open_folder_btn.setMinimumHeight(36)
@@ -997,10 +987,6 @@ class RepositoryTab(QWidget):
             }}
         """
 
-    def on_scan_toggle(self):
-        self.scan_large_files = self.scan_btn.isChecked()
-        self.refresh_status()
-
     def refresh_status(self):
         if not self.repo_path:
             print("[DEBUG] refresh_status: No repo_path")
@@ -1046,6 +1032,7 @@ class RepositoryTab(QWidget):
     def _auto_refresh_tick(self):
         if self.repo_path and self.stacked_widget.currentWidget() == self.repo_view:
             self.refresh_status()
+            self.update_plugin_indicators()
             if not self.history_future or self.history_future.done():
                 if not self.commit_graph.commits:
                     self.load_history()
@@ -2008,6 +1995,13 @@ class RepositoryTab(QWidget):
         theme = get_current_theme()
         if not self.plugin_manager or not self.repo_path:
             return
+        
+        indicators = self.plugin_manager.get_repository_indicators(self.repo_path)
+        
+        current_state = str([(i.get('text'), i.get('color')) for i in indicators])
+        if hasattr(self, '_last_indicator_state') and self._last_indicator_state == current_state:
+            return
+        self._last_indicator_state = current_state
         
         while self.plugin_indicators_layout.count():
             item = self.plugin_indicators_layout.takeAt(0)

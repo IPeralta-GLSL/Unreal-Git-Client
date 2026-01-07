@@ -51,13 +51,70 @@ class Plugin(PluginInterface):
             uproject = self.get_uproject_file(repo_path)
             project_name = os.path.basename(uproject).replace('.uproject', '') if uproject else 'Unreal'
             
-            return {
-                'icon': '',
-                'text': project_name,
-                'tooltip': f'Proyecto de Unreal Engine detectado\n{project_name}',
-                'plugin_name': 'unreal_engine'
-            }
+            is_running, _ = self.is_unreal_running(repo_path)
+            
+            if is_running:
+                return {
+                    'icon': '',
+                    'text': project_name,
+                    'tooltip': f'Unreal Engine ABIERTO\n{project_name}',
+                    'plugin_name': 'unreal_engine',
+                    'color': '#e06c75'
+                }
+            else:
+                return {
+                    'icon': '',
+                    'text': project_name,
+                    'tooltip': f'Proyecto de Unreal Engine detectado\n{project_name}',
+                    'plugin_name': 'unreal_engine'
+                }
         return None
+    
+    def is_unreal_running(self, repo_path):
+        """Check if Unreal Engine is running"""
+        import subprocess
+        uproject = self.get_uproject_file(repo_path)
+        if not uproject:
+            return False, None
+        
+        project_name = os.path.basename(uproject).replace('.uproject', '')
+        
+        try:
+            result = subprocess.run(
+                ['tasklist', '/FI', 'IMAGENAME eq UnrealEditor.exe', '/NH'],
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                timeout=2
+            )
+            
+            if 'UnrealEditor.exe' in result.stdout:
+                return True, project_name
+            return False, None
+        except Exception:
+            return False, None
+    
+    def close_unreal(self, repo_path):
+        """Close Unreal Engine"""
+        import subprocess
+        try:
+            subprocess.run(['taskkill', '/IM', 'UnrealEditor.exe', '/F'], capture_output=True)
+            return True, "Unreal Engine cerrado"
+        except Exception as e:
+            return False, f"Error al cerrar Unreal: {str(e)}"
+    
+    def restart_unreal(self, repo_path):
+        """Close and reopen Unreal Engine with the project"""
+        import subprocess
+        import time
+        
+        success, msg = self.close_unreal(repo_path)
+        if not success:
+            return False, msg
+        
+        time.sleep(2)
+        return self.open_in_unreal(repo_path)
     
     def get_actions(self, context='repository'):
         if context != 'repository':
@@ -69,6 +126,20 @@ class Plugin(PluginInterface):
                 'name': 'Abrir en Unreal Engine',
                 'icon': 'unreal-engine-svgrepo-com',
                 'callback': self.open_in_unreal,
+                'requires_unreal': True
+            },
+            {
+                'id': 'close_unreal',
+                'name': 'Cerrar Unreal Engine',
+                'icon': 'x-square',
+                'callback': self.close_unreal,
+                'requires_unreal': True
+            },
+            {
+                'id': 'restart_unreal',
+                'name': 'Reiniciar Unreal Engine',
+                'icon': 'refresh',
+                'callback': self.restart_unreal,
                 'requires_unreal': True
             },
             {
