@@ -424,6 +424,22 @@ class RepositoryTab(QWidget):
         layout.setSpacing(0)
         
         self.changes_header = self.create_section_header(tr('changes_title'), tr('changes_subtitle'), "file-text")
+        
+        self.changes_counter = QLabel("0")
+        self.changes_counter.setStyleSheet(f"""
+            QLabel {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+                border-radius: 10px;
+                padding: 2px 8px;
+                font-weight: {theme.fonts['weight_bold']};
+                font-size: {theme.fonts['size_xs']}px;
+                min-width: 20px;
+            }}
+        """)
+        self.changes_counter.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.changes_header.layout().insertWidget(2, self.changes_counter)
+        
         layout.addWidget(self.changes_header)
         
         changes_container = QWidget()
@@ -1083,6 +1099,9 @@ class RepositoryTab(QWidget):
         self.changes_list.clear()
         entries = summary.get('entries', [])
         self.large_files = summary.get('large_files', [])
+        
+        if hasattr(self, 'changes_counter'):
+            self.changes_counter.setText(str(len(entries)))
 
         if not entries:
             item = QListWidgetItem(tr('no_changes'))
@@ -1276,6 +1295,13 @@ class RepositoryTab(QWidget):
         
         menu.addSeparator()
         
+        discard_selected_action = QAction("Descartar seleccionados", self)
+        discard_selected_action.setIcon(self.icon_manager.get_icon("trash", size=16))
+        discard_selected_action.triggered.connect(self.discard_selected_changes)
+        menu.addAction(discard_selected_action)
+        
+        menu.addSeparator()
+        
         ignore_action = QAction(tr('add_to_gitignore'), self)
         ignore_action.setIcon(self.icon_manager.get_icon("file-x", size=16))
         ignore_action.triggered.connect(lambda: self.add_to_gitignore(file_path))
@@ -1351,6 +1377,41 @@ class RepositoryTab(QWidget):
                 self.refresh_status()
             else:
                 QMessageBox.warning(self, tr('error'), message)
+    
+    def discard_selected_changes(self):
+        checked_items = self.get_checked_items()
+        if not checked_items:
+            QMessageBox.warning(self, "Aviso", "No hay archivos seleccionados")
+            return
+        
+        file_paths = [item.data(Qt.ItemDataRole.UserRole) for item in checked_items if item.data(Qt.ItemDataRole.UserRole)]
+        
+        if not file_paths:
+            QMessageBox.warning(self, "Aviso", "No hay archivos válidos seleccionados")
+            return
+        
+        file_count = len(file_paths)
+        reply = QMessageBox.question(
+            self,
+            "Confirmar descarte",
+            f"¿Estás seguro de que deseas descartar los cambios en {file_count} archivo(s) seleccionado(s)?\n\nEsta acción no se puede deshacer.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            errors = []
+            for file_path in file_paths:
+                success, message = self.git_manager.discard_file(file_path)
+                if not success:
+                    errors.append(f"{file_path}: {message}")
+            
+            self.refresh_status()
+            
+            if errors:
+                QMessageBox.warning(self, tr('error'), "\n".join(errors))
+            else:
+                QMessageBox.information(self, "Éxito", f"{file_count} archivo(s) descartado(s)")
                 
     def do_commit(self):
         summary = self.commit_summary.text().strip()

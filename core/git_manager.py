@@ -15,6 +15,19 @@ class GitManager:
         self.repo_path = path
         self._lfs_cache = []
         self._lfs_cache_ts = 0.0
+    
+    def check_and_remove_lock(self):
+        if not self.repo_path:
+            return False, "No repository path set"
+        
+        lock_file = os.path.join(self.repo_path, '.git', 'index.lock')
+        if os.path.exists(lock_file):
+            try:
+                os.remove(lock_file)
+                return True, "Lock file removed successfully"
+            except Exception as e:
+                return False, f"Failed to remove lock file: {str(e)}"
+        return False, "No lock file found"
         
     def run_command(self, command, timeout=30):
         try:
@@ -33,7 +46,10 @@ class GitManager:
             if result.returncode == 0:
                 return True, result.stdout.rstrip()
             else:
-                return False, result.stderr.strip()
+                error_msg = result.stderr.strip()
+                if 'index.lock' in error_msg or 'unable to create' in error_msg.lower():
+                    error_msg += "\n\n💡 Sugerencia: Otro proceso de Git está en uso o quedó bloqueado. Puedes intentar cerrar otros programas o usar la opción 'Desbloquear repositorio' del menú."
+                return False, error_msg
         except subprocess.TimeoutExpired:
             return False, f"Command timed out after {timeout}s"
         except Exception as e:
@@ -105,7 +121,15 @@ class GitManager:
                 'error': 'repository path not set'
             }
         print("[DEBUG] get_status_summary: Running git status command")
-        success, output = self.run_command(["git", "status", "--branch", "--porcelain=v1", "-uall"], timeout=10)
+        success, output = self.run_command([
+            "git",
+            "-c",
+            "core.quotepath=false",
+            "status",
+            "--branch",
+            "--porcelain=v1",
+            "-uall"
+        ], timeout=10)
         print(f"[DEBUG] get_status_summary: Command result: success={success}, output_len={len(output) if output else 0}")
         print(f"[DEBUG] get_status_summary: Command result: success={success}, output_len={len(output) if output else 0}")
         if not success or output is None:
@@ -603,11 +627,11 @@ class GitManager:
         return self.run_command(['git', 'commit', '-m', message])
 
     def discard_file(self, file_path):
-        success, output = self.run_command(f"git ls-files --error-unmatch \"{file_path}\"")
+        success, output = self.run_command(["git", "ls-files", "--error-unmatch", file_path])
         is_tracked = success
         
         if is_tracked:
-            return self.run_command(f"git checkout HEAD -- \"{file_path}\"")
+            return self.run_command(["git", "checkout", "HEAD", "--", file_path])
         else:
             try:
                 full_path = os.path.join(self.repo_path, file_path)
@@ -615,7 +639,7 @@ class GitManager:
                     os.remove(full_path)
                     return True, "File deleted"
                 else:
-                    return False, "File not found"
+                    return True, "File already removed"
             except Exception as e:
                 return False, str(e)
 
