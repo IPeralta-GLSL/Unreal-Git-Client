@@ -1,5 +1,18 @@
 import os
 from pathlib import Path
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 from core.plugin_interface import PluginInterface
 
 class Plugin(PluginInterface):
@@ -127,21 +140,16 @@ class Plugin(PluginInterface):
             with open(uproject, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            engine_version = data.get('EngineAssociation', 'Desconocida')
-            plugins = data.get('Plugins', [])
-            
-            info = f"Versión del Engine: {engine_version}\n"
-            info += f"Plugins: {len(plugins)}\n\n"
-            
-            if plugins:
-                info += "Plugins instalados:\n"
-                for plugin in plugins[:10]:
-                    name = plugin.get('Name', 'Unknown')
-                    enabled = plugin.get('Enabled', False)
-                    status = '✓' if enabled else '✗'
-                    info += f"  {status} {name}\n"
-            
-            return True, info
+            dialog = EngineInfoDialog(data)
+            result = dialog.exec()
+
+            if result == QDialog.DialogCode.Accepted:
+                updated = dialog.get_data()
+                with open(uproject, 'w', encoding='utf-8') as f:
+                    json.dump(updated, f, ensure_ascii=False, indent=4)
+                return True, "Información del Engine actualizada"
+            else:
+                return True, "Sin cambios"
         except Exception as e:
             return False, f"Error al leer información: {str(e)}"
     
@@ -179,3 +187,76 @@ class Plugin(PluginInterface):
             "*.s3m", "*.xm", "*.psd", "*.mov", "*.avi",
             "*.mp4", "*.wmv"
         ]
+
+
+class EngineInfoDialog(QDialog):
+    def __init__(self, data, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Información del Engine")
+        self.data = data
+        self.plugins = data.get('Plugins', [])
+        self.plugin_rows = []
+
+        layout = QVBoxLayout(self)
+
+        version_label = QLabel("Versión del Engine")
+        self.version_input = QLineEdit(str(data.get('EngineAssociation', '')))
+        version_row = QHBoxLayout()
+        version_row.addWidget(version_label)
+        version_row.addWidget(self.version_input)
+        layout.addLayout(version_row)
+
+        buttons_row = QHBoxLayout()
+        activate_all = QPushButton("Activar todos")
+        deactivate_all = QPushButton("Desactivar todos")
+        activate_all.clicked.connect(lambda: self.toggle_all(True))
+        deactivate_all.clicked.connect(lambda: self.toggle_all(False))
+        buttons_row.addWidget(activate_all)
+        buttons_row.addWidget(deactivate_all)
+        buttons_row.addStretch(1)
+        layout.addLayout(buttons_row)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+
+        if self.plugins:
+            for plugin in self.plugins:
+                row_widget = QWidget()
+                row_layout = QHBoxLayout(row_widget)
+                row_layout.setContentsMargins(0, 0, 0, 0)
+                name = plugin.get('Name', 'Desconocido')
+                checkbox = QCheckBox(name)
+                checkbox.setChecked(bool(plugin.get('Enabled', False)))
+                row_layout.addWidget(checkbox)
+                row_layout.addStretch(1)
+                content_layout.addWidget(row_widget)
+                self.plugin_rows.append((plugin, checkbox))
+        else:
+            empty_label = QLabel("No se encontraron plugins en el .uproject")
+            content_layout.addWidget(empty_label)
+
+        content_layout.addStretch(1)
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+
+        actions_row = QHBoxLayout()
+        actions_row.addStretch(1)
+        save_btn = QPushButton("Guardar")
+        cancel_btn = QPushButton("Cancelar")
+        save_btn.clicked.connect(self.accept)
+        cancel_btn.clicked.connect(self.reject)
+        actions_row.addWidget(cancel_btn)
+        actions_row.addWidget(save_btn)
+        layout.addLayout(actions_row)
+
+    def toggle_all(self, value):
+        for _, checkbox in self.plugin_rows:
+            checkbox.setChecked(value)
+
+    def get_data(self):
+        self.data['EngineAssociation'] = self.version_input.text().strip()
+        for plugin, checkbox in self.plugin_rows:
+            plugin['Enabled'] = checkbox.isChecked()
+        return self.data

@@ -31,6 +31,7 @@ class CommitGraphWidget(QWidget):
         self.avatars = {}
         
     def set_commits(self, commits):
+        print(f"[DEBUG] CommitGraphWidget.set_commits: received {len(commits)} commits")
         self.commits = commits
         self.branch_colors = {}
         self.calculate_positions()

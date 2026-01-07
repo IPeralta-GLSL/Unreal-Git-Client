@@ -325,27 +325,43 @@ class GitManager:
         return result
     
     def get_commit_history(self, limit=20):
-        success, result = self.run_command(
-            f'git log --pretty=format:"%H|||%an|||%ae|||%ad|||%s" --date=relative -n {limit}'
-        )
+        print(f"[DEBUG] get_commit_history: repo_path={self.repo_path}, limit={limit}")
+        success, result = self.run_command([
+            'git',
+            'log',
+            '--no-color',
+            '--pretty=format:%H|||%an|||%ae|||%ad|||%s',
+            '--date=relative',
+            '-n',
+            str(limit)
+        ])
         
         if not success:
+            print(f"[DEBUG] get_commit_history: git log failed -> {result}")
+            return []
+        if not result:
+            print("[DEBUG] get_commit_history: git log returned empty output")
             return []
         
         commits = []
         for line in result.splitlines():
-            if '|||' in line:
-                parts = line.split('|||')
-                if len(parts) >= 5:
-                    date_spanish = self.translate_relative_date(parts[3])
-                    commits.append({
-                        'hash': parts[0],
-                        'author': parts[1],
-                        'email': parts[2],
-                        'date': date_spanish,
-                        'message': parts[4]
-                    })
+            if '|||' not in line:
+                print(f"[DEBUG] get_commit_history: skipping malformed line -> {line}")
+                continue
+            parts = line.split('|||')
+            if len(parts) < 5:
+                print(f"[DEBUG] get_commit_history: skipping short line -> {line}")
+                continue
+            date_spanish = self.translate_relative_date(parts[3])
+            commits.append({
+                'hash': parts[0],
+                'author': parts[1],
+                'email': parts[2],
+                'date': date_spanish,
+                'message': parts[4]
+            })
         
+        print(f"[DEBUG] get_commit_history: parsed {len(commits)} commits")
         return commits
         
     def get_commit_diff(self, commit_hash):

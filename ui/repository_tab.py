@@ -24,6 +24,9 @@ import re
 class StatusWorkerSignals(QObject):
     finished = pyqtSignal(object)
 
+class HistoryWorkerSignals(QObject):
+    finished = pyqtSignal(object)
+
 class CloneThread(QThread):
     progress = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
@@ -1043,6 +1046,9 @@ class RepositoryTab(QWidget):
     def _auto_refresh_tick(self):
         if self.repo_path and self.stacked_widget.currentWidget() == self.repo_view:
             self.refresh_status()
+            if not self.history_future or self.history_future.done():
+                if not self.commit_graph.commits:
+                    self.load_history()
 
     def _on_status_future(self, summary):
         print(f"[DEBUG] _on_status_future: Slot triggered with {len(summary.get('entries', []))} entries")
@@ -1570,27 +1576,43 @@ class RepositoryTab(QWidget):
         self.repo_info.setText(info_text)
         
     def load_history(self):
+        print(f"[DEBUG] load_history: Starting, repo_path={self.repo_path}")
         if not self.repo_path:
+            print("[DEBUG] load_history: No repo_path, returning")
             return
         if self.history_future and not self.history_future.done():
+            print("[DEBUG] load_history: history_future still running, marking pending")
             self.history_worker_pending = True
             return
+        print("[DEBUG] load_history: Submitting history task")
         branch = self.current_branch_name or self.git_manager.get_current_branch()
         self.history_branch_requested = branch
         self.history_worker_pending = False
         self.busy_message = "Loading history..."
         self.busy_timer.start()
+        
+        signals = HistoryWorkerSignals()
+        signals.finished.connect(self._on_history_result)
+        
         def task():
-            return self.git_manager.get_commit_history(50)
+            result = self.git_manager.get_commit_history(50)
+            print(f"[DEBUG] history task: Got {len(result)} commits")
+            return result
+        
+        def on_done(future):
+            try:
+                result = future.result()
+            except Exception as e:
+                print(f"[DEBUG] history on_done: Exception {e}")
+                result = []
+            print(f"[DEBUG] history on_done: Emitting signal with {len(result)} commits")
+            signals.finished.emit(result)
+        
         self.history_future = self.executor.submit(task)
-        self.history_future.add_done_callback(lambda f: QTimer.singleShot(0, lambda: self._on_history_future(f)))
+        self.history_future.add_done_callback(on_done)
 
-    def _on_history_future(self, future):
-        try:
-            history = future.result()
-        except Exception:
-            history = []
-
+    def _on_history_result(self, history):
+        print(f"[DEBUG] _on_history_result: received {len(history)} commits")
         if not history:
             self._stop_busy()
             if self.history_worker_pending:
@@ -1613,6 +1635,7 @@ class RepositoryTab(QWidget):
             if email and email not in self.avatar_cache:
                 self.download_gravatar(email, commit['author'])
 
+        print(f"[DEBUG] _on_history_result: setting {len(formatted_commits)} commits on graph")
         self.commit_graph.set_commits(formatted_commits)
         self._stop_busy()
 
