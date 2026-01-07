@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QProgressBar,
                              QSizePolicy, QMenu, QInputDialog, QApplication, QDialog,
                              QTableWidget, QTableWidgetItem, QHeaderView, QGridLayout)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl, QTimer
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl, QTimer, QObject
 from PyQt6.QtGui import QFont, QIcon, QCursor, QAction, QColor, QPixmap, QPainter, QBrush
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from concurrent.futures import ThreadPoolExecutor
@@ -20,6 +20,9 @@ import sys
 import hashlib
 import fnmatch
 import re
+
+class StatusWorkerSignals(QObject):
+    finished = pyqtSignal(object)
 
 class CloneThread(QThread):
     progress = pyqtSignal(str)
@@ -140,10 +143,9 @@ class RepositoryTab(QWidget):
         self.history_worker = None
         self.history_worker_pending = False
         self.repo_splitter = None
-        self.status_refresh_timer = QTimer(self)
-        self.status_refresh_timer.setSingleShot(True)
-        self.status_refresh_timer.setInterval(120)
-        self.status_refresh_timer.timeout.connect(self._start_status_worker)
+        self.auto_refresh_timer = QTimer(self)
+        self.auto_refresh_timer.setInterval(2000)
+        self.auto_refresh_timer.timeout.connect(self._auto_refresh_tick)
         self.scan_large_files = False
         self.current_branch_name = ""
         self.last_status_summary = {}
@@ -157,6 +159,8 @@ class RepositoryTab(QWidget):
         self.busy_timer.setInterval(300)
         self.busy_timer.timeout.connect(self._show_busy)
         self.busy_message = ""
+        self.status_signals = StatusWorkerSignals()
+        self.status_signals.finished.connect(self._on_status_future)
         self.init_ui()
 
     def _show_busy(self):
@@ -873,9 +877,15 @@ class RepositoryTab(QWidget):
         
     def show_home_view(self):
         self.stacked_widget.setCurrentWidget(self.home_view)
+        if self.auto_refresh_timer.isActive():
+            self.auto_refresh_timer.stop()
         
     def show_repo_view(self):
         self.stacked_widget.setCurrentWidget(self.repo_view)
+        if self.repo_path and not self.auto_refresh_timer.isActive():
+            self.auto_refresh_timer.start()
+        if self.repo_path:
+            self.refresh_status()
         
     def on_home_open_repo(self):
         if self.parent_window:
@@ -903,8 +913,11 @@ class RepositoryTab(QWidget):
                 tab_widget.setTabIcon(current_index, self.icon_manager.get_icon("folder", size=16))
         
         self.show_repo_view()
+        if not self.auto_refresh_timer.isActive():
+            self.auto_refresh_timer.start()
         self.load_sidebar_plugins()
         self.refresh_status()
+        self._start_status_worker()
         self.update_repo_info()
         self.load_history()
         self.check_lfs_status()
@@ -971,37 +984,80 @@ class RepositoryTab(QWidget):
 
     def refresh_status(self):
         if not self.repo_path:
+            print("[DEBUG] refresh_status: No repo_path")
             return
-        self.status_refresh_timer.start()
+        if self.status_future and not self.status_future.done():
+            print("[DEBUG] refresh_status: Worker running, marking pending")
+            self.status_worker_pending = True
+            return
+        print("[DEBUG] refresh_status: Starting worker")
+        self.status_worker_pending = False
+        self._start_status_worker()
 
     def _start_status_worker(self):
         if not self.repo_path:
+            print("[DEBUG] _start_status_worker: No repo_path")
             return
         if self.status_future and not self.status_future.done():
+            print("[DEBUG] _start_status_worker: Already running")
             self.status_worker_pending = True
             return
+        print(f"[DEBUG] _start_status_worker: Submitting task for {self.repo_path}")
         self.status_worker_pending = False
         self.busy_message = "Loading status..."
         self.busy_timer.start()
         def task():
-            return self.git_manager.get_status_summary(self.scan_large_files)
+            print("[DEBUG] task: Calling get_status_summary")
+            result = self.git_manager.get_status_summary(self.scan_large_files)
+            print(f"[DEBUG] task: Got result, entries={len(result.get('entries', []))}")
+            return result
+        def on_done(future):
+            print("[DEBUG] on_done: Future callback triggered")
+            try:
+                summary = future.result()
+                print(f"[DEBUG] on_done: Emitting signal with {len(summary.get('entries', []))} entries")
+                self.status_signals.finished.emit(summary)
+            except Exception as e:
+                print(f"[DEBUG] on_done: Exception {e}")
+                self.status_signals.finished.emit({})
         self.status_future = self.executor.submit(task)
-        self.status_future.add_done_callback(lambda f: QTimer.singleShot(0, lambda: self._on_status_future(f)))
+        self.status_future.add_done_callback(on_done)
+        print("[DEBUG] _start_status_worker: Task submitted")
 
-    def _on_status_future(self, future):
-        try:
-            summary = future.result()
-        except Exception:
-            summary = {}
+    def _auto_refresh_tick(self):
+        if self.repo_path and self.stacked_widget.currentWidget() == self.repo_view:
+            self.refresh_status()
+
+    def _on_status_future(self, summary):
+        print(f"[DEBUG] _on_status_future: Slot triggered with {len(summary.get('entries', []))} entries")
         self.last_status_summary = summary or {}
         self.current_branch_name = self.last_status_summary.get('branch', '')
+        print("[DEBUG] _on_status_future: Applying summary")
         self.apply_status_summary()
         self._stop_busy()
+        print("[DEBUG] _on_status_future: Done")
         if self.status_worker_pending:
-            self.status_refresh_timer.start(50)
+            print("[DEBUG] _on_status_future: Restarting worker (pending=True)")
+            self._start_status_worker()
 
     def apply_status_summary(self):
         summary = self.last_status_summary or {}
+        print(f"[DEBUG] apply_status_summary: Processing summary with {len(summary.get('entries', []))} entries")
+
+        error_msg = summary.get('error')
+        if error_msg:
+            print(f"[DEBUG] apply_status_summary: Error detected: {error_msg}")
+            self.changes_list.clear()
+            item = QListWidgetItem(tr('error'))
+            item.setIcon(self.icon_manager.get_icon("warning", size=16))
+            item.setToolTip(error_msg)
+            item.setForeground(QColor("#d16969"))
+            font = QFont("Segoe UI", 11)
+            font.setBold(True)
+            item.setFont(font)
+            self.changes_list.addItem(item)
+            self.branch_button.setText(summary.get('branch', 'unknown'))
+            return
 
         branch = summary.get('branch', 'unknown')
         self.branch_button.setText(branch)

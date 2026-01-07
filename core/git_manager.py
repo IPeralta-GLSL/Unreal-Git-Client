@@ -16,7 +16,7 @@ class GitManager:
         self._lfs_cache = []
         self._lfs_cache_ts = 0.0
         
-    def run_command(self, command):
+    def run_command(self, command, timeout=30):
         try:
             use_shell = isinstance(command, str)
             
@@ -27,12 +27,15 @@ class GitManager:
                 text=True,
                 shell=use_shell,
                 encoding='utf-8',
-                errors='replace'
+                errors='replace',
+                timeout=timeout
             )
             if result.returncode == 0:
                 return True, result.stdout.rstrip()
             else:
                 return False, result.stderr.strip()
+        except subprocess.TimeoutExpired:
+            return False, f"Command timed out after {timeout}s"
         except Exception as e:
             return False, str(e)
             
@@ -90,22 +93,30 @@ class GitManager:
         return result
     
     def get_status_summary(self, include_sizes=False, size_threshold=100 * 1024 * 1024):
+        print(f"[DEBUG] get_status_summary: Starting, repo_path={self.repo_path}, include_sizes={include_sizes}")
         if not self.repo_path:
+            print("[DEBUG] get_status_summary: No repo_path!")
             return {
                 'branch': 'unknown',
                 'ahead': 0,
                 'behind': 0,
                 'entries': [],
-                'large_files': []
+                'large_files': [],
+                'error': 'repository path not set'
             }
-        success, output = self.run_command("git status --branch --porcelain=v1 -uall")
+        print("[DEBUG] get_status_summary: Running git status command")
+        success, output = self.run_command(["git", "status", "--branch", "--porcelain=v1", "-uall"], timeout=10)
+        print(f"[DEBUG] get_status_summary: Command result: success={success}, output_len={len(output) if output else 0}")
+        print(f"[DEBUG] get_status_summary: Command result: success={success}, output_len={len(output) if output else 0}")
         if not success or output is None:
+            print(f"[DEBUG] get_status_summary: Command failed: {output}")
             return {
                 'branch': 'unknown',
                 'ahead': 0,
                 'behind': 0,
                 'entries': [],
-                'large_files': []
+                'large_files': [],
+                'error': output or 'git status failed'
             }
 
         branch = 'unknown'
@@ -183,12 +194,14 @@ class GitManager:
             if is_large:
                 large_files.append(file_path)
 
+        print(f"[DEBUG] get_status_summary: Returning {len(entries)} entries, {len(large_files)} large files")
         return {
             'branch': branch,
             'ahead': ahead,
             'behind': behind,
             'entries': entries,
-            'large_files': large_files
+            'large_files': large_files,
+            'error': None
         }
         
     def get_file_diff(self, file_path):
