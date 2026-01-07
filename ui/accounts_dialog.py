@@ -1253,8 +1253,14 @@ class AccountsDialog(QDialog):
         
         try:
             import subprocess
-            subprocess.run(['git', 'config', '--global', 'user.name', name], check=True)
-            subprocess.run(['git', 'config', '--global', 'user.email', email], check=True)
+            import os
+            
+            kwargs = {'check': True}
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                
+            subprocess.run(['git', 'config', '--global', 'user.name', name], **kwargs)
+            subprocess.run(['git', 'config', '--global', 'user.email', email], **kwargs)
             
             QMessageBox.information(
                 self,
@@ -1269,17 +1275,20 @@ class AccountsDialog(QDialog):
     def load_git_config(self):
         try:
             import subprocess
+            import os
+            
+            kwargs = {'capture_output': True, 'text': True}
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
             
             result_name = subprocess.run(
                 ['git', 'config', '--global', 'user.name'],
-                capture_output=True,
-                text=True
+                **kwargs
             )
             
             result_email = subprocess.run(
                 ['git', 'config', '--global', 'user.email'],
-                capture_output=True,
-                text=True
+                **kwargs
             )
             
             name = result_name.stdout.strip() if result_name.returncode == 0 else "No configurado"

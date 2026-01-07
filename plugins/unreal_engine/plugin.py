@@ -91,13 +91,20 @@ class Plugin(PluginInterface):
                 return self._unreal_status_cache[cache_key], project_name
         
         try:
+            kwargs = {
+                'capture_output': True,
+                'text': True,
+                'encoding': 'utf-8',
+                'errors': 'replace',
+                'timeout': 2
+            }
+            
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                
             result = subprocess.run(
                 ['tasklist', '/FI', f'WINDOWTITLE eq {project_name}*'],
-                capture_output=True,
-                text=True,
-                encoding='utf-8',
-                errors='replace',
-                timeout=2
+                **kwargs
             )
             
             is_running = 'UnrealEditor.exe' in result.stdout
@@ -113,7 +120,13 @@ class Plugin(PluginInterface):
         """Close Unreal Engine"""
         import subprocess
         try:
-            subprocess.run(['taskkill', '/IM', 'UnrealEditor.exe', '/F'], capture_output=True)
+            kwargs = {
+                'capture_output': True
+            }
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                
+            subprocess.run(['taskkill', '/IM', 'UnrealEditor.exe', '/F'], **kwargs)
             return True, "Unreal Engine cerrado"
         except Exception as e:
             return False, f"Error al cerrar Unreal: {str(e)}"
@@ -267,7 +280,14 @@ class Plugin(PluginInterface):
                 for ext in unreal_extensions:
                     f.write(f"{ext} filter=lfs diff=lfs merge=lfs -text\n")
             
-            subprocess.run(['git', 'add', '.gitattributes'], cwd=repo_path, check=True)
+            kwargs = {
+                'cwd': repo_path, 
+                'check': True
+            }
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                
+            subprocess.run(['git', 'add', '.gitattributes'], **kwargs)
             
             return True, f"Configurados {len(unreal_extensions)} tipos de archivos para LFS"
         except Exception as e:

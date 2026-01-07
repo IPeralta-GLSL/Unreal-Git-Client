@@ -33,16 +33,23 @@ class GitManager:
         try:
             use_shell = isinstance(command, str)
             
-            result = subprocess.run(
-                command,
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True,
-                shell=use_shell,
-                encoding='utf-8',
-                errors='replace',
-                timeout=timeout
-            )
+            # Prepare subprocess arguments
+            kwargs = {
+                'cwd': self.repo_path,
+                'capture_output': True,
+                'text': True,
+                'shell': use_shell,
+                'encoding': 'utf-8',
+                'errors': 'replace',
+                'timeout': timeout
+            }
+            
+            # Suppress window on Windows
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+            
+            result = subprocess.run(command, **kwargs)
+
             if result.returncode == 0:
                 return True, result.stdout.rstrip()
             else:
@@ -248,15 +255,22 @@ class GitManager:
     def push(self, progress_callback=None):
         if progress_callback:
             try:
+                kwargs = {
+                    'cwd': self.repo_path,
+                    'stdout': subprocess.PIPE,
+                    'stderr': subprocess.STDOUT,
+                    'text': True,
+                    'encoding': 'utf-8',
+                    'errors': 'replace',
+                    'bufsize': 1
+                }
+                
+                if os.name == 'nt':
+                    kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+
                 process = subprocess.Popen(
                     ['git', 'push', '--progress'],
-                    cwd=self.repo_path,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    encoding='utf-8',
-                    errors='replace',
-                    bufsize=1
+                    **kwargs
                 )
                 
                 output_lines = []
@@ -390,14 +404,21 @@ class GitManager:
             
             if progress_callback:
                 if progress_callback: progress_callback(f"Cloning into {target_path}...")
+                
+                kwargs = {
+                    'stdout': subprocess.PIPE,
+                    'stderr': subprocess.STDOUT,
+                    'text': True,
+                    'encoding': 'utf-8',
+                    'errors': 'replace',
+                    'bufsize': 1
+                }
+                if os.name == 'nt':
+                    kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                    
                 process = subprocess.Popen(
                     ['git', 'clone', '--progress', url, target_path],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    encoding='utf-8',
-                    errors='replace',
-                    bufsize=1
+                    **kwargs
                 )
                 
                 output_lines = []
@@ -417,12 +438,18 @@ class GitManager:
                 else:
                     return False, ''.join(output_lines)
             else:
+                kwargs = {
+                    'capture_output': True,
+                    'text': True,
+                    'encoding': 'utf-8',
+                    'errors': 'replace'
+                }
+                if os.name == 'nt':
+                    kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                    
                 result = subprocess.run(
                     ['git', 'clone', url, target_path],
-                    capture_output=True,
-                    text=True,
-                    encoding='utf-8',
-                    errors='replace'
+                    **kwargs
                 )
                 
                 if result.returncode == 0:
