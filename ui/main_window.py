@@ -171,28 +171,12 @@ class MainWindow(QMainWindow):
         self.tab_widget.currentChanged.connect(self.on_tab_changed)
         
         self.tab_widget.setCornerWidget(self.create_window_controls(), Qt.Corner.TopRightCorner)
-        self.tab_widget.setCornerWidget(self.create_app_icon(), Qt.Corner.TopLeftCorner)
         
         self.tab_widget.tabBar().installEventFilter(self)
         
         layout.addWidget(self.tab_widget)
         
         self.add_empty_tab()
-
-    def create_app_icon(self):
-        container = QWidget()
-        container.setObjectName("appCorner")
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(8, 8, 6, 0)
-        layout.setSpacing(0)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        
-        app_icon = QLabel()
-        app_icon.setPixmap(self.icon_manager.get_pixmap("git-tree", size=18))
-        app_icon.setFixedSize(18, 18)
-        layout.addWidget(app_icon)
-        
-        return container
 
     def create_window_controls(self):
         from ui.theme import get_current_theme
