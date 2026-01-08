@@ -332,7 +332,6 @@ class GitManager:
         return result
     
     def get_commit_history(self, limit=20):
-        print(f"[DEBUG] get_commit_history: repo_path={self.repo_path}, limit={limit}")
         success, result = self.run_command([
             'git',
             'log',
@@ -344,20 +343,16 @@ class GitManager:
         ])
         
         if not success:
-            print(f"[DEBUG] get_commit_history: git log failed -> {result}")
             return []
         if not result:
-            print("[DEBUG] get_commit_history: git log returned empty output")
             return []
         
         commits = []
         for line in result.splitlines():
             if '|||' not in line:
-                print(f"[DEBUG] get_commit_history: skipping malformed line -> {line}")
                 continue
             parts = line.split('|||')
             if len(parts) < 5:
-                print(f"[DEBUG] get_commit_history: skipping short line -> {line}")
                 continue
             date_spanish = self.translate_relative_date(parts[3])
             commits.append({
@@ -368,7 +363,6 @@ class GitManager:
                 'message': parts[4]
             })
         
-        print(f"[DEBUG] get_commit_history: parsed {len(commits)} commits")
         return commits
         
     def get_commit_diff(self, commit_hash):
@@ -697,6 +691,9 @@ class GitManager:
             
     def unstage_all(self):
         return self.run_command(['git', 'reset'])
+    
+    def unstage_file(self, file_path):
+        return self.run_command(['git', 'reset', 'HEAD', '--', file_path])
         
     def commit(self, message):
         return self.run_command(['git', 'commit', '-m', message])

@@ -6,6 +6,7 @@ import math
 
 class CommitGraphWidget(QWidget):
     commit_clicked = pyqtSignal(str)
+    commit_context_menu = pyqtSignal(str)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -31,7 +32,6 @@ class CommitGraphWidget(QWidget):
         self.avatars = {}
         
     def set_commits(self, commits):
-        print(f"[DEBUG] CommitGraphWidget.set_commits: received {len(commits)} commits")
         self.commits = commits
         self.branch_colors = {}
         self.calculate_positions()
@@ -283,33 +283,21 @@ class CommitGraphWidget(QWidget):
         return "?"
         
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            # Check for row click first (easier and covers everything)
-            y = event.pos().y()
-            row = int((y - 30 + self.row_height / 2) / self.row_height)
+        y = event.pos().y()
+        row = int((y - 30 + self.row_height / 2) / self.row_height)
+        
+        if 0 <= row < len(self.commits):
+            commit = self.commits[row]
+            commit_hash = commit.get('hash', '')
             
-            if 0 <= row < len(self.commits):
-                commit = self.commits[row]
-                self.selected_commit = commit.get('hash', '')
-                self.commit_clicked.emit(commit.get('hash', ''))
+            if event.button() == Qt.MouseButton.LeftButton:
+                self.selected_commit = commit_hash
+                self.commit_clicked.emit(commit_hash)
                 self.update()
-                return
-
-            # Fallback to specific node click if needed (though row click covers it)
-            for commit in self.commits:
-                column = commit.get('column', 0)
-                row = commit.get('row', 0)
-                
-                x = self.left_margin + column * 24
-                y = 30 + row * self.row_height
-                
-                distance = math.sqrt((event.pos().x() - x)**2 + (event.pos().y() - y)**2)
-                
-                if distance <= self.node_radius * 2:
-                    self.selected_commit = commit.get('hash', '')
-                    self.commit_clicked.emit(commit.get('hash', ''))
-                    self.update()
-                    return
+            elif event.button() == Qt.MouseButton.RightButton:
+                self.selected_commit = commit_hash
+                self.commit_context_menu.emit(commit_hash)
+                self.update()
     
     def sizeHint(self):
         from PyQt6.QtCore import QSize

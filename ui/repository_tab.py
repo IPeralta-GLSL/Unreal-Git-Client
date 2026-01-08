@@ -858,6 +858,7 @@ class RepositoryTab(QWidget):
         self.commit_graph = CommitGraphWidget()
         self.commit_graph.setStyleSheet("background-color: palette(window);")
         self.commit_graph.commit_clicked.connect(self.on_graph_commit_clicked)
+        self.commit_graph.commit_context_menu.connect(self.show_commit_context_menu)
         scroll.setWidget(self.commit_graph)
         
         history_layout.addWidget(scroll)
@@ -1169,6 +1170,14 @@ class RepositoryTab(QWidget):
             self.push_btn.setText(tr('push'))
             self.push_btn.setStyleSheet(self.get_action_button_style(highlight=False))
 
+        # Preserve selection state
+        current_states = {}
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            path = item.data(Qt.ItemDataRole.UserRole)
+            if path:
+                current_states[path] = item.checkState()
+
         self.changes_list.clear()
         entries = summary.get('entries', [])
         self.large_files = summary.get('large_files', [])
@@ -1241,7 +1250,13 @@ class RepositoryTab(QWidget):
             item.setFont(font)
             item.setData(Qt.ItemDataRole.UserRole, file_path)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Checked)
+            
+            # Restore selection state
+            if file_path in current_states:
+                item.setCheckState(current_states[file_path])
+            else:
+                item.setCheckState(Qt.CheckState.Checked)
+                
             self.changes_list.addItem(item)
 
         if self.large_files:
@@ -1339,17 +1354,34 @@ class RepositoryTab(QWidget):
             QMenu {{
                 background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
-                padding: 5px;
+                padding: 8px;
+                border-radius: 8px;
             }}
             QMenu::item {{
-                padding: 8px 25px;
+                padding: 10px 20px;
                 color: {theme.colors['text']};
+                border-radius: 4px;
+                margin: 2px 4px;
             }}
             QMenu::item:selected {{
                 background-color: {theme.colors['primary']};
                 color: {theme.colors['text_inverse']};
             }}
+            QMenu::item:disabled {{
+                color: {theme.colors['text_secondary']};
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {theme.colors['border']};
+                margin: 8px 10px;
+            }}
         """)
+        
+        file_name = os.path.basename(file_path) if file_path else "archivo"
+        header = QAction(f"📄 {file_name}", self)
+        header.setEnabled(False)
+        menu.addAction(header)
+        menu.addSeparator()
         
         stage_action = QAction(tr('stage_file_context'), self)
         stage_action.setIcon(self.icon_manager.get_icon("file-plus", size=16))
@@ -1361,14 +1393,14 @@ class RepositoryTab(QWidget):
         unstage_action.triggered.connect(lambda: self.unstage_file_single(file_path))
         menu.addAction(unstage_action)
         
+        menu.addSeparator()
+        
         discard_action = QAction(tr('discard_changes_context'), self)
         discard_action.setIcon(self.icon_manager.get_icon("x-circle", size=16))
         discard_action.triggered.connect(lambda: self.discard_file_context(file_path))
         menu.addAction(discard_action)
         
-        menu.addSeparator()
-        
-        discard_selected_action = QAction("Descartar seleccionados", self)
+        discard_selected_action = QAction(tr('discard_selected'), self)
         discard_selected_action.setIcon(self.icon_manager.get_icon("trash", size=16))
         discard_selected_action.triggered.connect(self.discard_selected_changes)
         menu.addAction(discard_selected_action)
@@ -1767,8 +1799,103 @@ class RepositoryTab(QWidget):
         html += '</div>'
         return html
     
-    def show_commit_context_menu(self, position):
-        pass
+    def show_commit_context_menu(self, commit_hash):
+        if not commit_hash:
+            return
+            
+        menu = QMenu(self)
+        theme = get_current_theme()
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                padding: 8px;
+                border-radius: 8px;
+            }}
+            QMenu::item {{
+                padding: 10px 20px;
+                color: {theme.colors['text']};
+                border-radius: 4px;
+                margin: 2px 4px;
+            }}
+            QMenu::item:selected {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {theme.colors['border']};
+                margin: 8px 10px;
+            }}
+        """)
+        
+        hash_short = commit_hash[:7]
+        
+        header = QAction(f"📌 Commit: {hash_short}", self)
+        header.setEnabled(False)
+        menu.addAction(header)
+        menu.addSeparator()
+        
+        copy_action = QAction(tr('copy_hash'), self)
+        copy_action.setIcon(self.icon_manager.get_icon("copy", size=16))
+        copy_action.triggered.connect(lambda: self.copy_commit_hash(commit_hash))
+        menu.addAction(copy_action)
+        
+        menu.addSeparator()
+        
+        branch_action = QAction(tr('create_branch_from_commit'), self)
+        branch_action.setIcon(self.icon_manager.get_icon("git-branch", size=16))
+        branch_action.triggered.connect(lambda: self.create_branch_from_commit_quick(commit_hash))
+        menu.addAction(branch_action)
+        
+        checkout_action = QAction(tr('checkout_commit'), self)
+        checkout_action.setIcon(self.icon_manager.get_icon("git-checkout", size=16))
+        checkout_action.triggered.connect(lambda: self.checkout_commit_quick(commit_hash))
+        menu.addAction(checkout_action)
+        
+        menu.addSeparator()
+        
+        reset_menu = QMenu(tr('reset_to_commit'), self)
+        reset_menu.setIcon(self.icon_manager.get_icon("history", size=16))
+        reset_menu.setStyleSheet(menu.styleSheet())
+        
+        soft_action = QAction(f"🟢 {tr('reset_soft')} - {tr('reset_soft_desc')}", self)
+        soft_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'soft'))
+        reset_menu.addAction(soft_action)
+        
+        mixed_action = QAction(f"🟡 {tr('reset_mixed')} - {tr('reset_mixed_desc')}", self)
+        mixed_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'mixed'))
+        reset_menu.addAction(mixed_action)
+        
+        hard_action = QAction(f"🔴 {tr('reset_hard')} - {tr('reset_hard_desc')}", self)
+        hard_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'hard'))
+        reset_menu.addAction(hard_action)
+        
+        menu.addMenu(reset_menu)
+        
+        revert_action = QAction(tr('revert_commit'), self)
+        revert_action.setIcon(self.icon_manager.get_icon("undo", size=16))
+        revert_action.triggered.connect(lambda: self.revert_commit_quick(commit_hash))
+        menu.addAction(revert_action)
+        
+        menu.exec(QCursor.pos())
+    
+    def revert_commit_quick(self, commit_hash):
+        reply = QMessageBox.question(
+            self,
+            tr('confirm_revert'),
+            tr('revert_question', hash=commit_hash[:7]),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.git_manager.revert_commit(commit_hash)
+            if success:
+                QMessageBox.information(self, tr('success'), tr('success_revert', hash=commit_hash[:7]))
+                self.refresh_status()
+                self.load_history()
+            else:
+                QMessageBox.warning(self, tr('error'), f"{tr('error_revert')}:\n{message}")
     
     def create_branch_from_commit_quick(self, commit_hash):
         branch_name, ok = QInputDialog.getText(
