@@ -53,7 +53,7 @@ class GitManager:
             else:
                 error_msg = result.stderr.strip()
                 if 'index.lock' in error_msg or 'unable to create' in error_msg.lower():
-                    error_msg += "\n\n💡 Sugerencia: Otro proceso de Git está en uso o quedó bloqueado. Puedes intentar cerrar otros programas o usar la opción 'Desbloquear repositorio' del menú."
+                    error_msg += "\n\nSugerencia: Otro proceso de Git está en uso o quedó bloqueado. Puedes intentar cerrar otros programas o usar la opción 'Desbloquear repositorio' del menú."
                 return False, error_msg
         except subprocess.TimeoutExpired:
             return False, f"Command timed out after {timeout}s"

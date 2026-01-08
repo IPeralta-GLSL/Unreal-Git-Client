@@ -383,9 +383,16 @@ class AccountsDialog(QDialog):
         separator.setStyleSheet(" margin-top: 20px; margin-bottom: 10px;")
         layout.addWidget(separator)
         
-        advanced_label = QLabel("🔧 Métodos alternativos:")
+        advanced_container = QHBoxLayout()
+        advanced_icon = QLabel()
+        advanced_icon.setPixmap(self.icon_manager.get_pixmap('wrench', size=16))
+        advanced_icon.setFixedSize(20, 20)
+        advanced_label = QLabel(tr('alternative_methods'))
         advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(text); font-size: 12px;")
-        layout.addWidget(advanced_label)
+        advanced_container.addWidget(advanced_icon)
+        advanced_container.addWidget(advanced_label)
+        advanced_container.addStretch()
+        layout.addLayout(advanced_container)
         
         manual_label = QLabel("Agregar un Personal Access Token manualmente:")
         manual_label.setStyleSheet("margin-top: 10px; font-size: 11px; color: palette(text);")
@@ -406,7 +413,8 @@ class AccountsDialog(QDialog):
         """)
         token_layout.addWidget(self.github_token)
         
-        add_token_btn = QPushButton("➕ Agregar Token")
+        add_token_btn = QPushButton(tr('add_token'))
+        add_token_btn.setIcon(self.icon_manager.get_icon('plus', size=16))
         add_token_btn.clicked.connect(self.add_github_token)
         add_token_btn.setMinimumHeight(35)
         add_token_btn.setStyleSheet("""
@@ -587,9 +595,16 @@ class AccountsDialog(QDialog):
         separator.setStyleSheet(" margin-top: 20px; margin-bottom: 10px;")
         layout.addWidget(separator)
         
-        advanced_label = QLabel("🔧 Métodos alternativos:")
-        advanced_label.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(text); font-size: 12px;")
-        layout.addWidget(advanced_label)
+        advanced_container2 = QHBoxLayout()
+        advanced_icon2 = QLabel()
+        advanced_icon2.setPixmap(self.icon_manager.get_pixmap('wrench', size=16))
+        advanced_icon2.setFixedSize(20, 20)
+        advanced_label2 = QLabel(tr('alternative_methods'))
+        advanced_label2.setStyleSheet("margin-top: 10px; font-weight: bold; color: palette(text); font-size: 12px;")
+        advanced_container2.addWidget(advanced_icon2)
+        advanced_container2.addWidget(advanced_label2)
+        advanced_container2.addStretch()
+        layout.addLayout(advanced_container2)
         
         manual_label = QLabel("O agrega manualmente un Personal Access Token:")
         manual_label.setStyleSheet("margin-top: 5px; font-size: 12px;")
@@ -602,7 +617,8 @@ class AccountsDialog(QDialog):
         self.gitlab_token.setStyleSheet(self.gitlab_url.styleSheet())
         token_layout.addWidget(self.gitlab_token)
         
-        add_token_btn = QPushButton("➕ Agregar Token")
+        add_token_btn = QPushButton(tr('add_token'))
+        add_token_btn.setIcon(self.icon_manager.get_icon('plus', size=16))
         add_token_btn.clicked.connect(self.add_gitlab_token)
         add_token_btn.setStyleSheet("""
             QPushButton {
@@ -792,9 +808,16 @@ class AccountsDialog(QDialog):
             info_layout.addWidget(name_label)
             
             if email:
-                email_label = QLabel(f"📧 {email}")
+                email_container = QHBoxLayout()
+                email_icon = QLabel()
+                email_icon.setPixmap(self.icon_manager.get_pixmap('mail', size=14))
+                email_icon.setFixedSize(16, 16)
+                email_label = QLabel(email)
                 email_label.setStyleSheet("font-size: 12px; color: palette(text);")
-                info_layout.addWidget(email_label)
+                email_container.addWidget(email_icon)
+                email_container.addWidget(email_label)
+                email_container.addStretch()
+                info_layout.addLayout(email_container)
             else:
                 info_layout.addStretch()
             
@@ -829,13 +852,13 @@ class AccountsDialog(QDialog):
             self.accounts_changed.emit()
     
     def start_github_device_flow(self):
-        self.github_status_label.setText("⏳ Iniciando autenticación...")
+        self.github_status_label.setText(tr('auth_starting'))
         self.github_status_label.show()
         
         flow_data = self.account_manager.start_github_device_flow()
         
         if not flow_data:
-            self.github_status_label.setText("❌ Error al iniciar la autenticación. Verifica tu conexión a internet.")
+            self.github_status_label.setText(tr('auth_error_connection'))
             return
         
         user_code = flow_data['user_code']
@@ -843,7 +866,8 @@ class AccountsDialog(QDialog):
         device_code = flow_data['device_code']
         interval = flow_data['interval']
         
-        copy_button = QPushButton("📋")
+        copy_button = QPushButton()
+        copy_button.setIcon(self.icon_manager.get_icon('copy'))
         copy_button.setFixedSize(30, 30)
         copy_button.setStyleSheet("""
             QPushButton {
@@ -860,7 +884,7 @@ class AccountsDialog(QDialog):
         copy_button.clicked.connect(lambda: self.copy_code_to_clipboard(user_code))
         
         code_layout = QHBoxLayout()
-        code_label = QLabel(f"<b>📋 Código:</b> <span style='font-size: 20px; font-family: monospace;'>{user_code}</span>")
+        code_label = QLabel(f"<b>{tr('code')}:</b> <span style='font-size: 20px; font-family: monospace;'>{user_code}</span>")
         code_layout.addWidget(code_label)
         code_layout.addWidget(copy_button)
         code_layout.addStretch()
@@ -892,7 +916,7 @@ class AccountsDialog(QDialog):
         
         if self.poll_attempts > self.max_poll_attempts:
             self.poll_timer.stop()
-            self.github_status_label.setText("❌ Tiempo de espera agotado. Intenta nuevamente.")
+            self.github_status_label.setText(tr('auth_timeout'))
             return
         
         result = self.account_manager.poll_github_device_token(device_code, interval)
@@ -921,17 +945,17 @@ class AccountsDialog(QDialog):
                 self.load_accounts()
                 self.accounts_changed.emit()
             else:
-                self.github_status_label.setText("❌ Error al obtener información del usuario.")
+                self.github_status_label.setText(tr('auth_error_user_info'))
         else:
             self.poll_timer.stop()
-            self.github_status_label.setText("❌ Error en la autenticación. Intenta nuevamente.")
+            self.github_status_label.setText(tr('auth_error_generic'))
     
     def start_gitlab_device_flow(self):
         gitlab_url = self.gitlab_url_input.text().strip()
         if not gitlab_url:
             gitlab_url = "https://gitlab.com"
         
-        self.gitlab_status_label.setText("⏳ Iniciando autenticación con GitLab...")
+        self.gitlab_status_label.setText(tr('auth_starting_gitlab'))
         self.gitlab_status_label.show()
         
         flow_data = self.account_manager.start_gitlab_device_flow(gitlab_url)
@@ -949,9 +973,9 @@ class AccountsDialog(QDialog):
         interval = flow_data['interval']
         
         self.gitlab_status_label.setText(
-            f"<b>📋 Código de verificación:</b> <span style='font-size: 24px;'>{user_code}</span><br><br>"
-            f"Abriendo navegador en <b>{verification_uri}</b>...<br><br>"
-            f"Ingresa el código cuando se te solicite."
+            f"<b>{tr('verification_code')}:</b> <span style='font-size: 24px;'>{user_code}</span><br><br>"
+            f"{tr('opening_browser')} <b>{verification_uri}</b>...<br><br>"
+            f"{tr('enter_code_when_prompted')}"
         )
         
         webbrowser.open(verification_uri)
@@ -968,7 +992,7 @@ class AccountsDialog(QDialog):
         
         if self.gitlab_poll_attempts > self.gitlab_max_poll_attempts:
             self.gitlab_poll_timer.stop()
-            self.gitlab_status_label.setText("❌ Tiempo de espera agotado. Intenta nuevamente.")
+            self.gitlab_status_label.setText(tr('auth_timeout'))
             return
         
         result = self.account_manager.poll_gitlab_device_token(gitlab_url, device_code, interval)
@@ -997,10 +1021,10 @@ class AccountsDialog(QDialog):
                 self.load_accounts()
                 self.accounts_changed.emit()
             else:
-                self.gitlab_status_label.setText("❌ Error al obtener información del usuario.")
+                self.gitlab_status_label.setText(tr('auth_error_user_info'))
         else:
             self.gitlab_poll_timer.stop()
-            self.gitlab_status_label.setText("❌ Error en la autenticación. Intenta nuevamente.")
+            self.gitlab_status_label.setText(tr('auth_error_generic'))
     
     def connect_github(self):
         client_id = self.github_client_id.text().strip()

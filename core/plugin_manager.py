@@ -44,9 +44,9 @@ class PluginManager:
                         'enabled': enabled_by_default
                     }
                     status = "cargado" if enabled_by_default else "cargado (desactivado)"
-                    print(f"✓ Plugin {status}: {plugin_instance.get_name()}")
+                    print(f"[OK] Plugin {status}: {plugin_instance.get_name()}")
             except Exception as e:
-                print(f"✗ Error cargando plugin {plugin_dir.name}: {str(e)}")
+                print(f"[ERROR] Error cargando plugin {plugin_dir.name}: {str(e)}")
     
     def get_plugin(self, name):
         plugin_data = self.plugins.get(name)

@@ -282,7 +282,7 @@ class TranslationManager:
                 'reset_soft_desc': 'Mantiene cambios staged',
                 'reset_mixed_desc': 'Quita del staging',
                 'reset_hard_desc': 'Descarta todo',
-                'reset_warning': '\n\n⚠ ADVERTENCIA: Perderás todos los cambios no guardados!',
+                'reset_warning': '\n\nADVERTENCIA: Perderás todos los cambios no guardados!',
                 'reset_question': '¿Hacer reset {mode} al commit {hash}?{warning}',
                 'success_reset': 'Reset {mode} completado',
                 'error_reset': 'Error en reset',
@@ -401,6 +401,20 @@ class TranslationManager:
                 'update_available': 'Actualización disponible',
                 'new_version_available': 'Nueva versión disponible',
                 'update_question': '¿Deseas descargarla ahora?',
+                
+                # Autenticación
+                'auth_starting': 'Iniciando autenticación...',
+                'auth_starting_gitlab': 'Iniciando autenticación con GitLab...',
+                'auth_error_connection': 'Error al iniciar la autenticación. Verifica tu conexión a internet.',
+                'auth_timeout': 'Tiempo de espera agotado. Intenta nuevamente.',
+                'auth_error_user_info': 'Error al obtener información del usuario.',
+                'auth_error_generic': 'Error en la autenticación. Intenta nuevamente.',
+                'code': 'Código',
+                'verification_code': 'Código de verificación',
+                'opening_browser': 'Abriendo navegador en',
+                'enter_code_when_prompted': 'Ingresa el código cuando se te solicite.',
+                'alternative_methods': 'Métodos alternativos:',
+                'add_token': 'Agregar Token',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -673,7 +687,7 @@ class TranslationManager:
                 'reset_soft_desc': 'Keep changes staged',
                 'reset_mixed_desc': 'Unstage changes',
                 'reset_hard_desc': 'Discard everything',
-                'reset_warning': '\n\n⚠ WARNING: You will lose all unsaved changes!',
+                'reset_warning': '\n\nWARNING: You will lose all unsaved changes!',
                 'reset_question': 'Reset {mode} to commit {hash}?{warning}',
                 'success_reset': 'Reset {mode} completed',
                 'error_reset': 'Reset error',
@@ -792,6 +806,20 @@ class TranslationManager:
                 'update_available': 'Update available',
                 'new_version_available': 'New version available',
                 'update_question': 'Do you want to download it now?',
+                
+                # Authentication
+                'auth_starting': 'Starting authentication...',
+                'auth_starting_gitlab': 'Starting authentication with GitLab...',
+                'auth_error_connection': 'Error starting authentication. Check your internet connection.',
+                'auth_timeout': 'Timeout expired. Try again.',
+                'auth_error_user_info': 'Error getting user information.',
+                'auth_error_generic': 'Authentication error. Try again.',
+                'code': 'Code',
+                'verification_code': 'Verification code',
+                'opening_browser': 'Opening browser at',
+                'enter_code_when_prompted': 'Enter the code when prompted.',
+                'alternative_methods': 'Alternative methods:',
+                'add_token': 'Add Token',
             }
         }
         

@@ -1381,7 +1381,8 @@ class RepositoryTab(QWidget):
         """)
         
         file_name = os.path.basename(file_path) if file_path else "archivo"
-        header = QAction(f"📄 {file_name}", self)
+        header = QAction(file_name, self)
+        header.setIcon(self.icon_manager.get_icon('file-doc', size=16))
         header.setEnabled(False)
         menu.addAction(header)
         menu.addSeparator()
@@ -1834,7 +1835,8 @@ class RepositoryTab(QWidget):
         
         hash_short = commit_hash[:7]
         
-        header = QAction(f"📌 Commit: {hash_short}", self)
+        header = QAction(f"Commit: {hash_short}", self)
+        header.setIcon(self.icon_manager.get_icon('pin', size=16))
         header.setEnabled(False)
         menu.addAction(header)
         menu.addSeparator()
@@ -1862,15 +1864,18 @@ class RepositoryTab(QWidget):
         reset_menu.setIcon(self.icon_manager.get_icon("history", size=16))
         reset_menu.setStyleSheet(menu.styleSheet())
         
-        soft_action = QAction(f"🟢 {tr('reset_soft')} - {tr('reset_soft_desc')}", self)
+        soft_action = QAction(f"{tr('reset_soft')} - {tr('reset_soft_desc')}", self)
+        soft_action.setIcon(self.icon_manager.get_icon('circle-green', size=16))
         soft_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'soft'))
         reset_menu.addAction(soft_action)
         
-        mixed_action = QAction(f"🟡 {tr('reset_mixed')} - {tr('reset_mixed_desc')}", self)
+        mixed_action = QAction(f"{tr('reset_mixed')} - {tr('reset_mixed_desc')}", self)
+        mixed_action.setIcon(self.icon_manager.get_icon('circle-yellow', size=16))
         mixed_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'mixed'))
         reset_menu.addAction(mixed_action)
         
-        hard_action = QAction(f"🔴 {tr('reset_hard')} - {tr('reset_hard_desc')}", self)
+        hard_action = QAction(f"{tr('reset_hard')} - {tr('reset_hard_desc')}", self)
+        hard_action.setIcon(self.icon_manager.get_icon('circle-red', size=16))
         hard_action.triggered.connect(lambda: self.reset_commit_quick(commit_hash, 'hard'))
         reset_menu.addAction(hard_action)
         
@@ -2008,7 +2013,8 @@ class RepositoryTab(QWidget):
             }}
         """)
         
-        header = QAction(f"🌿 {tr('local_branches')}", self)
+        header = QAction(tr('local_branches'), self)
+        header.setIcon(self.icon_manager.get_icon('branch-local', color=theme.colors['primary']))
         header.setEnabled(False)
         menu.addAction(header)
         
@@ -2018,39 +2024,45 @@ class RepositoryTab(QWidget):
         for branch in local_branches:
             name = branch['name']
             if branch['is_current']:
-                action = QAction(f"✓ {name} (actual)", self)
+                action = QAction(f"{name} (actual)", self)
+                action.setIcon(self.icon_manager.get_icon('check', color=theme.colors['primary']))
                 action.setEnabled(False)
             else:
-                action = QAction(f"   {name}", self)
+                action = QAction(name, self)
+                action.setIcon(self.icon_manager.get_icon('git-branch', color=theme.colors['text_secondary']))
                 action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
             
             menu.addAction(action)
         
         if remote_branches:
             menu.addSeparator()
-            remote_header = QAction(f"☁️ {tr('remote_branches')}", self)
+            remote_header = QAction(tr('remote_branches'), self)
+            remote_header.setIcon(self.icon_manager.get_icon('branch-remote', color='#60a5fa'))
             remote_header.setEnabled(False)
             menu.addAction(remote_header)
             
             for branch in remote_branches[:8]:
                 name = branch['name']
                 display_name = name.replace('remotes/origin/', '')
-                action = QAction(f"   {display_name}", self)
+                action = QAction(display_name, self)
+                action.setIcon(self.icon_manager.get_icon('globe', color=theme.colors['text_secondary']))
                 action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
                 menu.addAction(action)
             
             if len(remote_branches) > 8:
-                more_action = QAction(f"   ... +{len(remote_branches) - 8} más", self)
+                more_action = QAction(f"... +{len(remote_branches) - 8} más", self)
                 more_action.setEnabled(False)
                 menu.addAction(more_action)
         
         menu.addSeparator()
         
-        new_branch_action = QAction(f"➕ {tr('new_branch_menu')}", self)
+        new_branch_action = QAction(tr('new_branch_menu'), self)
+        new_branch_action.setIcon(self.icon_manager.get_icon('plus', color=theme.colors['primary']))
         new_branch_action.triggered.connect(self.create_new_branch_quick)
         menu.addAction(new_branch_action)
         
-        manage_action = QAction(f"⚙️ {tr('manage_branches')}", self)
+        manage_action = QAction(tr('manage_branches'), self)
+        manage_action.setIcon(self.icon_manager.get_icon('settings', color=theme.colors['text_secondary']))
         manage_action.triggered.connect(self.open_branch_manager)
         menu.addAction(manage_action)
         
