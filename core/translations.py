@@ -256,6 +256,7 @@ class TranslationManager:
                 'cloning': 'Clonando',
                 
                 'change_branch_menu': 'Cambiar Rama',
+                'local_branches': 'Ramas Locales',
                 'remote_branches': 'Ramas Remotas',
                 'new_branch_menu': 'Nueva Rama...',
                 'manage_branches': 'Administrar Ramas...',
@@ -646,6 +647,7 @@ class TranslationManager:
                 'cloning': 'Cloning',
                 
                 'change_branch_menu': 'Change Branch',
+                'local_branches': 'Local Branches',
                 'remote_branches': 'Remote Branches',
                 'new_branch_menu': 'New Branch...',
                 'manage_branches': 'Manage Branches...',

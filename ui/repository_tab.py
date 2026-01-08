@@ -1186,12 +1186,15 @@ class RepositoryTab(QWidget):
             self.changes_counter.setText(str(len(entries)))
 
         if not entries:
+            theme = get_current_theme()
             item = QListWidgetItem(tr('no_changes'))
             item.setIcon(self.icon_manager.get_icon("check", size=16))
-            item.setForeground(QColor("#4ec9b0"))
+            item.setForeground(QColor(theme.colors['primary']))
             font = QFont("Segoe UI", 11)
             font.setBold(True)
             item.setFont(font)
+            item.setFlags(Qt.ItemFlag.NoItemFlags)
+            item.setData(Qt.ItemDataRole.UserRole, None)
             self.changes_list.addItem(item)
             self.large_files_banner.hide()
             return
@@ -1975,77 +1978,79 @@ class RepositoryTab(QWidget):
     def show_branch_menu(self):
         branches = self.git_manager.get_all_branches()
         current_branch = self.git_manager.get_current_branch()
+        theme = get_current_theme()
         
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: palette(button);
-                color: palette(window-text);
-                border: 1px solid #3d3d3d;
-                padding: 5px;
-            }
-            QMenu::item {
-                padding: 10px 30px;
-                border-radius: 3px;
-                font-size: 13px;
-            }
-            QMenu::item:selected {
-                background-color: palette(highlight);
-            }
-            QMenu::separator {
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                padding: 8px;
+                border-radius: 8px;
+            }}
+            QMenu::item {{
+                padding: 10px 20px;
+                color: {theme.colors['text']};
+                border-radius: 4px;
+                margin: 2px 4px;
+            }}
+            QMenu::item:selected {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+            QMenu::item:disabled {{
+                color: {theme.colors['text_secondary']};
+            }}
+            QMenu::separator {{
                 height: 1px;
-                background-color: palette(text);
-                margin: 5px 0;
-            }
+                background-color: {theme.colors['border']};
+                margin: 8px 10px;
+            }}
         """)
         
-        header = QAction(tr('change_branch_menu'), self)
-        header.setIcon(self.icon_manager.get_icon("git-branch", size=16))
+        header = QAction(f"🌿 {tr('local_branches')}", self)
         header.setEnabled(False)
         menu.addAction(header)
-        menu.addSeparator()
         
         local_branches = [b for b in branches if not b['is_remote']]
         remote_branches = [b for b in branches if b['is_remote']]
         
         for branch in local_branches:
             name = branch['name']
-            action = QAction(name, self)
             if branch['is_current']:
-                action.setIcon(self.icon_manager.get_icon("check", size=16))
-            else:
-                action.setIcon(self.icon_manager.get_icon("git-branch", size=16))
-            
-            if branch['is_current']:
+                action = QAction(f"✓ {name} (actual)", self)
                 action.setEnabled(False)
             else:
+                action = QAction(f"   {name}", self)
                 action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
             
             menu.addAction(action)
         
         if remote_branches:
             menu.addSeparator()
-            remote_header = QAction(tr('remote_branches'), self)
-            remote_header.setIcon(self.icon_manager.get_icon("share-network", size=16))
+            remote_header = QAction(f"☁️ {tr('remote_branches')}", self)
             remote_header.setEnabled(False)
             menu.addAction(remote_header)
             
-            for branch in remote_branches[:5]:
+            for branch in remote_branches[:8]:
                 name = branch['name']
-                action = QAction(name, self)
-                action.setIcon(self.icon_manager.get_icon("share-network", size=16))
+                display_name = name.replace('remotes/origin/', '')
+                action = QAction(f"   {display_name}", self)
                 action.triggered.connect(lambda checked, b=name: self.switch_branch_quick(b))
                 menu.addAction(action)
+            
+            if len(remote_branches) > 8:
+                more_action = QAction(f"   ... +{len(remote_branches) - 8} más", self)
+                more_action.setEnabled(False)
+                menu.addAction(more_action)
         
         menu.addSeparator()
         
-        new_branch_action = QAction(tr('new_branch_menu'), self)
-        new_branch_action.setIcon(self.icon_manager.get_icon("plus-circle", size=16))
+        new_branch_action = QAction(f"➕ {tr('new_branch_menu')}", self)
         new_branch_action.triggered.connect(self.create_new_branch_quick)
         menu.addAction(new_branch_action)
         
-        manage_action = QAction(tr('manage_branches'), self)
-        manage_action.setIcon(self.icon_manager.get_icon("gear-six", size=16))
+        manage_action = QAction(f"⚙️ {tr('manage_branches')}", self)
         manage_action.triggered.connect(self.open_branch_manager)
         menu.addAction(manage_action)
         
