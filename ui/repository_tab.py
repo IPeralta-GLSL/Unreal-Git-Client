@@ -567,7 +567,10 @@ class RepositoryTab(QWidget):
         self.changes_list.setMinimumHeight(200)
         self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
-        self.changes_list.itemChanged.connect(self.on_item_check_changed)
+        
+        # Optimización: usar un timer para procesar cambios de checkbox en batch
+        self._check_change_timer = None
+        self._pending_check_changes = []
         
         # Get path to checkmark icon for stylesheet
         import os
@@ -581,6 +584,7 @@ class RepositoryTab(QWidget):
                 padding: 5px;
                 font-family: 'Consolas', 'Monaco', monospace;
                 font-size: 13px;
+                outline: none;
             }}
             QListWidget::item {{
                 padding: 8px;
@@ -596,16 +600,16 @@ class RepositoryTab(QWidget):
                 border-left-color: {theme.colors['border_focus']};
             }}
             QListWidget::indicator {{
-                width: 20px;
-                height: 20px;
-                border-radius: 6px;
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
                 border: 2px solid {theme.colors['border']};
                 background-color: {theme.colors['surface']};
+                margin-right: 8px;
             }}
             QListWidget::indicator:hover {{
                 border-color: {theme.colors['primary']};
-                background-color: {theme.colors['surface_hover']};
-                border-width: 2px;
+                background-color: rgba(22, 163, 74, 0.1);
             }}
             QListWidget::indicator:checked {{
                 background-color: {theme.colors['primary']};
@@ -616,6 +620,14 @@ class RepositoryTab(QWidget):
                 background-color: {theme.colors['primary_hover']};
                 border-color: {theme.colors['primary_hover']};
                 image: url({checkmark_path});
+            }}
+            QListWidget::indicator:unchecked:pressed {{
+                background-color: rgba(22, 163, 74, 0.3);
+                border-color: {theme.colors['primary']};
+            }}
+            QListWidget::indicator:checked:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+                border-color: {theme.colors['primary_pressed']};
             }}
         """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
@@ -1185,6 +1197,8 @@ class RepositoryTab(QWidget):
             if path:
                 current_states[path] = item.checkState()
 
+        # Desactivar actualizaciones durante el llenado de la lista
+        self.changes_list.setUpdatesEnabled(False)
         self.changes_list.clear()
         entries = summary.get('entries', [])
         self.large_files = summary.get('large_files', [])
@@ -1204,6 +1218,7 @@ class RepositoryTab(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, None)
             self.changes_list.addItem(item)
             self.large_files_banner.hide()
+            self.changes_list.setUpdatesEnabled(True)
             return
 
         for entry in entries:
@@ -1268,6 +1283,9 @@ class RepositoryTab(QWidget):
                 item.setCheckState(Qt.CheckState.Checked)
                 
             self.changes_list.addItem(item)
+
+        # Reactivar actualizaciones
+        self.changes_list.setUpdatesEnabled(True)
 
         if self.large_files:
             self.large_files_label.setText(tr('large_files_detected', count=len(self.large_files)))
@@ -1447,23 +1465,30 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), message)
 
     def on_item_check_changed(self, item):
+        # Método vacío - el checkbox funciona nativamente sin necesidad de lógica adicional
         pass
 
     def select_all_changes(self):
-        self.changes_list.blockSignals(True)
-        for i in range(self.changes_list.count()):
-            item = self.changes_list.item(i)
-            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
-                item.setCheckState(Qt.CheckState.Checked)
-        self.changes_list.blockSignals(False)
+        # Desactivar actualizaciones visuales durante la operación masiva
+        self.changes_list.setUpdatesEnabled(False)
+        try:
+            for i in range(self.changes_list.count()):
+                item = self.changes_list.item(i)
+                if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                    item.setCheckState(Qt.CheckState.Checked)
+        finally:
+            self.changes_list.setUpdatesEnabled(True)
             
     def deselect_all_changes(self):
-        self.changes_list.blockSignals(True)
-        for i in range(self.changes_list.count()):
-            item = self.changes_list.item(i)
-            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
-                item.setCheckState(Qt.CheckState.Unchecked)
-        self.changes_list.blockSignals(False)
+        # Desactivar actualizaciones visuales durante la operación masiva
+        self.changes_list.setUpdatesEnabled(False)
+        try:
+            for i in range(self.changes_list.count()):
+                item = self.changes_list.item(i)
+                if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                    item.setCheckState(Qt.CheckState.Unchecked)
+        finally:
+            self.changes_list.setUpdatesEnabled(True)
 
     def stage_file_single(self, file_path):
         success, message = self.git_manager.stage_file(file_path)
