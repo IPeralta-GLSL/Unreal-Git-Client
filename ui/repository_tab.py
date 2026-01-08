@@ -1269,6 +1269,7 @@ class RepositoryTab(QWidget):
             font = QFont("Consolas", 11)
             item.setFont(font)
             item.setData(Qt.ItemDataRole.UserRole, file_path)
+            item.setData(Qt.ItemDataRole.UserRole + 1, state)  # Store git state
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             
             # Restore checkbox state
@@ -1418,15 +1419,28 @@ class RepositoryTab(QWidget):
         menu.addAction(header)
         menu.addSeparator()
         
-        stage_action = QAction(tr('stage_file_context'), self)
-        stage_action.setIcon(self.icon_manager.get_icon("file-plus", size=16))
-        stage_action.triggered.connect(lambda: self.stage_file_single(file_path))
-        menu.addAction(stage_action)
+        # Show in folder
+        show_folder_action = QAction(tr('show_in_folder'), self)
+        show_folder_action.setIcon(self.icon_manager.get_icon("folder-open", size=16))
+        show_folder_action.triggered.connect(lambda: self.show_in_folder(file_path))
+        menu.addAction(show_folder_action)
         
-        unstage_action = QAction(tr('unstage_file_context'), self)
-        unstage_action.setIcon(self.icon_manager.get_icon("file-minus", size=16))
-        unstage_action.triggered.connect(lambda: self.unstage_file_single(file_path))
-        menu.addAction(unstage_action)
+        # Copy path submenu
+        copy_menu = QMenu(tr('copy'), self)
+        copy_menu.setIcon(self.icon_manager.get_icon("copy", size=16))
+        copy_menu.setStyleSheet(menu.styleSheet())
+        
+        copy_abs_action = QAction(tr('copy_absolute_path'), self)
+        copy_abs_action.setIcon(self.icon_manager.get_icon("link", size=16))
+        copy_abs_action.triggered.connect(lambda: self.copy_file_path(file_path, absolute=True))
+        copy_menu.addAction(copy_abs_action)
+        
+        copy_rel_action = QAction(tr('copy_relative_path'), self)
+        copy_rel_action.setIcon(self.icon_manager.get_icon("link-simple", size=16))
+        copy_rel_action.triggered.connect(lambda: self.copy_file_path(file_path, absolute=False))
+        copy_menu.addAction(copy_rel_action)
+        
+        menu.addMenu(copy_menu)
         
         menu.addSeparator()
         
@@ -1460,6 +1474,38 @@ class RepositoryTab(QWidget):
         menu.addAction(lfs_action)
         
         menu.exec(self.changes_list.mapToGlobal(position))
+
+    def show_in_folder(self, file_path):
+        """Open the folder containing the file in the system file explorer with the file selected"""
+        if not self.repo_path or not file_path:
+            return
+        full_path = os.path.normpath(os.path.join(self.repo_path, file_path))
+        if sys.platform == 'win32':
+            # Use explorer.exe /select, to highlight the file
+            import subprocess
+            explorer_path = os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'explorer.exe')
+            subprocess.Popen([explorer_path, '/select,', full_path])
+        elif sys.platform == 'darwin':
+            import subprocess
+            subprocess.run(['open', '-R', full_path])
+        else:
+            # Linux: open folder (file selection not universally supported)
+            folder_path = os.path.dirname(full_path)
+            if os.path.exists(folder_path):
+                import subprocess
+                subprocess.run(['xdg-open', folder_path])
+
+    def copy_file_path(self, file_path, absolute=True):
+        """Copy the file path to clipboard"""
+        if not file_path:
+            return
+        if absolute and self.repo_path:
+            path_to_copy = os.path.join(self.repo_path, file_path)
+        else:
+            path_to_copy = file_path
+        
+        clipboard = QApplication.clipboard()
+        clipboard.setText(path_to_copy)
 
     def add_to_gitignore(self, file_path):
         success, message = self.git_manager.add_to_gitignore(file_path)
