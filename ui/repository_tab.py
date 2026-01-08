@@ -568,6 +568,11 @@ class RepositoryTab(QWidget):
         self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
         self.changes_list.itemChanged.connect(self.on_item_check_changed)
+        
+        # Get path to checkmark icon for stylesheet
+        import os
+        checkmark_path = os.path.join(os.path.dirname(__file__), "Icons", "checkmark.svg").replace("\\", "/")
+        
         self.changes_list.setStyleSheet(f"""
             QListWidget {{
                 background-color: palette(window);
@@ -591,24 +596,26 @@ class RepositoryTab(QWidget):
                 border-left-color: {theme.colors['border_focus']};
             }}
             QListWidget::indicator {{
-                width: 18px;
-                height: 18px;
-                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                border-radius: 6px;
                 border: 2px solid {theme.colors['border']};
                 background-color: {theme.colors['surface']};
             }}
             QListWidget::indicator:hover {{
                 border-color: {theme.colors['primary']};
                 background-color: {theme.colors['surface_hover']};
+                border-width: 2px;
             }}
             QListWidget::indicator:checked {{
                 background-color: {theme.colors['primary']};
                 border-color: {theme.colors['primary']};
-                image: url(none);
+                image: url({checkmark_path});
             }}
             QListWidget::indicator:checked:hover {{
                 background-color: {theme.colors['primary_hover']};
                 border-color: {theme.colors['primary_hover']};
+                image: url({checkmark_path});
             }}
         """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
