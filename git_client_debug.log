@@ -693,3 +693,52 @@ RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
 2026-01-08 14:06:22,413 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2026-01-08 14:06:22,977 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
 2026-01-08 14:06:22,978 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 14:11:57,317 - core.updater - INFO - Checking for updates...
+2026-01-08 14:11:57,351 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 14:11:57,943 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 14:11:57,944 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 14:19:40,578 - core.updater - INFO - Checking for updates...
+2026-01-08 14:19:40,609 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 14:19:41,249 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 14:19:41,250 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 14:33:30,588 - core.updater - INFO - Checking for updates...
+2026-01-08 14:33:30,625 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 14:33:31,238 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 14:33:31,238 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 14:49:29,087 - core.updater - INFO - Checking for updates...
+2026-01-08 14:49:29,130 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 14:49:29,719 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 14:49:29,720 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 14:50:09,972 - concurrent.futures - ERROR - exception calling callback for <Future at 0x1b4f6b15150 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 1106, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 1109, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-08 14:56:18,371 - core.updater - INFO - Checking for updates...
+2026-01-08 14:56:18,406 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 14:56:19,051 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 14:56:19,052 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 14:59:20,915 - core.updater - INFO - Checking for updates...
+2026-01-08 14:59:20,952 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 14:59:21,607 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 14:59:21,607 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 15:03:28,218 - core.updater - INFO - Checking for updates...
+2026-01-08 15:03:28,255 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 15:03:28,860 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 15:03:28,861 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-08 15:05:02,771 - core.updater - INFO - Checking for updates...
+2026-01-08 15:05:02,808 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-08 15:05:03,468 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-08 15:05:03,469 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8

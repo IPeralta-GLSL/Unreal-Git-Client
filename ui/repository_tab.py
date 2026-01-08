@@ -567,10 +567,7 @@ class RepositoryTab(QWidget):
         self.changes_list.setMinimumHeight(200)
         self.changes_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.changes_list.customContextMenuRequested.connect(self.show_changes_context_menu)
-        
-        # Optimización: usar un timer para procesar cambios de checkbox en batch
-        self._check_change_timer = None
-        self._pending_check_changes = []
+        self.changes_list.itemChanged.connect(self.on_item_check_changed)
         
         # Get path to checkmark icon for stylesheet
         import os
@@ -632,23 +629,26 @@ class RepositoryTab(QWidget):
         """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
         self.changes_list.itemDoubleClicked.connect(self.on_change_double_clicked)
+        # Enable multi-selection with Ctrl/Shift
+        self.changes_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         changes_layout.addWidget(self.changes_list)
         
+        # Buttons row - compact layout
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(5)
+        btn_layout.setSpacing(8)
         
-        self.select_all_btn = QPushButton(tr('select_all'))
-        self.select_all_btn.setIcon(self.icon_manager.get_icon("check-square", size=16))
-        self.select_all_btn.setMinimumHeight(36)
-        self.select_all_btn.setStyleSheet(f"""
+        # Toggle select all button (for checkboxes)
+        self._all_checked = True
+        self.toggle_select_btn = QPushButton()
+        self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=18))
+        self.toggle_select_btn.setToolTip(tr('toggle_selection'))
+        self.toggle_select_btn.setFixedSize(36, 36)
+        self.toggle_select_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.toggle_select_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {theme.colors['primary']};
-                color: {theme.colors['text_inverse']};
                 border: none;
-                border-radius: {theme.borders['radius_md']}px;
-                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
-                font-size: {theme.fonts['size_sm']}px;
-                font-weight: {theme.fonts['weight_bold']};
+                border-radius: 6px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['primary_hover']};
@@ -657,33 +657,22 @@ class RepositoryTab(QWidget):
                 background-color: {theme.colors['primary_pressed']};
             }}
         """)
-        self.select_all_btn.clicked.connect(self.select_all_changes)
-        btn_layout.addWidget(self.select_all_btn)
+        self.toggle_select_btn.clicked.connect(self.toggle_all_changes)
+        btn_layout.addWidget(self.toggle_select_btn)
         
-        self.deselect_all_btn = QPushButton(tr('deselect_all'))
-        self.deselect_all_btn.setIcon(self.icon_manager.get_icon("square", size=16))
-        self.deselect_all_btn.setMinimumHeight(36)
-        self.deselect_all_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {theme.colors['surface']};
+        # Checked files counter
+        self.checked_label = QLabel()
+        self.checked_label.setStyleSheet(f"""
+            QLabel {{
                 color: {theme.colors['text']};
-                border: {theme.borders['width_thin']}px solid {theme.colors['border']};
-                border-radius: {theme.borders['radius_md']}px;
-                padding: {theme.spacing['sm']}px {theme.spacing['md']}px;
-                font-size: {theme.fonts['size_sm']}px;
-                font-weight: {theme.fonts['weight_bold']};
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['surface_hover']};
-                border-color: {theme.colors['primary']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['primary']};
-                color: {theme.colors['text_inverse']};
+                font-size: 12px;
+                font-weight: bold;
+                padding: 0 8px;
             }}
         """)
-        self.deselect_all_btn.clicked.connect(self.deselect_all_changes)
-        btn_layout.addWidget(self.deselect_all_btn)
+        btn_layout.addWidget(self.checked_label)
+        
+        btn_layout.addStretch()
         
         changes_layout.addLayout(btn_layout)
         layout.addWidget(changes_container, 1)
@@ -1189,13 +1178,16 @@ class RepositoryTab(QWidget):
             self.push_btn.setText(tr('push'))
             self.push_btn.setStyleSheet(self.get_action_button_style(highlight=False))
 
-        # Preserve selection state
+        # Preserve selection state (checkboxes) and visual selection
         current_states = {}
+        selected_paths = set()
         for i in range(self.changes_list.count()):
             item = self.changes_list.item(i)
             path = item.data(Qt.ItemDataRole.UserRole)
             if path:
                 current_states[path] = item.checkState()
+                if item.isSelected():
+                    selected_paths.add(path)
 
         # Desactivar actualizaciones durante el llenado de la lista
         self.changes_list.setUpdatesEnabled(False)
@@ -1276,7 +1268,7 @@ class RepositoryTab(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, file_path)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             
-            # Restore selection state
+            # Restore checkbox state
             if file_path in current_states:
                 item.setCheckState(current_states[file_path])
             else:
@@ -1284,8 +1276,19 @@ class RepositoryTab(QWidget):
                 
             self.changes_list.addItem(item)
 
+        # Restore visual selection AFTER all items are added
+        if selected_paths:
+            for i in range(self.changes_list.count()):
+                item = self.changes_list.item(i)
+                path = item.data(Qt.ItemDataRole.UserRole)
+                if path and path in selected_paths:
+                    item.setSelected(True)
+
         # Reactivar actualizaciones
         self.changes_list.setUpdatesEnabled(True)
+        
+        # Actualizar contador de archivos marcados
+        self.update_checked_counter()
 
         if self.large_files:
             self.large_files_label.setText(tr('large_files_detected', count=len(self.large_files)))
@@ -1424,15 +1427,30 @@ class RepositoryTab(QWidget):
         
         menu.addSeparator()
         
-        discard_action = QAction(tr('discard_changes_context'), self)
+        # Discard this file
+        discard_action = QAction(tr('discard_file', file=file_name), self)
         discard_action.setIcon(self.icon_manager.get_icon("x-circle", size=16))
         discard_action.triggered.connect(lambda: self.discard_file_context(file_path))
         menu.addAction(discard_action)
         
-        discard_selected_action = QAction(tr('discard_selected'), self)
-        discard_selected_action.setIcon(self.icon_manager.get_icon("trash", size=16))
-        discard_selected_action.triggered.connect(self.discard_selected_changes)
-        menu.addAction(discard_selected_action)
+        # Discard selected files (if multiple selected via Ctrl/Shift)
+        selected_items = self.changes_list.selectedItems()
+        selected_files = [item for item in selected_items if item.data(Qt.ItemDataRole.UserRole)]
+        selected_count = len(selected_files)
+        if selected_count > 1:
+            discard_selected_action = QAction(tr('discard_n_files', count=selected_count), self)
+            discard_selected_action.setIcon(self.icon_manager.get_icon("trash", size=16))
+            discard_selected_action.triggered.connect(self.discard_selected_items)
+            menu.addAction(discard_selected_action)
+        
+        # Discard checked files (if any are checked)
+        checked_items = self.get_checked_items()
+        checked_count = len(checked_items)
+        if checked_count > 0 and checked_count != selected_count:
+            discard_checked_action = QAction(tr('discard_checked_files', count=checked_count), self)
+            discard_checked_action.setIcon(self.icon_manager.get_icon("check-square", size=16))
+            discard_checked_action.triggered.connect(self.discard_selected_changes)
+            menu.addAction(discard_checked_action)
         
         menu.addSeparator()
         
@@ -1465,30 +1483,91 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), message)
 
     def on_item_check_changed(self, item):
-        # Método vacío - el checkbox funciona nativamente sin necesidad de lógica adicional
-        pass
-
-    def select_all_changes(self):
-        # Desactivar actualizaciones visuales durante la operación masiva
-        self.changes_list.setUpdatesEnabled(False)
-        try:
-            for i in range(self.changes_list.count()):
-                item = self.changes_list.item(i)
-                if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
-                    item.setCheckState(Qt.CheckState.Checked)
-        finally:
-            self.changes_list.setUpdatesEnabled(True)
+        # Actualizar contador de archivos marcados
+        self.update_checked_counter()
+    
+    def update_checked_counter(self):
+        """Update the counter showing how many files are checked for commit"""
+        checked_count = 0
+        total_count = 0
+        for i in range(self.changes_list.count()):
+            item = self.changes_list.item(i)
+            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                total_count += 1
+                if item.checkState() == Qt.CheckState.Checked:
+                    checked_count += 1
+        
+        if hasattr(self, 'checked_label'):
+            self.checked_label.setText(tr('checked_for_commit', checked=checked_count, total=total_count))
+        
+        # Update toggle button state based on current state
+        if hasattr(self, '_all_checked') and hasattr(self, 'toggle_select_btn'):
+            if checked_count == total_count and total_count > 0:
+                self._all_checked = True
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=18))
+                self.toggle_select_btn.setToolTip(tr('deselect_all'))
+            elif checked_count == 0:
+                self._all_checked = False
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("square", size=18))
+                self.toggle_select_btn.setToolTip(tr('select_all'))
+    
+    def discard_selected_items(self):
+        """Discard changes for all selected items (multi-select via Ctrl/Shift)"""
+        selected_items = self.changes_list.selectedItems()
+        file_paths = [item.data(Qt.ItemDataRole.UserRole) for item in selected_items if item.data(Qt.ItemDataRole.UserRole)]
+        
+        if not file_paths:
+            return
+        
+        file_count = len(file_paths)
+        if file_count == 1:
+            msg = tr('confirm_discard_text', file=os.path.basename(file_paths[0]))
+        else:
+            msg = tr('confirm_discard_n_files', count=file_count)
+        
+        reply = QMessageBox.question(
+            self,
+            tr('confirm_discard'),
+            msg,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            errors = []
+            for file_path in file_paths:
+                success, message = self.git_manager.discard_file(file_path)
+                if not success:
+                    errors.append(f"{file_path}: {message}")
             
-    def deselect_all_changes(self):
-        # Desactivar actualizaciones visuales durante la operación masiva
+            if errors:
+                QMessageBox.warning(self, tr('error'), "\n".join(errors))
+            
+            self.refresh_status()
+
+    def toggle_all_changes(self):
+        """Toggle entre seleccionar todos / deseleccionar todos"""
         self.changes_list.setUpdatesEnabled(False)
         try:
+            # Determine new state (toggle)
+            new_state = Qt.CheckState.Unchecked if self._all_checked else Qt.CheckState.Checked
+            
             for i in range(self.changes_list.count()):
                 item = self.changes_list.item(i)
                 if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
-                    item.setCheckState(Qt.CheckState.Unchecked)
+                    item.setCheckState(new_state)
+            
+            # Update toggle state and button icon
+            self._all_checked = not self._all_checked
+            if self._all_checked:
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=18))
+                self.toggle_select_btn.setToolTip(tr('deselect_all'))
+            else:
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("square", size=18))
+                self.toggle_select_btn.setToolTip(tr('select_all'))
         finally:
             self.changes_list.setUpdatesEnabled(True)
+            self.update_checked_counter()
 
     def stage_file_single(self, file_path):
         success, message = self.git_manager.stage_file(file_path)
