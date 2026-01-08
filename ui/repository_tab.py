@@ -1427,30 +1427,22 @@ class RepositoryTab(QWidget):
         
         menu.addSeparator()
         
-        # Discard this file
-        discard_action = QAction(tr('discard_file', file=file_name), self)
-        discard_action.setIcon(self.icon_manager.get_icon("x-circle", size=16))
-        discard_action.triggered.connect(lambda: self.discard_file_context(file_path))
-        menu.addAction(discard_action)
-        
-        # Discard selected files (if multiple selected via Ctrl/Shift)
+        # Single discard option - smart based on selection
         selected_items = self.changes_list.selectedItems()
         selected_files = [item for item in selected_items if item.data(Qt.ItemDataRole.UserRole)]
         selected_count = len(selected_files)
-        if selected_count > 1:
-            discard_selected_action = QAction(tr('discard_n_files', count=selected_count), self)
-            discard_selected_action.setIcon(self.icon_manager.get_icon("trash", size=16))
-            discard_selected_action.triggered.connect(self.discard_selected_items)
-            menu.addAction(discard_selected_action)
         
-        # Discard checked files (if any are checked)
-        checked_items = self.get_checked_items()
-        checked_count = len(checked_items)
-        if checked_count > 0 and checked_count != selected_count:
-            discard_checked_action = QAction(tr('discard_checked_files', count=checked_count), self)
-            discard_checked_action.setIcon(self.icon_manager.get_icon("check-square", size=16))
-            discard_checked_action.triggered.connect(self.discard_selected_changes)
-            menu.addAction(discard_checked_action)
+        if selected_count > 1:
+            # Multiple files selected - discard all selected
+            discard_action = QAction(tr('discard_n_files', count=selected_count), self)
+            discard_action.setIcon(self.icon_manager.get_icon("trash", size=16))
+            discard_action.triggered.connect(self.discard_selected_items)
+        else:
+            # Single file or no selection - discard clicked file
+            discard_action = QAction(tr('discard_file', file=file_name), self)
+            discard_action.setIcon(self.icon_manager.get_icon("x-circle", size=16))
+            discard_action.triggered.connect(lambda: self.discard_file_context(file_path))
+        menu.addAction(discard_action)
         
         menu.addSeparator()
         
