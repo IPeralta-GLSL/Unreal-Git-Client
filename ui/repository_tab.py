@@ -562,6 +562,51 @@ class RepositoryTab(QWidget):
         
         changes_layout.addWidget(self.large_files_banner)
         
+        # Selection controls row - ABOVE the list
+        selection_row = QHBoxLayout()
+        selection_row.setSpacing(8)
+        selection_row.setContentsMargins(0, 0, 0, 4)
+        
+        # Toggle select all button (for checkboxes)
+        self._all_checked = True
+        self.toggle_select_btn = QPushButton()
+        self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=14, color="#ffffff"))
+        self.toggle_select_btn.setToolTip(tr('deselect_all'))
+        self.toggle_select_btn.setFixedSize(26, 26)
+        self.toggle_select_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.toggle_select_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['primary']};
+                border: none;
+                border-radius: 6px;
+                padding: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary_hover']};
+                transform: scale(1.05);
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary_pressed']};
+            }}
+        """)
+        self.toggle_select_btn.clicked.connect(self.toggle_all_changes)
+        selection_row.addWidget(self.toggle_select_btn)
+        
+        # Checked files counter
+        self.checked_label = QLabel()
+        self.checked_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme.colors['text']};
+                font-size: 12px;
+                font-weight: bold;
+            }}
+        """)
+        selection_row.addWidget(self.checked_label)
+        
+        selection_row.addStretch()
+        
+        changes_layout.addLayout(selection_row)
+        
         self.changes_list = QListWidget()
         self.changes_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.changes_list.setMinimumHeight(200)
@@ -633,48 +678,6 @@ class RepositoryTab(QWidget):
         self.changes_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         changes_layout.addWidget(self.changes_list)
         
-        # Buttons row - compact layout
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(8)
-        
-        # Toggle select all button (for checkboxes)
-        self._all_checked = True
-        self.toggle_select_btn = QPushButton()
-        self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=18))
-        self.toggle_select_btn.setToolTip(tr('toggle_selection'))
-        self.toggle_select_btn.setFixedSize(36, 36)
-        self.toggle_select_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.toggle_select_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {theme.colors['primary']};
-                border: none;
-                border-radius: 6px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['primary_pressed']};
-            }}
-        """)
-        self.toggle_select_btn.clicked.connect(self.toggle_all_changes)
-        btn_layout.addWidget(self.toggle_select_btn)
-        
-        # Checked files counter
-        self.checked_label = QLabel()
-        self.checked_label.setStyleSheet(f"""
-            QLabel {{
-                color: {theme.colors['text']};
-                font-size: 12px;
-                font-weight: bold;
-                padding: 0 8px;
-            }}
-        """)
-        btn_layout.addWidget(self.checked_label)
-        
-        btn_layout.addStretch()
-        
-        changes_layout.addLayout(btn_layout)
         layout.addWidget(changes_container, 1)
         
         self.commit_header = self.create_section_header(tr('commit_title'), tr('commit_subtitle'), "git-commit")
@@ -1433,14 +1436,14 @@ class RepositoryTab(QWidget):
         selected_count = len(selected_files)
         
         if selected_count > 1:
-            # Multiple files selected - discard all selected
+            # Multiple files selected - discard all selected (files icon)
             discard_action = QAction(tr('discard_n_files', count=selected_count), self)
-            discard_action.setIcon(self.icon_manager.get_icon("trash", size=16))
+            discard_action.setIcon(self.icon_manager.get_icon("files", size=16))
             discard_action.triggered.connect(self.discard_selected_items)
         else:
-            # Single file or no selection - discard clicked file
+            # Single file or no selection - discard clicked file (single file icon)
             discard_action = QAction(tr('discard_file', file=file_name), self)
-            discard_action.setIcon(self.icon_manager.get_icon("x-circle", size=16))
+            discard_action.setIcon(self.icon_manager.get_icon("file-x", size=16))
             discard_action.triggered.connect(lambda: self.discard_file_context(file_path))
         menu.addAction(discard_action)
         
@@ -1496,11 +1499,11 @@ class RepositoryTab(QWidget):
         if hasattr(self, '_all_checked') and hasattr(self, 'toggle_select_btn'):
             if checked_count == total_count and total_count > 0:
                 self._all_checked = True
-                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=18))
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=14, color="#ffffff"))
                 self.toggle_select_btn.setToolTip(tr('deselect_all'))
             elif checked_count == 0:
                 self._all_checked = False
-                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("square", size=18))
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("square", size=14, color="#ffffff"))
                 self.toggle_select_btn.setToolTip(tr('select_all'))
     
     def discard_selected_items(self):
@@ -1552,10 +1555,10 @@ class RepositoryTab(QWidget):
             # Update toggle state and button icon
             self._all_checked = not self._all_checked
             if self._all_checked:
-                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=18))
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=14, color="#ffffff"))
                 self.toggle_select_btn.setToolTip(tr('deselect_all'))
             else:
-                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("square", size=18))
+                self.toggle_select_btn.setIcon(self.icon_manager.get_icon("square", size=14, color="#ffffff"))
                 self.toggle_select_btn.setToolTip(tr('select_all'))
         finally:
             self.changes_list.setUpdatesEnabled(True)
