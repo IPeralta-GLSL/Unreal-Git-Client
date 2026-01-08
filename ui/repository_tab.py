@@ -153,7 +153,7 @@ class RepositoryTab(QWidget):
         self.auto_refresh_timer = QTimer(self)
         self.auto_refresh_timer.setInterval(2000)
         self.auto_refresh_timer.timeout.connect(self._auto_refresh_tick)
-        self.scan_large_files = False
+        self.scan_large_files = True
         self.current_branch_name = ""
         self.last_status_summary = {}
         self.status_future = None
@@ -2359,7 +2359,7 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), message)
             
     def show_lfs_tracking(self):
-        dialog = LFSTrackingDialog(self.git_manager, self.plugin_manager, self)
+        dialog = LFSTrackingDialog(self.git_manager, self.plugin_manager, self, suggested_files=self.large_files)
         dialog.exec()
         self.check_lfs_status()
             

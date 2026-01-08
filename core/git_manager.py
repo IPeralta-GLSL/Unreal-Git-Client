@@ -33,7 +33,6 @@ class GitManager:
         try:
             use_shell = isinstance(command, str)
             
-            # Prepare subprocess arguments
             kwargs = {
                 'cwd': self.repo_path,
                 'capture_output': True,
@@ -44,7 +43,6 @@ class GitManager:
                 'timeout': timeout
             }
             
-            # Suppress window on Windows
             if os.name == 'nt':
                 kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
             
@@ -116,9 +114,7 @@ class GitManager:
         return result
     
     def get_status_summary(self, include_sizes=False, size_threshold=100 * 1024 * 1024):
-        print(f"[DEBUG] get_status_summary: Starting, repo_path={self.repo_path}, include_sizes={include_sizes}")
         if not self.repo_path:
-            print("[DEBUG] get_status_summary: No repo_path!")
             return {
                 'branch': 'unknown',
                 'ahead': 0,
@@ -127,7 +123,7 @@ class GitManager:
                 'large_files': [],
                 'error': 'repository path not set'
             }
-        print("[DEBUG] get_status_summary: Running git status command")
+        
         success, output = self.run_command([
             "git",
             "-c",
@@ -137,10 +133,8 @@ class GitManager:
             "--porcelain=v1",
             "-uall"
         ], timeout=10)
-        print(f"[DEBUG] get_status_summary: Command result: success={success}, output_len={len(output) if output else 0}")
-        print(f"[DEBUG] get_status_summary: Command result: success={success}, output_len={len(output) if output else 0}")
+        
         if not success or output is None:
-            print(f"[DEBUG] get_status_summary: Command failed: {output}")
             return {
                 'branch': 'unknown',
                 'ahead': 0,
@@ -225,7 +219,6 @@ class GitManager:
             if is_large:
                 large_files.append(file_path)
 
-        print(f"[DEBUG] get_status_summary: Returning {len(entries)} entries, {len(large_files)} large files")
         return {
             'branch': branch,
             'ahead': ahead,
@@ -534,7 +527,13 @@ class GitManager:
         new_entries = []
         for pattern in normalized:
             if pattern not in existing_patterns:
-                new_entries.append(f"{pattern} filter=lfs diff=lfs merge=lfs -text\n")
+                # Wrap in quotes if it contains spaces or special chars
+                pattern_str = pattern
+                if ' ' in pattern_str or any(c in pattern_str for c in '()[]{}'):
+                    if not pattern_str.startswith('"'):
+                        pattern_str = f'"{pattern_str}"'
+                
+                new_entries.append(f"{pattern_str} filter=lfs diff=lfs merge=lfs -text\n")
 
         if new_entries:
             try:
