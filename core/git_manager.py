@@ -105,6 +105,107 @@ class GitManager:
     
     def merge_branch(self, branch_name):
         return self.run_command(f"git merge \"{branch_name}\"")
+    
+    # ==================== STASH METHODS ====================
+    
+    def stash_save(self, message=None, include_untracked=True):
+        """Save current changes to stash"""
+        cmd = ['git', 'stash', 'push']
+        if include_untracked:
+            cmd.append('-u')
+        if message:
+            cmd.extend(['-m', message])
+        return self.run_command(cmd)
+    
+    def stash_list(self):
+        """Get list of all stashes"""
+        success, output = self.run_command(['git', 'stash', 'list', '--format=%gd|%s|%ci'])
+        if not success or not output:
+            return []
+        
+        stashes = []
+        for line in output.strip().split('\n'):
+            if not line:
+                continue
+            parts = line.split('|', 2)
+            if len(parts) >= 3:
+                stashes.append({
+                    'index': parts[0],  # stash@{0}
+                    'message': parts[1],
+                    'date': parts[2]
+                })
+            elif len(parts) >= 2:
+                stashes.append({
+                    'index': parts[0],
+                    'message': parts[1],
+                    'date': ''
+                })
+        return stashes
+    
+    def stash_apply(self, stash_index='stash@{0}'):
+        """Apply a stash without removing it"""
+        return self.run_command(['git', 'stash', 'apply', stash_index])
+    
+    def stash_pop(self, stash_index='stash@{0}'):
+        """Apply and remove a stash"""
+        return self.run_command(['git', 'stash', 'pop', stash_index])
+    
+    def stash_drop(self, stash_index='stash@{0}'):
+        """Remove a stash"""
+        return self.run_command(['git', 'stash', 'drop', stash_index])
+    
+    def stash_clear(self):
+        """Remove all stashes"""
+        return self.run_command(['git', 'stash', 'clear'])
+    
+    def stash_show(self, stash_index='stash@{0}'):
+        """Show stash diff"""
+        success, output = self.run_command(['git', 'stash', 'show', '-p', stash_index])
+        return output if success else "No se puede mostrar el stash"
+    
+    # ==================== CONFLICT METHODS ====================
+    
+    def get_conflicted_files(self):
+        """Get list of files with merge conflicts"""
+        success, output = self.run_command(['git', 'diff', '--name-only', '--diff-filter=U'])
+        if not success or not output:
+            return []
+        return [f.strip() for f in output.strip().split('\n') if f.strip()]
+    
+    def has_conflicts(self):
+        """Check if there are any merge conflicts"""
+        return len(self.get_conflicted_files()) > 0
+    
+    def resolve_conflict_ours(self, file_path):
+        """Resolve conflict using our version (current branch)"""
+        success, msg = self.run_command(['git', 'checkout', '--ours', file_path])
+        if success:
+            return self.run_command(['git', 'add', file_path])
+        return success, msg
+    
+    def resolve_conflict_theirs(self, file_path):
+        """Resolve conflict using their version (incoming branch)"""
+        success, msg = self.run_command(['git', 'checkout', '--theirs', file_path])
+        if success:
+            return self.run_command(['git', 'add', file_path])
+        return success, msg
+    
+    def mark_resolved(self, file_path):
+        """Mark a file as resolved after manual edit"""
+        return self.run_command(['git', 'add', file_path])
+    
+    def abort_merge(self):
+        """Abort the current merge"""
+        return self.run_command(['git', 'merge', '--abort'])
+    
+    def continue_merge(self):
+        """Continue merge after resolving conflicts (commit)"""
+        return self.run_command(['git', 'commit', '--no-edit'])
+    
+    def get_merge_status(self):
+        """Check if we're in a merge state"""
+        merge_head = os.path.join(self.repo_path, '.git', 'MERGE_HEAD')
+        return os.path.exists(merge_head)
         
     def get_status(self):
         summary = self.get_status_summary(include_sizes=False)

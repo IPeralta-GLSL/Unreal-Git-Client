@@ -13,6 +13,7 @@ from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
 from ui.lfs_tracking_dialog import LFSTrackingDialog
+from ui.stash_dialog import StashDialog
 from ui.theme import get_current_theme
 from core.translations import tr
 import os
@@ -483,6 +484,109 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
+        # Conflict section (hidden by default)
+        self.conflict_container = QWidget()
+        self.conflict_container.setVisible(False)
+        conflict_layout = QVBoxLayout(self.conflict_container)
+        conflict_layout.setContentsMargins(0, 0, 0, 0)
+        conflict_layout.setSpacing(0)
+        
+        self.conflict_header = self.create_section_header(tr('conflicts'), tr('conflicts_desc'), "warning")
+        
+        self.conflict_counter = QLabel("0")
+        self.conflict_counter.setStyleSheet(f"""
+            QLabel {{
+                background-color: {theme.colors['danger']};
+                color: {theme.colors['text_inverse']};
+                border-radius: 10px;
+                padding: 2px 8px;
+                font-weight: {theme.fonts['weight_bold']};
+                font-size: {theme.fonts['size_xs']}px;
+                min-width: 20px;
+            }}
+        """)
+        self.conflict_counter.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.conflict_header.layout().insertWidget(2, self.conflict_counter)
+        conflict_layout.addWidget(self.conflict_header)
+        
+        # Conflict list
+        conflict_list_container = QWidget()
+        conflict_list_container.setStyleSheet("background-color: palette(window); padding: 10px;")
+        conflict_list_layout = QVBoxLayout(conflict_list_container)
+        conflict_list_layout.setContentsMargins(10, 10, 10, 10)
+        
+        self.conflict_list = QListWidget()
+        self.conflict_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.conflict_list.customContextMenuRequested.connect(self.show_conflict_context_menu)
+        self.conflict_list.setStyleSheet(f"""
+            QListWidget {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['danger']};
+                border-radius: 8px;
+                padding: 4px;
+            }}
+            QListWidget::item {{
+                color: {theme.colors['danger']};
+                padding: 8px;
+                border-radius: 4px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme.colors['danger']};
+                color: {theme.colors['text_inverse']};
+            }}
+        """)
+        self.conflict_list.setMaximumHeight(150)
+        conflict_list_layout.addWidget(self.conflict_list)
+        
+        # Conflict action buttons
+        conflict_btn_row = QHBoxLayout()
+        conflict_btn_row.setSpacing(8)
+        
+        self.abort_merge_btn = QPushButton(tr('abort_merge'))
+        self.abort_merge_btn.setIcon(self.icon_manager.get_icon("x-circle", size=16))
+        self.abort_merge_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.abort_merge_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['danger']};
+                color: {theme.colors['text_inverse']};
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors.get('danger_hover', '#c0392b')};
+            }}
+        """)
+        self.abort_merge_btn.clicked.connect(self.abort_merge)
+        conflict_btn_row.addWidget(self.abort_merge_btn)
+        
+        conflict_btn_row.addStretch()
+        
+        self.continue_merge_btn = QPushButton(tr('continue_merge'))
+        self.continue_merge_btn.setIcon(self.icon_manager.get_icon("check-circle", size=16))
+        self.continue_merge_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.continue_merge_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['success']};
+                color: {theme.colors['text_inverse']};
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors.get('success_hover', '#45a049')};
+            }}
+        """)
+        self.continue_merge_btn.clicked.connect(self.continue_merge)
+        conflict_btn_row.addWidget(self.continue_merge_btn)
+        
+        conflict_list_layout.addLayout(conflict_btn_row)
+        conflict_layout.addWidget(conflict_list_container)
+        
+        layout.addWidget(self.conflict_container)
+        
         self.changes_header = self.create_section_header(tr('changes_title'), tr('changes_subtitle'), "file-text")
         
         self.changes_counter = QLabel("0")
@@ -747,6 +851,29 @@ class RepositoryTab(QWidget):
         self.commit_btn.setToolTip(tr('commit_and_save_tooltip'))
         self.commit_btn.clicked.connect(self.do_commit)
         commit_layout.addWidget(self.commit_btn)
+        
+        # Stash button
+        self.stash_btn = QPushButton(tr('stash'))
+        self.stash_btn.setIcon(self.icon_manager.get_icon("download", size=16))
+        self.stash_btn.setMinimumHeight(32)
+        self.stash_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.stash_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['surface']};
+                color: {theme.colors['text']};
+                font-size: 12px;
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+                padding: 4px 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+            }}
+        """)
+        self.stash_btn.setToolTip(tr('stash_changes'))
+        self.stash_btn.clicked.connect(self.show_stash_dialog)
+        commit_layout.addWidget(self.stash_btn)
         
         layout.addWidget(commit_container)
         
@@ -1144,6 +1271,9 @@ class RepositoryTab(QWidget):
     def apply_status_summary(self):
         summary = self.last_status_summary or {}
         print(f"[DEBUG] apply_status_summary: Processing summary with {len(summary.get('entries', []))} entries")
+
+        # Update conflict section
+        self.update_conflict_section()
 
         error_msg = summary.get('error')
         if error_msg:
@@ -1586,6 +1716,142 @@ class RepositoryTab(QWidget):
             
             self.refresh_status()
 
+    # ==================== CONFLICT METHODS ====================
+    
+    def update_conflict_section(self):
+        """Update the conflict section visibility and content"""
+        if not hasattr(self, 'conflict_container'):
+            return
+            
+        conflicted_files = self.git_manager.get_conflicted_files()
+        is_merging = self.git_manager.get_merge_status()
+        
+        if conflicted_files or is_merging:
+            self.conflict_container.setVisible(True)
+            self.conflict_counter.setText(str(len(conflicted_files)))
+            
+            self.conflict_list.clear()
+            for file_path in conflicted_files:
+                item = QListWidgetItem(file_path)
+                item.setIcon(self.icon_manager.get_icon("warning", size=16))
+                item.setData(Qt.ItemDataRole.UserRole, file_path)
+                self.conflict_list.addItem(item)
+            
+            # Enable/disable continue button based on conflicts
+            self.continue_merge_btn.setEnabled(len(conflicted_files) == 0 and is_merging)
+        else:
+            self.conflict_container.setVisible(False)
+    
+    def show_conflict_context_menu(self, position):
+        """Show context menu for conflict resolution"""
+        item = self.conflict_list.itemAt(position)
+        if not item:
+            return
+            
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        menu = QMenu(self)
+        theme = get_current_theme()
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                padding: 8px;
+                border-radius: 8px;
+            }}
+            QMenu::item {{
+                padding: 10px 20px;
+                color: {theme.colors['text']};
+                border-radius: 4px;
+                margin: 2px 4px;
+            }}
+            QMenu::item:selected {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+            }}
+        """)
+        
+        file_name = os.path.basename(file_path)
+        header = QAction(f"⚠️ {file_name}", self)
+        header.setEnabled(False)
+        menu.addAction(header)
+        menu.addSeparator()
+        
+        ours_action = QAction(tr('use_ours'), self)
+        ours_action.setIcon(self.icon_manager.get_icon("git-branch", size=16))
+        ours_action.triggered.connect(lambda: self.resolve_conflict_ours(file_path))
+        menu.addAction(ours_action)
+        
+        theirs_action = QAction(tr('use_theirs'), self)
+        theirs_action.setIcon(self.icon_manager.get_icon("git-merge", size=16))
+        theirs_action.triggered.connect(lambda: self.resolve_conflict_theirs(file_path))
+        menu.addAction(theirs_action)
+        
+        menu.addSeparator()
+        
+        resolved_action = QAction(tr('mark_resolved'), self)
+        resolved_action.setIcon(self.icon_manager.get_icon("check-circle", size=16))
+        resolved_action.triggered.connect(lambda: self.mark_conflict_resolved(file_path))
+        menu.addAction(resolved_action)
+        
+        menu.exec(self.conflict_list.mapToGlobal(position))
+    
+    def resolve_conflict_ours(self, file_path):
+        """Resolve conflict using our version"""
+        success, msg = self.git_manager.resolve_conflict_ours(file_path)
+        if success:
+            QMessageBox.information(self, tr('success'), tr('conflict_resolved', file=file_path))
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), msg)
+    
+    def resolve_conflict_theirs(self, file_path):
+        """Resolve conflict using their version"""
+        success, msg = self.git_manager.resolve_conflict_theirs(file_path)
+        if success:
+            QMessageBox.information(self, tr('success'), tr('conflict_resolved', file=file_path))
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), msg)
+    
+    def mark_conflict_resolved(self, file_path):
+        """Mark a conflict as resolved after manual edit"""
+        success, msg = self.git_manager.mark_resolved(file_path)
+        if success:
+            QMessageBox.information(self, tr('success'), tr('conflict_resolved', file=file_path))
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), msg)
+    
+    def abort_merge(self):
+        """Abort the current merge"""
+        reply = QMessageBox.question(
+            self,
+            tr('confirm'),
+            tr('confirm_discard'),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            success, msg = self.git_manager.abort_merge()
+            if success:
+                QMessageBox.information(self, tr('success'), tr('merge_aborted'))
+                self.refresh_status()
+            else:
+                QMessageBox.warning(self, tr('error'), msg)
+    
+    def continue_merge(self):
+        """Continue merge after resolving all conflicts"""
+        if self.git_manager.has_conflicts():
+            QMessageBox.warning(self, tr('error'), tr('resolve_all_conflicts'))
+            return
+        
+        success, msg = self.git_manager.continue_merge()
+        if success:
+            QMessageBox.information(self, tr('success'), tr('merge_continued'))
+            self.refresh_status()
+        else:
+            QMessageBox.warning(self, tr('error'), msg)
+
     def toggle_all_changes(self):
         """Toggle entre seleccionar todos / deseleccionar todos"""
         self.changes_list.setUpdatesEnabled(False)
@@ -1673,6 +1939,15 @@ class RepositoryTab(QWidget):
                 QMessageBox.warning(self, tr('error'), "\n".join(errors))
             else:
                 QMessageBox.information(self, "Éxito", f"{file_count} archivo(s) descartado(s)")
+
+    def show_stash_dialog(self):
+        """Show the stash management dialog"""
+        if not self.repo_path:
+            QMessageBox.warning(self, tr('error'), tr('no_repository'))
+            return
+        dialog = StashDialog(self.git_manager, self)
+        dialog.exec()
+        self.refresh_status()
                 
     def do_commit(self):
         summary = self.commit_summary.text().strip()
