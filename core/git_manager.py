@@ -493,6 +493,38 @@ class GitManager:
         success, output = self.run_command(f"git show {commit_hash}")
         return output if success else "No se pudo obtener el diff"
     
+    def get_commit_files(self, commit_hash):
+        if not _is_valid_git_ref(commit_hash):
+            return []
+        success, output = self.run_command(f"git show --name-status --format= {commit_hash}")
+        if not success:
+            return []
+        files = []
+        for line in output.strip().split('\n'):
+            if not line.strip():
+                continue
+            parts = line.split('\t', 1)
+            if len(parts) == 2:
+                status, path = parts
+                files.append({'status': status[0], 'path': path})
+        return files
+    
+    def get_commit_file_diff(self, commit_hash, file_path):
+        if not _is_valid_git_ref(commit_hash):
+            return ""
+        success, output = self.run_command(f"git show {commit_hash} -- \"{file_path}\"")
+        if not success:
+            return ""
+        lines = output.split('\n')
+        diff_lines = []
+        in_diff = False
+        for line in lines:
+            if line.startswith('diff --git'):
+                in_diff = True
+            if in_diff:
+                diff_lines.append(line)
+        return '\n'.join(diff_lines)
+    
     def reset_to_commit(self, commit_hash, mode='soft'):
         if not _is_valid_git_ref(commit_hash):
             return False, "Invalid commit hash"

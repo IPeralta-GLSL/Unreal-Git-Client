@@ -133,6 +133,191 @@ class PushProgressDialog(QDialog):
             self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(percent)
 
+
+class CommitFileItem(QFrame):
+    def __init__(self, file_path, status, diff_content, icon_manager, parent=None):
+        super().__init__(parent)
+        self.file_path = file_path
+        self.status = status
+        self.diff_content = diff_content
+        self.icon_manager = icon_manager
+        self.is_expanded = False
+        self.theme = get_current_theme()
+        
+        self.setObjectName("commitFileItem")
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.setup_ui()
+        self.update_style()
+        
+    def setup_ui(self):
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+        
+        self.header = QFrame()
+        self.header.setObjectName("commitFileHeader")
+        header_layout = QHBoxLayout(self.header)
+        header_layout.setContentsMargins(12, 10, 12, 10)
+        header_layout.setSpacing(10)
+        
+        self.expand_icon = QLabel()
+        self.expand_icon.setFixedSize(16, 16)
+        header_layout.addWidget(self.expand_icon)
+        
+        self.file_icon = QLabel()
+        self.file_icon.setFixedSize(16, 16)
+        header_layout.addWidget(self.file_icon)
+        
+        self.file_label = QLabel(self.file_path)
+        self.file_label.setStyleSheet(f"""
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+        """)
+        header_layout.addWidget(self.file_label, 1)
+        
+        self.state_badge = QLabel()
+        self.state_badge.setFixedHeight(20)
+        self.state_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(self.state_badge)
+        
+        self.main_layout.addWidget(self.header)
+        
+        self.diff_container = QFrame()
+        self.diff_container.setObjectName("commitDiffContainer")
+        self.diff_container.setVisible(False)
+        diff_layout = QVBoxLayout(self.diff_container)
+        diff_layout.setContentsMargins(0, 0, 0, 0)
+        diff_layout.setSpacing(0)
+        
+        self.diff_view = QTextEdit()
+        self.diff_view.setReadOnly(True)
+        self.diff_view.setMinimumHeight(100)
+        self.diff_view.setMaximumHeight(400)
+        self.diff_view.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {self.theme.colors['background']};
+                border: none;
+                border-top: 1px solid {self.theme.colors['border']};
+                font-family: 'Cascadia Code', 'Consolas', monospace;
+                font-size: 11px;
+                padding: 8px;
+            }}
+        """)
+        diff_layout.addWidget(self.diff_view)
+        
+        self.main_layout.addWidget(self.diff_container)
+        
+        self._update_icons()
+        
+    def _update_icons(self):
+        is_added = self.status == 'A'
+        is_deleted = self.status == 'D'
+        is_modified = self.status == 'M'
+        is_renamed = self.status == 'R'
+        
+        if is_added:
+            icon_name, color, badge_text, badge_bg = "file-plus", "#4ec9b0", "A", "#4ec9b030"
+        elif is_deleted:
+            icon_name, color, badge_text, badge_bg = "file-x", "#f48771", "D", "#f4877130"
+        elif is_renamed:
+            icon_name, color, badge_text, badge_bg = "file-plus", "#569cd6", "R", "#569cd630"
+        elif is_modified:
+            icon_name, color, badge_text, badge_bg = "file-text", "#dcdcaa", "M", "#dcdcaa30"
+        else:
+            icon_name, color, badge_text, badge_bg = "file", "#858585", "?", "#85858530"
+            
+        self.file_icon.setPixmap(self.icon_manager.get_icon(icon_name, size=16).pixmap(16, 16))
+        self.file_label.setStyleSheet(f"""
+            color: {color};
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+        """)
+        
+        self.state_badge.setText(badge_text)
+        self.state_badge.setStyleSheet(f"""
+            QLabel {{
+                background-color: {badge_bg};
+                color: {color};
+                border-radius: 4px;
+                padding: 2px 8px;
+                font-size: 10px;
+                font-weight: bold;
+            }}
+        """)
+        
+        expand_icon = "caret-right" if not self.is_expanded else "caret-down"
+        self.expand_icon.setPixmap(self.icon_manager.get_icon(expand_icon, size=14).pixmap(14, 14))
+        
+    def update_style(self):
+        expanded_bg = f"{self.theme.colors['primary']}15" if self.is_expanded else self.theme.colors['surface']
+        expanded_border = self.theme.colors['primary'] if self.is_expanded else self.theme.colors['border']
+        self.setStyleSheet(f"""
+            QFrame#commitFileItem {{
+                background-color: {expanded_bg};
+                border: 1px solid {expanded_border};
+                border-radius: 8px;
+                margin: 2px 0px;
+            }}
+            QFrame#commitFileItem:hover {{
+                background-color: {self.theme.colors['primary']}20;
+                border-color: {self.theme.colors['primary']}80;
+            }}
+            QFrame#commitFileHeader {{
+                background-color: transparent;
+                border: none;
+            }}
+            QFrame#commitDiffContainer {{
+                background-color: {self.theme.colors['background']};
+                border-top: 1px solid {self.theme.colors['border']};
+                border-radius: 0px 0px 7px 7px;
+            }}
+        """)
+        
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle_expand()
+        super().mousePressEvent(event)
+        
+    def toggle_expand(self):
+        self.is_expanded = not self.is_expanded
+        self.diff_container.setVisible(self.is_expanded)
+        self._update_icons()
+        self.update_style()
+        
+        if self.is_expanded and self.diff_view.toPlainText() == "":
+            self.load_diff()
+            
+    def load_diff(self):
+        if self.diff_content:
+            formatted = self.format_diff_simple(self.diff_content)
+            self.diff_view.setHtml(formatted)
+        else:
+            self.diff_view.setPlainText(tr('no_changes'))
+        
+    def format_diff_simple(self, diff_text):
+        if not diff_text:
+            return "<p style='color: #858585;'>No diff available</p>"
+            
+        lines = diff_text.split('\n')
+        html_parts = ["<pre style='margin:0; font-family: Consolas, monospace; font-size: 11px; line-height: 1.4;'>"]
+        
+        for line in lines:
+            escaped = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            if line.startswith('+') and not line.startswith('+++'):
+                html_parts.append(f"<div style='background-color: #2d4a3e; color: #4ec9b0;'>{escaped}</div>")
+            elif line.startswith('-') and not line.startswith('---'):
+                html_parts.append(f"<div style='background-color: #4a2d2d; color: #f48771;'>{escaped}</div>")
+            elif line.startswith('@@'):
+                html_parts.append(f"<div style='background-color: #2d3a4a; color: #569cd6;'>{escaped}</div>")
+            elif line.startswith('diff ') or line.startswith('index '):
+                html_parts.append(f"<div style='color: #858585;'>{escaped}</div>")
+            else:
+                html_parts.append(f"<div style='color: #d4d4d4;'>{escaped}</div>")
+                
+        html_parts.append("</pre>")
+        return ''.join(html_parts)
+
+
 class RepositoryTab(QWidget):
     def __init__(self, git_manager, settings_manager=None, parent_window=None, plugin_manager=None):
         super().__init__()
@@ -231,13 +416,9 @@ class RepositoryTab(QWidget):
         left_panel = self.create_left_panel()
         splitter.addWidget(left_panel)
         
-        middle_panel = self.create_middle_panel()
-        splitter.addWidget(middle_panel)
-        
         right_panel = self.create_right_panel()
         splitter.addWidget(right_panel)
 
-        # Sidebar Container (for plugins like AI Chat) - Now inside repo splitter
         self.sidebar_container = QWidget()
         self.sidebar_container.setMinimumWidth(300)
         self.sidebar_container.setMaximumWidth(400)
@@ -247,7 +428,7 @@ class RepositoryTab(QWidget):
         self.sidebar_layout.setSpacing(0)
         splitter.addWidget(self.sidebar_container)
         
-        splitter.setSizes([350, 400, 650, 0])
+        splitter.setSizes([400, 700, 0])
         splitter.setHandleWidth(2)
         
         repo_layout.addWidget(splitter)
@@ -479,9 +660,158 @@ class RepositoryTab(QWidget):
         self.fetch_btn.clicked.connect(self.do_fetch)
         layout.addWidget(self.fetch_btn)
         
+        layout.addSpacing(10)
+        
+        separator3 = QWidget()
+        separator3.setFixedWidth(1)
+        separator3.setFixedHeight(24)
+        separator3.setStyleSheet(f"background-color: {theme.colors['border']};")
+        layout.addWidget(separator3)
+        
+        layout.addSpacing(10)
+        
+        self.ai_chat_btn = QPushButton("AI")
+        self.ai_chat_btn.setIcon(self.icon_manager.get_icon("lightbulb", size=18))
+        self.ai_chat_btn.setMinimumHeight(36)
+        self.ai_chat_btn.setMinimumWidth(70)
+        self.ai_chat_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.ai_chat_btn.setStyleSheet(button_style)
+        self.ai_chat_btn.setToolTip("AI Chat Assistant")
+        self.ai_chat_btn.clicked.connect(self.toggle_ai_sidebar)
+        layout.addWidget(self.ai_chat_btn)
+        
         layout.addStretch()
         
     def create_left_panel(self):
+        theme = get_current_theme()
+        
+        panel = QWidget()
+        panel.setMinimumWidth(350)
+        panel.setMaximumWidth(500)
+        panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(0, 0, 0, 0)
+        panel_layout.setSpacing(0)
+        
+        tabs_container = QFrame()
+        tabs_container.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+            }}
+        """)
+        tabs_layout = QHBoxLayout(tabs_container)
+        tabs_layout.setContentsMargins(0, 0, 0, 0)
+        tabs_layout.setSpacing(0)
+        
+        changes_tab_container = QWidget()
+        changes_tab_container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        changes_tab_inner = QHBoxLayout(changes_tab_container)
+        changes_tab_inner.setContentsMargins(16, 12, 16, 12)
+        changes_tab_inner.setSpacing(6)
+        changes_tab_inner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        changes_tab_icon = QLabel()
+        changes_tab_icon.setPixmap(self.icon_manager.get_icon("file-text", size=14).pixmap(14, 14))
+        changes_tab_inner.addWidget(changes_tab_icon)
+        
+        self.changes_tab_label = QLabel(tr('changes_title'))
+        changes_tab_inner.addWidget(self.changes_tab_label)
+        
+        self.changes_tab_counter = QLabel("0")
+        self.changes_tab_counter.setStyleSheet(f"""
+            QLabel {{
+                background-color: {theme.colors['primary']};
+                color: {theme.colors['text_inverse']};
+                border-radius: 9px;
+                padding: 1px 6px;
+                font-size: 10px;
+                font-weight: bold;
+            }}
+        """)
+        changes_tab_inner.addWidget(self.changes_tab_counter)
+        
+        history_tab_container = QWidget()
+        history_tab_container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        history_tab_inner = QHBoxLayout(history_tab_container)
+        history_tab_inner.setContentsMargins(16, 12, 16, 12)
+        history_tab_inner.setSpacing(6)
+        history_tab_inner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        history_tab_icon = QLabel()
+        history_tab_icon.setPixmap(self.icon_manager.get_icon("git-commit", size=14).pixmap(14, 14))
+        history_tab_inner.addWidget(history_tab_icon)
+        
+        self.history_tab_label = QLabel(tr('history_title'))
+        history_tab_inner.addWidget(self.history_tab_label)
+        
+        self.changes_tab_btn = QPushButton()
+        self.changes_tab_btn.setCheckable(True)
+        self.changes_tab_btn.setChecked(True)
+        self.changes_tab_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.changes_tab_btn.setLayout(changes_tab_inner)
+        
+        self.history_tab_btn = QPushButton()
+        self.history_tab_btn.setCheckable(True)
+        self.history_tab_btn.setChecked(False)
+        self.history_tab_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.history_tab_btn.setLayout(history_tab_inner)
+        
+        tab_btn_style = f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {theme.colors['text_secondary']};
+                border: none;
+                border-bottom: 3px solid transparent;
+                padding: 14px 20px;
+                font-size: 13px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                color: {theme.colors['text']};
+                background-color: {theme.colors['surface_hover']};
+            }}
+            QPushButton:checked {{
+                color: {theme.colors['primary']};
+                border-bottom: 3px solid {theme.colors['primary']};
+            }}
+        """
+        self.changes_tab_btn.setStyleSheet(tab_btn_style)
+        self.history_tab_btn.setStyleSheet(tab_btn_style)
+        
+        self.changes_tab_btn.clicked.connect(lambda: self.switch_tab('changes'))
+        self.history_tab_btn.clicked.connect(lambda: self.switch_tab('history'))
+        
+        tabs_layout.addWidget(self.changes_tab_btn, 1)
+        tabs_layout.addWidget(self.history_tab_btn, 1)
+        
+        panel_layout.addWidget(tabs_container)
+        self.tab_stack = QStackedWidget()
+        panel_layout.addWidget(self.tab_stack, 1)
+        
+        changes_page = self._create_changes_page()
+        self.tab_stack.addWidget(changes_page)
+        
+        history_page = self._create_history_page()
+        self.tab_stack.addWidget(history_page)
+        
+        return panel
+    
+    def switch_tab(self, tab_name):
+        if tab_name == 'changes':
+            self.changes_tab_btn.setChecked(True)
+            self.history_tab_btn.setChecked(False)
+            self.tab_stack.setCurrentIndex(0)
+            if hasattr(self, 'right_stack'):
+                self.right_stack.setCurrentIndex(0)
+        else:
+            self.changes_tab_btn.setChecked(False)
+            self.history_tab_btn.setChecked(True)
+            self.tab_stack.setCurrentIndex(1)
+            if hasattr(self, 'right_stack'):
+                self.right_stack.setCurrentIndex(1)
+    
+    def _create_changes_page(self):
         theme = get_current_theme()
         
         scroll_area = QScrollArea()
@@ -489,9 +819,6 @@ class RepositoryTab(QWidget):
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setMinimumWidth(300)
-        scroll_area.setMaximumWidth(600)
-        scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         widget = QWidget()
         widget.setStyleSheet("background-color: palette(base);")
@@ -601,27 +928,6 @@ class RepositoryTab(QWidget):
         conflict_layout.addWidget(conflict_list_container)
         
         layout.addWidget(self.conflict_container)
-        
-        self.changes_header = self.create_section_header(tr('changes_title'), tr('changes_subtitle'), "file-text")
-        
-        self.changes_counter = QLabel("0")
-        self.changes_counter.setStyleSheet(f"""
-            QLabel {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 {theme.colors['primary']}, 
-                    stop:1 {theme.colors['primary_hover']});
-                color: {theme.colors['text_inverse']};
-                border-radius: 12px;
-                padding: 3px 10px;
-                font-weight: {theme.fonts['weight_bold']};
-                font-size: {theme.fonts['size_xs']}px;
-                min-width: 22px;
-            }}
-        """)
-        self.changes_counter.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.changes_header.layout().insertWidget(2, self.changes_counter)
-        
-        layout.addWidget(self.changes_header)
         
         changes_container = QFrame()
         changes_container.setObjectName("changesContainer")
@@ -830,9 +1136,8 @@ class RepositoryTab(QWidget):
                 height: 0px;
             }}
         """)
-        self.changes_list.itemClicked.connect(self.on_file_selected)
         self.changes_list.itemDoubleClicked.connect(self.on_change_double_clicked)
-        # Enable multi-selection with Ctrl/Shift
+        self.changes_list.itemClicked.connect(self.on_change_clicked)
         self.changes_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         changes_layout.addWidget(self.changes_list)
         
@@ -962,6 +1267,86 @@ class RepositoryTab(QWidget):
         self.apply_left_panel_styles()
         
         return scroll_area
+    
+    def _create_history_page(self):
+        theme = get_current_theme()
+        
+        widget = QWidget()
+        widget.setStyleSheet("background-color: palette(base);")
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        filter_container = QFrame()
+        filter_container.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-bottom: 1px solid {theme.colors['border']};
+                padding: 8px;
+            }}
+        """)
+        filter_layout = QHBoxLayout(filter_container)
+        filter_layout.setContentsMargins(12, 8, 12, 8)
+        
+        filter_icon = QLabel()
+        filter_icon.setPixmap(self.icon_manager.get_icon("filter", size=14).pixmap(14, 14))
+        filter_layout.addWidget(filter_icon)
+        
+        self.history_filter = QLineEdit()
+        self.history_filter.setPlaceholderText(tr('filter'))
+        self.history_filter.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 12px;
+                color: {theme.colors['text']};
+            }}
+            QLineEdit:focus {{
+                border-color: {theme.colors['primary']};
+            }}
+        """)
+        filter_layout.addWidget(self.history_filter, 1)
+        
+        layout.addWidget(filter_container)
+        
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
+                background-color: palette(window);
+                border: none;
+            }}
+            QScrollBar:vertical {{
+                background-color: {theme.colors['background']};
+                width: 10px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {theme.colors['border']};
+                border-radius: 5px;
+                min-height: 30px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme.colors['primary']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+            }}
+        """)
+        
+        self.commit_graph = CommitGraphWidget()
+        self.commit_graph.setStyleSheet("background-color: palette(window);")
+        self.commit_graph.commit_clicked.connect(self.on_graph_commit_clicked)
+        self.commit_graph.commit_context_menu.connect(self.show_commit_context_menu)
+        scroll.setWidget(self.commit_graph)
+        
+        layout.addWidget(scroll, 1)
+        
+        return widget
         
     def create_section_header(self, title, description, icon_name=None):
         theme = get_current_theme()
@@ -1028,61 +1413,6 @@ class RepositoryTab(QWidget):
         
         return header
     
-    def create_middle_panel(self):
-        theme = get_current_theme()
-        widget = QWidget()
-        widget.setStyleSheet("background-color: palette(window);")
-        widget.setMinimumWidth(400)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        
-        self.history_header = self.create_section_header(tr('history_title'), tr('history_subtitle'), "git-commit")
-        layout.addWidget(self.history_header)
-        
-        history_container = QWidget()
-        history_container.setStyleSheet("background-color: palette(window); padding: 10px;")
-        history_layout = QVBoxLayout(history_container)
-        history_layout.setContentsMargins(10, 10, 10, 10)
-        
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setMinimumHeight(600)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        scroll.setStyleSheet(f"""
-            QScrollArea {{
-                background-color: palette(window);
-                border: 1px solid #3d3d3d;
-                border-radius: 5px;
-            }}
-            QScrollBar:vertical {{
-                background-color: palette(window);
-                width: 12px;
-                border-radius: 6px;
-            }}
-            QScrollBar::handle:vertical {{
-                background-color: palette(text);
-                border-radius: 6px;
-                min-height: 20px;
-            }}
-            QScrollBar::handle:vertical:hover {{
-                background-color: {theme.colors['primary']};
-            }}
-        """)
-        
-        self.commit_graph = CommitGraphWidget()
-        self.commit_graph.setStyleSheet("background-color: palette(window);")
-        self.commit_graph.commit_clicked.connect(self.on_graph_commit_clicked)
-        self.commit_graph.commit_context_menu.connect(self.show_commit_context_menu)
-        scroll.setWidget(self.commit_graph)
-        
-        history_layout.addWidget(scroll)
-        layout.addWidget(history_container)
-        
-        return widget
-    
     def create_right_panel(self):
         theme = get_current_theme()
         widget = QWidget()
@@ -1113,40 +1443,13 @@ class RepositoryTab(QWidget):
         info_group_layout.addWidget(self.info_header)
         info_group_layout.addWidget(info_container)
         
-        self.diff_header = self.create_section_header(tr('diff_title'), tr('diff_subtitle'), "git-diff")
+        self.right_stack = QStackedWidget()
         
-        diff_container = QWidget()
-        diff_container.setStyleSheet("background-color: palette(window); padding: 10px;")
-        diff_layout = QVBoxLayout(diff_container)
-        diff_layout.setContentsMargins(10, 10, 10, 10)
+        changes_diff_page = self._create_changes_diff_view()
+        self.right_stack.addWidget(changes_diff_page)
         
-        self.diff_view = QTextEdit()
-        self.diff_view.setReadOnly(True)
-        self.diff_view.setFont(QFont("Courier New", 10))
-        self.diff_view.setPlaceholderText(tr('select_file_diff'))
-        self.diff_view.setStyleSheet("""
-            QTextEdit {
-                background-color: palette(window);
-                border: 1px solid #3d3d3d;
-                border-radius: 5px;
-                padding: 10px;
-                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                font-size: 12px;
-                line-height: 1.6;
-                color: palette(window-text);
-            }
-        """)
-        palette = self.diff_view.palette()
-        palette.setColor(palette.ColorRole.PlaceholderText, palette.color(palette.ColorRole.Text))
-        self.diff_view.setPalette(palette)
-        diff_layout.addWidget(self.diff_view)
-        
-        diff_group = QWidget()
-        diff_group_layout = QVBoxLayout(diff_group)
-        diff_group_layout.setContentsMargins(0, 0, 0, 0)
-        diff_group_layout.setSpacing(0)
-        diff_group_layout.addWidget(self.diff_header)
-        diff_group_layout.addWidget(diff_container)
+        history_diff_page = self._create_history_diff_view()
+        self.right_stack.addWidget(history_diff_page)
         
         right_splitter = QSplitter(Qt.Orientation.Vertical)
         right_splitter.setHandleWidth(3)
@@ -1159,7 +1462,7 @@ class RepositoryTab(QWidget):
             }}
         """)
         right_splitter.addWidget(info_group)
-        right_splitter.addWidget(diff_group)
+        right_splitter.addWidget(self.right_stack)
         right_splitter.setStretchFactor(0, 1)
         right_splitter.setStretchFactor(1, 4)
         right_splitter.setSizes([150, 600])
@@ -1169,6 +1472,108 @@ class RepositoryTab(QWidget):
         self.apply_right_panel_styles()
         
         return widget
+    
+    def _create_changes_diff_view(self):
+        theme = get_current_theme()
+        
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        
+        self.changes_diff_header = self.create_section_header(tr('diff_title'), tr('changes_subtitle'), "git-diff")
+        container_layout.addWidget(self.changes_diff_header)
+        
+        diff_container = QWidget()
+        diff_container.setStyleSheet("background-color: palette(window); padding: 10px;")
+        diff_layout = QVBoxLayout(diff_container)
+        diff_layout.setContentsMargins(10, 10, 10, 10)
+        
+        self.changes_diff_view = QTextEdit()
+        self.changes_diff_view.setReadOnly(True)
+        self.changes_diff_view.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 8px;
+                font-family: 'Cascadia Code', 'Consolas', monospace;
+                font-size: 12px;
+                padding: 10px;
+            }}
+        """)
+        self.changes_diff_view.setPlaceholderText(tr('select_file_diff'))
+        diff_layout.addWidget(self.changes_diff_view)
+        
+        container_layout.addWidget(diff_container, 1)
+        
+        return container
+    
+    def _create_history_diff_view(self):
+        theme = get_current_theme()
+        
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        
+        self.diff_header = self.create_section_header(tr('diff_title'), tr('diff_subtitle'), "git-diff")
+        container_layout.addWidget(self.diff_header)
+        
+        diff_container = QWidget()
+        diff_container.setStyleSheet("background-color: palette(window); padding: 10px;")
+        diff_layout = QVBoxLayout(diff_container)
+        diff_layout.setContentsMargins(10, 10, 10, 10)
+        
+        self.diff_scroll = QScrollArea()
+        self.diff_scroll.setWidgetResizable(True)
+        self.diff_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.diff_scroll.setStyleSheet(f"""
+            QScrollArea {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 8px;
+            }}
+            QScrollBar:vertical {{
+                background-color: {theme.colors['background']};
+                width: 10px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {theme.colors['border']};
+                border-radius: 5px;
+                min-height: 30px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme.colors['primary']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+            }}
+        """)
+        
+        self.diff_files_widget = QWidget()
+        self.diff_files_layout = QVBoxLayout(self.diff_files_widget)
+        self.diff_files_layout.setContentsMargins(8, 8, 8, 8)
+        self.diff_files_layout.setSpacing(4)
+        self.diff_files_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        
+        self.diff_placeholder = QLabel(tr('select_file_diff'))
+        self.diff_placeholder.setStyleSheet(f"""
+            color: {theme.colors['text_secondary']};
+            font-size: 13px;
+            padding: 40px;
+        """)
+        self.diff_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.diff_files_layout.addWidget(self.diff_placeholder)
+        
+        self.diff_scroll.setWidget(self.diff_files_widget)
+        diff_layout.addWidget(self.diff_scroll)
+        
+        self.commit_file_items = []
+        
+        container_layout.addWidget(diff_container, 1)
+        
+        return container
         
     def show_home_view(self):
         self.stacked_widget.setCurrentWidget(self.home_view)
@@ -1223,29 +1628,41 @@ class RepositoryTab(QWidget):
         self.check_lfs_status()
         self.update_plugin_indicators()
         
+    def toggle_ai_sidebar(self):
+        if self.sidebar_container.isVisible():
+            self.sidebar_container.hide()
+            if self.repo_splitter:
+                sizes = self.repo_splitter.sizes()
+                if len(sizes) >= 3:
+                    sizes[-1] = 0
+                    self.repo_splitter.setSizes(sizes)
+        else:
+            if not hasattr(self, '_sidebar_loaded') or not self._sidebar_loaded:
+                self.load_sidebar_plugins()
+                self._sidebar_loaded = True
+            self.sidebar_container.show()
+            if self.repo_splitter:
+                sizes = self.repo_splitter.sizes()
+                if len(sizes) >= 3:
+                    sizes[-1] = max(sizes[-1], 320)
+                    self.repo_splitter.setSizes(sizes)
+        
     def load_sidebar_plugins(self):
         if not self.plugin_manager or not self.repo_path:
             return
-            
-        # Clear existing sidebar widgets if any (optional, depending on if we want to reload)
-        # For now, we assume we append or check if exists.
+        
+        # Clear existing sidebar widgets first
+        while self.sidebar_layout.count():
+            item = self.sidebar_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         
         plugins = self.plugin_manager.get_all_plugins()
         for name, plugin in plugins.items():
             if hasattr(plugin, 'get_sidebar_widget'):
                 widget = plugin.get_sidebar_widget(self.repo_path)
                 if widget:
-                    # Check if widget is already in sidebar
-                    if self.sidebar_layout.indexOf(widget) == -1:
-                        self.sidebar_layout.addWidget(widget)
-                    
-                    if not self.sidebar_container.isVisible():
-                        self.sidebar_container.show()
-                        if self.repo_splitter:
-                            sizes = self.repo_splitter.sizes()
-                            if len(sizes) >= 4:
-                                sizes[-1] = max(sizes[-1], 320)
-                                self.repo_splitter.setSizes(sizes)
+                    self.sidebar_layout.addWidget(widget)
 
     def get_action_button_style(self, highlight=False):
         theme = get_current_theme()
@@ -1405,14 +1822,16 @@ class RepositoryTab(QWidget):
                 if item.isSelected():
                     selected_paths.add(path)
 
-        # Desactivar actualizaciones durante el llenado de la lista
         self.changes_list.setUpdatesEnabled(False)
         self.changes_list.clear()
         entries = summary.get('entries', [])
         self.large_files = summary.get('large_files', [])
         
+        count_str = str(len(entries))
         if hasattr(self, 'changes_counter'):
-            self.changes_counter.setText(str(len(entries)))
+            self.changes_counter.setText(count_str)
+        if hasattr(self, 'changes_tab_counter'):
+            self.changes_tab_counter.setText(count_str)
 
         if not entries:
             theme = get_current_theme()
@@ -1522,13 +1941,18 @@ class RepositoryTab(QWidget):
         self.refresh_status()
             
     def on_change_double_clicked(self, item):
-        original_line = item.data(Qt.ItemDataRole.UserRole)
-        if original_line:
-            file_path = original_line.split(' ', 1)[1] if ' ' in original_line else original_line
-            file_path = file_path.strip()
-            diff = self.git_manager.get_file_diff(file_path)
-            formatted_diff = self.format_diff(diff)
-            self.diff_view.setHtml(formatted_diff)
+        pass
+    
+    def on_change_clicked(self, item):
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        if not file_path:
+            return
+        diff = self.git_manager.get_file_diff(file_path)
+        if diff:
+            formatted = self.format_diff(diff)
+            self.changes_diff_view.setHtml(formatted)
+        else:
+            self.changes_diff_view.setPlainText(tr('no_changes'))
         
     def stage_all(self):
         success, message = self.git_manager.stage_all()
@@ -2267,10 +2691,13 @@ class RepositoryTab(QWidget):
         try:
             if commit_hash in self.diff_cache:
                 return
-            diff = self.git_manager.get_commit_diff(commit_hash)
-            formatted_diff = self.format_diff(diff)
+            files = self.git_manager.get_commit_files(commit_hash)
+            file_diffs = {}
+            for f in files:
+                diff = self.git_manager.get_commit_file_diff(commit_hash, f['path'])
+                file_diffs[f['path']] = {'status': f['status'], 'diff': diff}
             if len(self.diff_cache) < self.diff_cache_max_size:
-                self.diff_cache[commit_hash] = formatted_diff
+                self.diff_cache[commit_hash] = file_diffs
         except Exception:
             pass
             
@@ -2286,8 +2713,12 @@ class RepositoryTab(QWidget):
     def _request_commit_diff(self, commit_hash):
         self.pending_diff_commit = commit_hash
         if commit_hash in self.diff_cache:
-            self.diff_view.setHtml(self.diff_cache[commit_hash])
-            return
+            cached = self.diff_cache[commit_hash]
+            if isinstance(cached, dict):
+                self._display_commit_files(commit_hash, cached)
+                return
+            else:
+                del self.diff_cache[commit_hash]
         self.diff_debounce_timer.start()
     
     def _load_pending_diff(self):
@@ -2295,55 +2726,57 @@ class RepositoryTab(QWidget):
         if not commit_hash:
             return
         if commit_hash in self.diff_cache:
-            self.diff_view.setHtml(self.diff_cache[commit_hash])
-            return
+            cached = self.diff_cache[commit_hash]
+            if isinstance(cached, dict):
+                self._display_commit_files(commit_hash, cached)
+                return
+            else:
+                del self.diff_cache[commit_hash]
         self.executor.submit(self._fetch_and_display_diff, commit_hash)
     
     def _fetch_and_display_diff(self, commit_hash):
         try:
-            diff = self.git_manager.get_commit_diff(commit_hash)
-            formatted_diff = self.format_diff(diff)
+            files = self.git_manager.get_commit_files(commit_hash)
+            file_diffs = {}
+            for f in files:
+                diff = self.git_manager.get_commit_file_diff(commit_hash, f['path'])
+                file_diffs[f['path']] = {'status': f['status'], 'diff': diff}
+            
             if len(self.diff_cache) >= self.diff_cache_max_size:
                 try:
                     oldest_key = next(iter(self.diff_cache))
                     del self.diff_cache[oldest_key]
                 except StopIteration:
                     pass
-            self.diff_cache[commit_hash] = formatted_diff
-            QTimer.singleShot(0, lambda: self._update_diff_view(commit_hash, formatted_diff))
+            self.diff_cache[commit_hash] = file_diffs
+            QTimer.singleShot(0, lambda: self._display_commit_files(commit_hash, file_diffs))
         except Exception:
             pass
     
-    def _update_diff_view(self, commit_hash, formatted_diff):
-        if self.pending_diff_commit == commit_hash:
-            self.diff_view.setHtml(formatted_diff)
-    
-    def on_file_selected(self, item):
-        original_line = item.data(Qt.ItemDataRole.UserRole)
-        if original_line:
-            file_path = original_line.split(' ', 1)[1] if ' ' in original_line else original_line
-            file_path = file_path.strip()
-            cache_key = f"file:{file_path}"
-            self.pending_diff_commit = cache_key
-            if cache_key in self.diff_cache:
-                self.diff_view.setHtml(self.diff_cache[cache_key])
-                return
-            self.executor.submit(self._fetch_and_display_file_diff, file_path, cache_key)
-    
-    def _fetch_and_display_file_diff(self, file_path, cache_key):
-        try:
-            diff = self.git_manager.get_file_diff(file_path)
-            formatted_diff = self.format_diff(diff)
-            if len(self.diff_cache) >= self.diff_cache_max_size:
-                try:
-                    oldest_key = next(iter(self.diff_cache))
-                    del self.diff_cache[oldest_key]
-                except StopIteration:
-                    pass
-            self.diff_cache[cache_key] = formatted_diff
-            QTimer.singleShot(0, lambda: self._update_diff_view(cache_key, formatted_diff))
-        except Exception:
-            pass
+    def _display_commit_files(self, commit_hash, file_diffs):
+        if self.pending_diff_commit != commit_hash:
+            return
+            
+        for item in self.commit_file_items:
+            item.setParent(None)
+            item.deleteLater()
+        self.commit_file_items.clear()
+        
+        self.diff_placeholder.setVisible(False)
+        
+        if not file_diffs:
+            self.diff_placeholder.setVisible(True)
+            return
+            
+        for file_path, data in file_diffs.items():
+            item = CommitFileItem(
+                file_path, 
+                data['status'], 
+                data['diff'], 
+                self.icon_manager
+            )
+            self.commit_file_items.append(item)
+            self.diff_files_layout.addWidget(item)
     
     def format_diff(self, diff_text):
         import html
@@ -3196,20 +3629,6 @@ class RepositoryTab(QWidget):
         self.setStyleSheet(style)
         
     def apply_right_panel_styles(self):
-        diff_style = """
-            QTextEdit {
-                background-color: palette(window);
-                color: palette(window-text);
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-                padding: 10px;
-                font-family: 'Courier New', monospace;
-                font-size: 11px;
-                line-height: 1.5;
-            }
-        """
-        self.diff_view.setStyleSheet(diff_style)
-        
         history_style = """
             QListWidget {
                 background-color: palette(window);
@@ -3321,8 +3740,8 @@ class RepositoryTab(QWidget):
         if hasattr(self, 'lfs_btn'):
             self.lfs_btn.setText(" LFS")
             self.lfs_btn.setToolTip(tr('lfs_title'))
-        if hasattr(self, 'diff_view'):
-            self.diff_view.setPlaceholderText(tr('select_file_diff'))
+        if hasattr(self, 'diff_placeholder'):
+            self.diff_placeholder.setText(tr('select_file_diff'))
         
         if self.repo_path:
             self.refresh_status()
