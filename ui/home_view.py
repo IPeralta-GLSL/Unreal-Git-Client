@@ -144,14 +144,14 @@ class HomeView(QWidget):
             """)
             placeholder_layout.addWidget(self.no_recent_placeholder)
             
-            hint_label = QLabel("Open or clone a repository to get started")
-            hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            hint_label.setWordWrap(True)
-            hint_label.setStyleSheet("""
+            self.hint_label = QLabel(tr('home_hint'))
+            self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.hint_label.setWordWrap(True)
+            self.hint_label.setStyleSheet("""
                 color: palette(mid); 
                 font-size: 12px;
             """)
-            placeholder_layout.addWidget(hint_label)
+            placeholder_layout.addWidget(self.hint_label)
             
             left_layout.addWidget(placeholder_frame)
         
@@ -600,6 +600,9 @@ class HomeView(QWidget):
         
         if hasattr(self, 'no_recent_placeholder') and self.no_recent_placeholder:
             self.no_recent_placeholder.setText(tr('no_recent_repos'))
+        
+        if hasattr(self, 'hint_label'):
+            self.hint_label.setText(tr('home_hint'))
         
         if hasattr(self, 'tips_title'):
             self.tips_title.setText(tr('quick_tips'))

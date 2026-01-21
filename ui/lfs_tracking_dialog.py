@@ -269,7 +269,7 @@ class LFSTrackingDialog(QDialog):
             has_large_files = True
             item = QListWidgetItem(file_path)
             item.setIcon(self.icon_manager.get_icon("warning", size=14, color=theme.colors['warning']))
-            item.setToolTip(f"Large file detected. Double click to track.")
+            item.setToolTip(tr('lfs_large_file_tooltip'))
             self.suggestions_list.addItem(item)
 
         self.add_all_btn.setVisible(has_large_files)
@@ -285,7 +285,7 @@ class LFSTrackingDialog(QDialog):
                 
             item = QListWidgetItem(pattern)
             item.setIcon(self.icon_manager.get_icon("plus", size=14, color=theme.colors['text_secondary']))
-            item.setToolTip(f"Double click to track {pattern}")
+            item.setToolTip(tr('lfs_pattern_tooltip', pattern=pattern))
             self.suggestions_list.addItem(item)
             
     def add_pattern(self):

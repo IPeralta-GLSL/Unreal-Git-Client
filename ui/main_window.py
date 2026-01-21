@@ -287,10 +287,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, "max_button"):
             if self.isMaximized():
                 self.max_button.setIcon(self.icon_manager.get_icon("window-restore-symbolic-svgrepo-com", size=16))
-                self.max_button.setToolTip("Restore")
+                self.max_button.setToolTip(tr('restore'))
             else:
                 self.max_button.setIcon(self.icon_manager.get_icon("window-maximize-symbolic-svgrepo-com", size=16))
-                self.max_button.setToolTip("Maximize")
+                self.max_button.setToolTip(tr('maximize'))
     
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and not self.isMaximized():
@@ -460,7 +460,7 @@ class MainWindow(QMainWindow):
                 break
     
     def on_accounts_changed(self):
-        self.status_bar.showMessage("Cuentas actualizadas", 3000)
+        self.status_bar.showMessage(tr('accounts_updated'), 3000)
                 
     def apply_styles(self):
         theme = get_current_theme()
@@ -605,11 +605,11 @@ class MainWindow(QMainWindow):
         if success:
             QApplication.quit()
         else:
-            QMessageBox.critical(self, tr('error'), f"Update failed: {message}")
+            QMessageBox.critical(self, tr('error'), f"{tr('update_failed')}: {message}")
             
     def on_update_error(self, error_message):
         self.progress_dialog.close()
-        QMessageBox.critical(self, tr('error'), f"Download failed: {error_message}")
+        QMessageBox.critical(self, tr('error'), f"{tr('download_failed')}: {error_message}")
 
     def changeEvent(self, event):
         if event.type() == QEvent.Type.ActivationChange:

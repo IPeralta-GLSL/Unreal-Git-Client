@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QFileDialog, QFrame, QWidget)
+                             QLineEdit, QPushButton, QFileDialog, QFrame, QWidget,
+                             QMessageBox)
 from PyQt6.QtCore import Qt, QPoint
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
@@ -141,7 +142,7 @@ class CloneDialog(QDialog):
         self.clone_btn.setIcon(self.icon_manager.get_icon("download", size=18))
         self.clone_btn.setMinimumHeight(40)
         self.clone_btn.setMinimumWidth(180)
-        self.clone_btn.clicked.connect(self.accept)
+        self.clone_btn.clicked.connect(self.validate_and_accept)
         self.clone_btn.setDefault(True)
         self.theme.apply_button_style(self.clone_btn, 'primary')
         button_layout.addWidget(self.clone_btn)
@@ -229,6 +230,27 @@ class CloneDialog(QDialog):
         )
         if folder:
             self.path_input.setText(folder)
+    
+    def validate_and_accept(self):
+        url = self.url_input.text().strip()
+        path = self.path_input.text().strip()
+        
+        if not url:
+            QMessageBox.warning(self, tr('error'), tr('clone_url_required'))
+            self.url_input.setFocus()
+            return
+            
+        if not path:
+            QMessageBox.warning(self, tr('error'), tr('clone_path_required'))
+            self.path_input.setFocus()
+            return
+            
+        if not os.path.isdir(path):
+            QMessageBox.warning(self, tr('error'), tr('clone_path_invalid'))
+            self.path_input.setFocus()
+            return
+            
+        self.accept()
             
     def get_url(self):
         return self.url_input.text().strip()
