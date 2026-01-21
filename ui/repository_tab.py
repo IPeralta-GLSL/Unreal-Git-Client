@@ -607,13 +607,15 @@ class RepositoryTab(QWidget):
         self.changes_counter = QLabel("0")
         self.changes_counter.setStyleSheet(f"""
             QLabel {{
-                background-color: {theme.colors['primary']};
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 {theme.colors['primary']}, 
+                    stop:1 {theme.colors['primary_hover']});
                 color: {theme.colors['text_inverse']};
-                border-radius: 10px;
-                padding: 2px 8px;
+                border-radius: 12px;
+                padding: 3px 10px;
                 font-weight: {theme.fonts['weight_bold']};
                 font-size: {theme.fonts['size_xs']}px;
-                min-width: 20px;
+                min-width: 22px;
             }}
         """)
         self.changes_counter.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -621,21 +623,32 @@ class RepositoryTab(QWidget):
         
         layout.addWidget(self.changes_header)
         
-        changes_container = QWidget()
+        changes_container = QFrame()
+        changes_container.setObjectName("changesContainer")
         changes_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        changes_container.setStyleSheet("background-color: palette(window); padding: 10px;")
+        changes_container.setStyleSheet(f"""
+            QFrame#changesContainer {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 10px;
+                margin: 4px;
+            }}
+        """)
         changes_layout = QVBoxLayout(changes_container)
-        changes_layout.setContentsMargins(10, 10, 10, 10)
+        changes_layout.setContentsMargins(12, 12, 12, 12)
+        changes_layout.setSpacing(10)
         
         # Large files banner
         self.large_files_banner = QFrame()
         self.large_files_banner.setObjectName("largeFilesBanner")
         self.large_files_banner.setStyleSheet(f"""
             QFrame#largeFilesBanner {{
-                background-color: {theme.colors['surface']};
-                border: 1px solid {theme.colors['border']};
-                border-left: 3px solid {theme.colors['warning']};
-                border-radius: 4px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                    stop:0 {theme.colors['warning']}15, 
+                    stop:1 {theme.colors['warning']}08);
+                border: 1px solid {theme.colors['warning']}40;
+                border-left: 4px solid {theme.colors['warning']};
+                border-radius: 8px;
                 margin-bottom: 8px;
             }}
         """)
@@ -691,18 +704,21 @@ class RepositoryTab(QWidget):
         self.toggle_select_btn = QPushButton()
         self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=14, color="#ffffff"))
         self.toggle_select_btn.setToolTip(tr('deselect_all'))
-        self.toggle_select_btn.setFixedSize(26, 26)
+        self.toggle_select_btn.setFixedSize(28, 28)
         self.toggle_select_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.toggle_select_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {theme.colors['primary']};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {theme.colors['primary']}, 
+                    stop:1 {theme.colors['primary_hover']});
                 border: none;
-                border-radius: 6px;
-                padding: 4px;
+                border-radius: 8px;
+                padding: 5px;
             }}
             QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
-                transform: scale(1.05);
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {theme.colors['primary_hover']}, 
+                    stop:1 {theme.colors['primary']});
             }}
             QPushButton:pressed {{
                 background-color: {theme.colors['primary_pressed']};
@@ -715,9 +731,12 @@ class RepositoryTab(QWidget):
         self.checked_label = QLabel()
         self.checked_label.setStyleSheet(f"""
             QLabel {{
-                color: {theme.colors['text']};
-                font-size: 12px;
-                font-weight: bold;
+                color: {theme.colors['text_secondary']};
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px 8px;
+                background-color: {theme.colors['background']};
+                border-radius: 6px;
             }}
         """)
         selection_row.addWidget(self.checked_label)
@@ -739,38 +758,42 @@ class RepositoryTab(QWidget):
         
         self.changes_list.setStyleSheet(f"""
             QListWidget {{
-                background-color: palette(window);
-                border: 1px solid #3d3d3d;
-                border-radius: 5px;
-                padding: 5px;
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 13px;
+                background-color: {theme.colors['background']};
+                border: none;
+                border-radius: 8px;
+                padding: 6px;
+                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+                font-size: 12px;
                 outline: none;
             }}
             QListWidget::item {{
-                padding: 8px;
-                border-radius: 4px;
-                margin: 2px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                margin: 3px 2px;
                 border-left: 3px solid transparent;
+                background-color: {theme.colors['surface']};
             }}
             QListWidget::item:hover {{
-                background-color: palette(button);
+                background-color: {theme.colors['surface_hover']};
+                border-left-color: {theme.colors['primary']}80;
             }}
             QListWidget::item:selected {{
-                background-color: palette(highlight);
-                border-left-color: {theme.colors['border_focus']};
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                    stop:0 {theme.colors['primary']}25, 
+                    stop:1 {theme.colors['surface']});
+                border-left-color: {theme.colors['primary']};
             }}
             QListWidget::indicator {{
-                width: 18px;
-                height: 18px;
-                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                border-radius: 6px;
                 border: 2px solid {theme.colors['border']};
-                background-color: {theme.colors['surface']};
-                margin-right: 8px;
+                background-color: {theme.colors['background']};
+                margin-right: 10px;
             }}
             QListWidget::indicator:hover {{
                 border-color: {theme.colors['primary']};
-                background-color: rgba(22, 163, 74, 0.1);
+                background-color: {theme.colors['primary']}15;
             }}
             QListWidget::indicator:checked {{
                 background-color: {theme.colors['primary']};
@@ -783,12 +806,28 @@ class RepositoryTab(QWidget):
                 image: url({checkmark_path});
             }}
             QListWidget::indicator:unchecked:pressed {{
-                background-color: rgba(22, 163, 74, 0.3);
+                background-color: {theme.colors['primary']}40;
                 border-color: {theme.colors['primary']};
             }}
             QListWidget::indicator:checked:pressed {{
                 background-color: {theme.colors['primary_pressed']};
                 border-color: {theme.colors['primary_pressed']};
+            }}
+            QScrollBar:vertical {{
+                background-color: transparent;
+                width: 10px;
+                margin: 4px 2px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {theme.colors['border']};
+                border-radius: 5px;
+                min-height: 30px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme.colors['text_secondary']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
             }}
         """)
         self.changes_list.itemClicked.connect(self.on_file_selected)
@@ -802,62 +841,84 @@ class RepositoryTab(QWidget):
         self.commit_header = self.create_section_header(tr('commit_title'), tr('commit_subtitle'), "git-commit")
         layout.addWidget(self.commit_header)
         
-        commit_container = QWidget()
-        commit_container.setStyleSheet("background-color: palette(window); padding: 10px;")
+        commit_container = QFrame()
+        commit_container.setObjectName("commitContainer")
+        commit_container.setStyleSheet(f"""
+            QFrame#commitContainer {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 10px;
+                margin: 4px;
+            }}
+        """)
         commit_layout = QVBoxLayout(commit_container)
-        commit_layout.setContentsMargins(10, 10, 10, 10)
+        commit_layout.setContentsMargins(12, 12, 12, 12)
+        commit_layout.setSpacing(10)
         
         self.commit_summary = QLineEdit()
         self.commit_summary.setPlaceholderText(tr('commit_summary_placeholder'))
         self.commit_summary.setStyleSheet(f"""
             QLineEdit {{
-                background-color: palette(window);
-                border: 2px solid #3d3d3d;
-                border-radius: 5px;
-                padding: 8px;
+                background-color: {theme.colors['background']};
+                border: 2px solid {theme.colors['border']};
+                border-radius: 8px;
+                padding: 10px 12px;
                 font-size: 13px;
-                color: palette(window-text);
+                font-weight: 600;
+                color: {theme.colors['text']};
             }}
             QLineEdit:focus {{
-                border-color: {theme.colors['border_focus']};
+                border-color: {theme.colors['primary']};
+                background-color: {theme.colors['background']};
+            }}
+            QLineEdit:hover {{
+                border-color: {theme.colors['text_secondary']};
             }}
         """)
         commit_layout.addWidget(self.commit_summary)
 
         self.commit_message = QTextEdit()
         self.commit_message.setPlaceholderText(tr('commit_placeholder'))
-        self.commit_message.setMaximumHeight(100)
+        self.commit_message.setMaximumHeight(90)
         self.commit_message.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.commit_message.setStyleSheet("""
-            QTextEdit {
-                background-color: palette(window);
-                border: 2px solid #3d3d3d;
-                border-radius: 5px;
-                padding: 8px;
-                font-size: 13px;
-                color: palette(window-text);
-            }
-            QTextEdit:focus {
-                border-color: {theme.colors['border_focus']};
-            }
+        self.commit_message.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {theme.colors['background']};
+                border: 2px solid {theme.colors['border']};
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-size: 12px;
+                color: {theme.colors['text']};
+            }}
+            QTextEdit:focus {{
+                border-color: {theme.colors['primary']};
+            }}
+            QTextEdit:hover {{
+                border-color: {theme.colors['text_secondary']};
+            }}
         """)
         commit_layout.addWidget(self.commit_message)
         
         self.commit_btn = QPushButton(tr('commit_and_save'))
-        self.commit_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18))
-        self.commit_btn.setMinimumHeight(40)
+        self.commit_btn.setIcon(self.icon_manager.get_icon("git-commit", size=18, color="#ffffff"))
+        self.commit_btn.setMinimumHeight(44)
+        self.commit_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.commit_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {theme.colors['success']};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {theme.colors['success']}, 
+                    stop:1 {theme.colors['success_hover']});
                 color: {theme.colors['text_inverse']};
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: bold;
                 border: none;
-                border-radius: 6px;
-                padding-left: 10px;
+                border-radius: 10px;
+                padding: 8px 16px;
             }}
             QPushButton:hover {{
-                background-color: {theme.colors['success_hover']};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {theme.colors['success_hover']}, 
+                    stop:1 {theme.colors['success']});
             }}
             QPushButton:pressed {{
                 background-color: {theme.colors['success_pressed']};
@@ -870,20 +931,22 @@ class RepositoryTab(QWidget):
         # Stash button
         self.stash_btn = QPushButton(tr('stash'))
         self.stash_btn.setIcon(self.icon_manager.get_icon("download", size=16))
-        self.stash_btn.setMinimumHeight(32)
+        self.stash_btn.setMinimumHeight(36)
         self.stash_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.stash_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {theme.colors['surface']};
-                color: {theme.colors['text']};
+                background-color: transparent;
+                color: {theme.colors['text_secondary']};
                 font-size: 12px;
+                font-weight: 600;
                 border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                padding: 4px 12px;
+                border-radius: 8px;
+                padding: 6px 14px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['surface_hover']};
                 border-color: {theme.colors['primary']};
+                color: {theme.colors['text']};
             }}
         """)
         self.stash_btn.setToolTip(tr('stash_changes'))
