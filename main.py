@@ -57,18 +57,14 @@ def main():
         # sys.stdout.flush()
         
         print("Starting event loop...")
-        # sys.stdout.flush()
         sys.exit(app.exec())
     except SystemExit:
-        pass
+        raise
     except Exception as e:
-        # print("\n" + "="*60)
-        # print(f"FATAL ERROR: {e}")
-        # print("="*60)
-        # traceback.print_exc()
-        # print("="*60)
-        # input("\nPress Enter to exit...")
-        pass
+        logger.critical(f"FATAL ERROR: {e}")
+        logger.critical(traceback.format_exc())
+        QMessageBox.critical(None, "Fatal Error", f"Application error:\n{e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

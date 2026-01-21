@@ -13,21 +13,20 @@ class ThemeManager:
         """Carga la configuración del tema"""
         if self.config_file.exists():
             try:
-                with open(self.config_file, 'r') as f:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                     self.current_theme_name = config.get('theme', 'Dark')
-            except Exception as e:
-                print(f"Error cargando configuración del tema: {e}")
+            except (json.JSONDecodeError, OSError) as e:
                 self.current_theme_name = "Dark"
     
     def save_config(self):
         """Guarda la configuración del tema"""
         try:
             self.config_dir.mkdir(parents=True, exist_ok=True)
-            with open(self.config_file, 'w') as f:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump({'theme': self.current_theme_name}, f, indent=2)
-        except Exception as e:
-            print(f"Error guardando configuración del tema: {e}")
+        except OSError:
+            pass
     
     def set_theme(self, theme_name):
         """Cambia el tema actual"""

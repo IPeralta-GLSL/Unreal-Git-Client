@@ -136,7 +136,7 @@ class ChatWidget(QWidget):
             try:
                 with open(docs_path, "r", encoding="utf-8") as f:
                     doc_context += f.read() + "\n\n"
-            except:
+            except Exception:
                 pass
 
         repo_context = self._build_repo_context(include_size=False)

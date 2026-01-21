@@ -7,6 +7,7 @@ from PyQt6.QtGui import QFont, QColor
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
 from ui.style_utils import apply_primary_button, apply_danger_button, apply_default_button, get_theme
+from core.translations import tr
 import platform
 
 class BranchManagerDialog(QDialog):
@@ -21,7 +22,7 @@ class BranchManagerDialog(QDialog):
         
     def init_ui(self):
         theme = get_theme()
-        self.setWindowTitle("Administrador de Ramas")
+        self.setWindowTitle(tr('branch_manager'))
         self.setModal(True)
         self.setMinimumSize(700, 500)
         
@@ -78,25 +79,25 @@ class BranchManagerDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(theme.spacing['md'])
         
-        self.new_branch_btn = QPushButton("Nueva Rama")
+        self.new_branch_btn = QPushButton(tr('new_branch'))
         self.new_branch_btn.setIcon(self.icon_manager.get_icon("plus-circle", size=18))
         self.new_branch_btn.clicked.connect(self.create_new_branch)
         apply_primary_button(self.new_branch_btn)
         buttons_layout.addWidget(self.new_branch_btn)
         
-        self.switch_btn = QPushButton("Cambiar")
+        self.switch_btn = QPushButton(tr('switch'))
         self.switch_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise", size=18))
         self.switch_btn.clicked.connect(self.switch_to_selected_branch)
         apply_default_button(self.switch_btn)
         buttons_layout.addWidget(self.switch_btn)
         
-        self.delete_btn = QPushButton("Eliminar")
+        self.delete_btn = QPushButton(tr('delete'))
         self.delete_btn.setIcon(self.icon_manager.get_icon("trash", size=18))
         self.delete_btn.clicked.connect(self.delete_selected_branch)
         apply_danger_button(self.delete_btn)
         buttons_layout.addWidget(self.delete_btn)
         
-        self.merge_btn = QPushButton("Merge")
+        self.merge_btn = QPushButton(tr('merge'))
         self.merge_btn.setIcon(self.icon_manager.get_icon("git-merge", size=18))
         self.merge_btn.clicked.connect(self.merge_selected_branch)
         apply_default_button(self.merge_btn)
@@ -104,7 +105,7 @@ class BranchManagerDialog(QDialog):
         
         content_layout.addLayout(buttons_layout)
         
-        close_btn = QPushButton("Cerrar")
+        close_btn = QPushButton(tr('close'))
         close_btn.clicked.connect(self.accept)
         apply_default_button(close_btn)
         content_layout.addWidget(close_btn)
@@ -132,7 +133,7 @@ class BranchManagerDialog(QDialog):
         title_icon.setPixmap(self.icon_manager.get_pixmap("git-branch", size=18))
         title_layout.addWidget(title_icon)
         
-        title = QLabel("Administrador de Ramas")
+        title = QLabel(tr('branch_manager'))
         title.setStyleSheet(f"""
             QLabel {{
                 color: {theme.colors['text']};
@@ -217,55 +218,55 @@ class BranchManagerDialog(QDialog):
         if current_item:
             self.switch_to_branch(current_item)
         else:
-            QMessageBox.warning(self, "Aviso", "Selecciona una rama primero")
+            QMessageBox.warning(self, tr('warning'), tr('select_branch_first'))
             
     def switch_branch(self, branch_name):
         reply = QMessageBox.question(
             self,
-            "Confirmar",
-            f"¿Cambiar a la rama '{branch_name}'?",
+            tr('confirm'),
+            tr('change_branch_question', branch=branch_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             success, message = self.git_manager.switch_branch(branch_name)
             if success:
-                QMessageBox.information(self, "Éxito", f"Cambiado a la rama: {branch_name}")
+                QMessageBox.information(self, tr('success'), tr('branch_switched', branch=branch_name))
                 self.load_branches()
             else:
-                QMessageBox.warning(self, "Error", f"No se pudo cambiar de rama:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_change_branch')}:\n{message}")
                 
     def delete_selected_branch(self):
         current_item = self.branches_list.currentItem()
         if not current_item:
-            QMessageBox.warning(self, "Aviso", "Selecciona una rama para eliminar")
+            QMessageBox.warning(self, tr('warning'), tr('select_branch_to_delete'))
             return
             
         branch_name = current_item.data(Qt.ItemDataRole.UserRole)
         
-        if "actual" in current_item.text():
-            QMessageBox.warning(self, "Error", "No puedes eliminar la rama actual")
+        if "actual" in current_item.text() or "current" in current_item.text().lower():
+            QMessageBox.warning(self, tr('error'), tr('cannot_delete_current_branch'))
             return
             
         reply = QMessageBox.question(
             self,
-            "Confirmar Eliminación",
-            f"¿Eliminar la rama '{branch_name}'?\n\nEsta acción no se puede deshacer.",
+            tr('confirm_delete'),
+            tr('confirm_delete_branch', branch=branch_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             success, message = self.git_manager.delete_branch(branch_name)
             if success:
-                QMessageBox.information(self, "Éxito", f"Rama eliminada: {branch_name}")
+                QMessageBox.information(self, tr('success'), tr('branch_deleted', branch=branch_name))
                 self.load_branches()
             else:
-                QMessageBox.warning(self, "Error", f"No se pudo eliminar:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_delete_branch')}:\n{message}")
                 
     def merge_selected_branch(self):
         current_item = self.branches_list.currentItem()
         if not current_item:
-            QMessageBox.warning(self, "Aviso", "Selecciona una rama para hacer merge")
+            QMessageBox.warning(self, tr('warning'), tr('select_branch_to_merge'))
             return
             
         branch_name = current_item.data(Qt.ItemDataRole.UserRole)
@@ -273,17 +274,17 @@ class BranchManagerDialog(QDialog):
         
         reply = QMessageBox.question(
             self,
-            "Confirmar Merge",
-            f"¿Hacer merge de '{branch_name}' en '{current}'?",
+            tr('confirm_merge'),
+            tr('confirm_merge_question', source=branch_name, target=current),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             success, message = self.git_manager.merge_branch(branch_name)
             if success:
-                QMessageBox.information(self, "Éxito", "Merge completado correctamente")
+                QMessageBox.information(self, tr('success'), tr('merge_completed'))
             else:
-                QMessageBox.warning(self, "Error", f"Error en merge:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('merge_error')}:\n{message}")
 
 class CreateBranchDialog(QDialog):
     def __init__(self, git_manager, parent=None):
@@ -295,7 +296,7 @@ class CreateBranchDialog(QDialog):
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle("Crear Nueva Rama")
+        self.setWindowTitle(tr('create_new_branch'))
         self.setModal(True)
         self.setMinimumWidth(500)
         
@@ -311,26 +312,26 @@ class CreateBranchDialog(QDialog):
         content_layout.setSpacing(15)
         content_layout.setContentsMargins(20, 20, 20, 20)
         
-        name_label = QLabel("Nombre de la rama:")
+        name_label = QLabel(tr('branch_name_label'))
         name_label.setStyleSheet("color: palette(window-text); font-weight: bold;")
         content_layout.addWidget(name_label)
         
         self.branch_name_input = QLineEdit()
-        self.branch_name_input.setPlaceholderText("feature/nueva-funcionalidad")
+        self.branch_name_input.setPlaceholderText("feature/new-feature")
         content_layout.addWidget(self.branch_name_input)
         
-        source_group = QGroupBox("Crear desde:")
+        source_group = QGroupBox(tr('create_from'))
         source_layout = QVBoxLayout()
         
-        self.from_current_radio = QRadioButton("Rama actual")
+        self.from_current_radio = QRadioButton(tr('current_branch'))
         self.from_current_radio.setChecked(True)
         source_layout.addWidget(self.from_current_radio)
         
-        self.from_commit_radio = QRadioButton("Commit específico")
+        self.from_commit_radio = QRadioButton(tr('specific_commit'))
         source_layout.addWidget(self.from_commit_radio)
         
         self.commit_input = QLineEdit()
-        self.commit_input.setPlaceholderText("Hash del commit (ej: a1b2c3d)")
+        self.commit_input.setPlaceholderText(tr('commit_hash_placeholder'))
         self.commit_input.setEnabled(False)
         source_layout.addWidget(self.commit_input)
         
@@ -341,11 +342,11 @@ class CreateBranchDialog(QDialog):
         
         buttons_layout = QHBoxLayout()
         
-        cancel_btn = QPushButton("Cancelar")
+        cancel_btn = QPushButton(tr('cancel'))
         cancel_btn.clicked.connect(self.reject)
         buttons_layout.addWidget(cancel_btn)
         
-        create_btn = QPushButton("Crear Rama")
+        create_btn = QPushButton(tr('create_branch'))
         create_btn.setIcon(self.icon_manager.get_icon("check", size=18))
         create_btn.clicked.connect(self.create_branch)
         create_btn.setDefault(True)
@@ -376,7 +377,7 @@ class CreateBranchDialog(QDialog):
         icon_label.setPixmap(self.icon_manager.get_pixmap("plus-circle", 18))
         title_layout.addWidget(icon_label)
         
-        title_text = QLabel("Crear Nueva Rama")
+        title_text = QLabel(tr('create_new_branch'))
         title_text.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px; margin-left: 5px;")
         title_layout.addWidget(title_text)
         title_layout.addStretch()
@@ -415,23 +416,23 @@ class CreateBranchDialog(QDialog):
         branch_name = self.branch_name_input.text().strip()
         
         if not branch_name:
-            QMessageBox.warning(self, "Error", "Debes ingresar un nombre para la rama")
+            QMessageBox.warning(self, tr('error'), tr('enter_branch_name'))
             return
             
         from_commit = None
         if self.from_commit_radio.isChecked():
             from_commit = self.commit_input.text().strip()
             if not from_commit:
-                QMessageBox.warning(self, "Error", "Debes ingresar un hash de commit")
+                QMessageBox.warning(self, tr('error'), tr('enter_commit_hash'))
                 return
                 
         success, message = self.git_manager.create_branch(branch_name, from_commit)
         
         if success:
-            QMessageBox.information(self, "Éxito", f"Rama '{branch_name}' creada correctamente")
+            QMessageBox.information(self, tr('success'), tr('branch_created_success', branch=branch_name))
             self.accept()
         else:
-            QMessageBox.warning(self, "Error", f"No se pudo crear la rama:\n{message}")
+            QMessageBox.warning(self, tr('error'), f"{tr('error_create_branch')}:\n{message}")
             
     def apply_styles(self):
         from ui.theme import get_current_theme
@@ -504,10 +505,11 @@ class CommitActionsDialog(QDialog):
         self.git_manager = git_manager
         self.commit_hash = commit_hash
         self.commit_info = commit_info
+        self.icon_manager = IconManager()
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle("Acciones del Commit")
+        self.setWindowTitle(tr('commit_actions'))
         self.setModal(True)
         self.setMinimumSize(600, 400)
         
@@ -520,7 +522,7 @@ class CommitActionsDialog(QDialog):
         icon_label.setPixmap(self.icon_manager.get_pixmap("git-commit", 24))
         title_layout.addWidget(icon_label)
         
-        title_text = QLabel("Acciones del Commit")
+        title_text = QLabel(tr('commit_actions'))
         title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(bright-text);")
         title_layout.addWidget(title_text)
         title_layout.addStretch()
@@ -531,30 +533,30 @@ class CommitActionsDialog(QDialog):
         info_label.setStyleSheet("color: palette(link); font-size: 14px; font-weight: bold;")
         layout.addWidget(info_label)
         
-        msg_label = QLabel(f"Mensaje: {self.commit_info}")
+        msg_label = QLabel(f"{tr('message')}: {self.commit_info}")
         msg_label.setWordWrap(True)
         msg_label.setStyleSheet("color: palette(window-text); font-size: 12px; padding: 10px; background-color: palette(button); border-radius: 4px;")
         layout.addWidget(msg_label)
         
-        actions_label = QLabel("Selecciona una acción:")
+        actions_label = QLabel(tr('select_action'))
         actions_label.setStyleSheet("color: palette(window-text); font-weight: bold; margin-top: 10px;")
         layout.addWidget(actions_label)
         
-        self.reset_soft_btn = QPushButton("Reset Soft (mantener cambios)")
+        self.reset_soft_btn = QPushButton(tr('reset_soft'))
         self.reset_soft_btn.setIcon(self.icon_manager.get_icon("arrow-clockwise", size=18))
-        self.reset_soft_btn.setToolTip("Volver a este commit manteniendo los cambios en el área de trabajo")
+        self.reset_soft_btn.setToolTip(tr('reset_soft_tooltip'))
         self.reset_soft_btn.clicked.connect(lambda: self.reset_commit('soft'))
         layout.addWidget(self.reset_soft_btn)
         
-        self.reset_mixed_btn = QPushButton("Reset Mixed (descartar staging)")
+        self.reset_mixed_btn = QPushButton(tr('reset_mixed'))
         self.reset_mixed_btn.setIcon(self.icon_manager.get_icon("arrow-clockwise", size=18))
-        self.reset_mixed_btn.setToolTip("Volver a este commit, descartar staging pero mantener archivos")
+        self.reset_mixed_btn.setToolTip(tr('reset_mixed_tooltip'))
         self.reset_mixed_btn.clicked.connect(lambda: self.reset_commit('mixed'))
         layout.addWidget(self.reset_mixed_btn)
         
-        self.reset_hard_btn = QPushButton("Reset Hard (descartar todo)")
+        self.reset_hard_btn = QPushButton(tr('reset_hard'))
         self.reset_hard_btn.setIcon(self.icon_manager.get_icon("warning", size=18))
-        self.reset_hard_btn.setToolTip("Volver a este commit descartando TODOS los cambios")
+        self.reset_hard_btn.setToolTip(tr('reset_hard_tooltip'))
         self.reset_hard_btn.setStyleSheet("""
             QPushButton {
                 background-color: palette(highlight);
@@ -568,21 +570,21 @@ class CommitActionsDialog(QDialog):
         self.reset_hard_btn.clicked.connect(lambda: self.reset_commit('hard'))
         layout.addWidget(self.reset_hard_btn)
         
-        self.checkout_btn = QPushButton("Ver este commit (detached HEAD)")
+        self.checkout_btn = QPushButton(tr('checkout_commit'))
         self.checkout_btn.setIcon(self.icon_manager.get_icon("sign-in", size=18))
-        self.checkout_btn.setToolTip("Ver el repositorio como estaba en este commit")
+        self.checkout_btn.setToolTip(tr('checkout_commit_tooltip'))
         self.checkout_btn.clicked.connect(self.checkout_commit)
         layout.addWidget(self.checkout_btn)
         
-        self.create_branch_btn = QPushButton("Crear rama desde aquí")
+        self.create_branch_btn = QPushButton(tr('create_branch_from_here'))
         self.create_branch_btn.setIcon(self.icon_manager.get_icon("git-branch", size=18))
-        self.create_branch_btn.setToolTip("Crear una nueva rama a partir de este commit")
+        self.create_branch_btn.setToolTip(tr('create_branch_from_here_tooltip'))
         self.create_branch_btn.clicked.connect(self.create_branch_from_commit)
         layout.addWidget(self.create_branch_btn)
         
         layout.addStretch()
         
-        close_btn = QPushButton("Cerrar")
+        close_btn = QPushButton(tr('close'))
         close_btn.clicked.connect(self.reject)
         layout.addWidget(close_btn)
         
@@ -590,59 +592,59 @@ class CommitActionsDialog(QDialog):
         
     def reset_commit(self, mode):
         mode_names = {
-            'soft': 'Soft (mantener cambios)',
-            'mixed': 'Mixed (descartar staging)',
-            'hard': 'Hard (descartar todo)'
+            'soft': tr('reset_soft'),
+            'mixed': tr('reset_mixed'),
+            'hard': tr('reset_hard')
         }
         
         reply = QMessageBox.question(
             self,
-            "Confirmar Reset",
-            f"¿Hacer reset {mode_names[mode]} al commit {self.commit_hash[:7]}?\n\n" +
-            ("ADVERTENCIA: Perderás todos los cambios no guardados!" if mode == 'hard' else ""),
+            tr('confirm_reset'),
+            f"{tr('confirm_reset_question', mode=mode_names[mode], commit=self.commit_hash[:7])}\n\n" +
+            (tr('warning_lose_changes') if mode == 'hard' else ""),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             success, message = self.git_manager.reset_to_commit(self.commit_hash, mode)
             if success:
-                QMessageBox.information(self, "Éxito", f"Reset {mode} completado")
+                QMessageBox.information(self, tr('success'), tr('reset_completed', mode=mode))
                 self.accept()
             else:
-                QMessageBox.warning(self, "Error", f"Error en reset:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error_reset')}:\n{message}")
                 
     def checkout_commit(self):
         reply = QMessageBox.question(
             self,
-            "Confirmar Checkout",
-            f"¿Ver el commit {self.commit_hash[:7]}?\n\n" +
-            "Estarás en modo 'detached HEAD'. Para guardar cambios, crea una nueva rama.",
+            tr('confirm_checkout'),
+            f"{tr('confirm_checkout_question', commit=self.commit_hash[:7])}\n\n" +
+            tr('detached_head_warning'),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             success, message = self.git_manager.checkout_commit(self.commit_hash)
             if success:
-                QMessageBox.information(self, "Éxito", f"Ahora estás en el commit {self.commit_hash[:7]}")
+                QMessageBox.information(self, tr('success'), tr('checkout_commit_success', commit=self.commit_hash[:7]))
                 self.accept()
             else:
-                QMessageBox.warning(self, "Error", f"Error:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error')}:\n{message}")
                 
     def create_branch_from_commit(self):
         branch_name, ok = QLineEdit().getText(
             self,
-            "Crear Rama",
-            "Nombre de la nueva rama:",
+            tr('create_new_branch'),
+            tr('new_branch_name'),
             QLineEdit.EchoMode.Normal
         )
         
         if ok and branch_name:
             success, message = self.git_manager.create_branch(branch_name, self.commit_hash)
             if success:
-                QMessageBox.information(self, "Éxito", f"Rama '{branch_name}' creada desde el commit {self.commit_hash[:7]}")
+                QMessageBox.information(self, tr('success'), tr('branch_created_from_commit', branch=branch_name, commit=self.commit_hash[:7]))
                 self.accept()
             else:
-                QMessageBox.warning(self, "Error", f"Error:\n{message}")
+                QMessageBox.warning(self, tr('error'), f"{tr('error')}:\n{message}")
                 
     def apply_styles(self):
         from ui.theme import get_current_theme

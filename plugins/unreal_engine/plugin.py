@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from core.plugin_interface import PluginInterface
+from core.translations import tr
 
 class Plugin(PluginInterface):
     def get_name(self):
@@ -275,7 +276,7 @@ class Plugin(PluginInterface):
             
             gitattributes_path = os.path.join(repo_path, ".gitattributes")
             
-            with open(gitattributes_path, 'a') as f:
+            with open(gitattributes_path, 'a', encoding='utf-8') as f:
                 f.write("\n# Unreal Engine LFS Configuration\n")
                 for ext in unreal_extensions:
                     f.write(f"{ext} filter=lfs diff=lfs merge=lfs -text\n")
@@ -310,7 +311,7 @@ class Plugin(PluginInterface):
 class EngineInfoDialog(QDialog):
     def __init__(self, data, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Información del Engine")
+        self.setWindowTitle(tr('engine_info'))
         self.data = data
         self.plugins = data.get('Plugins', [])
         self.plugin_rows = []

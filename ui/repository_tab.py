@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from ui.home_view import HomeView
 from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
-from ui.lfs_tracking_dialog import LFSTrackingDialog
+from ui.lfs_tracking_dialog import LFSTrackingDialog, LFSLocksDialog
 from ui.stash_dialog import StashDialog
 from ui.theme import get_current_theme
 from core.translations import tr
@@ -142,6 +142,8 @@ class RepositoryTab(QWidget):
         self.parent_window = parent_window
         self.plugin_manager = plugin_manager
         self.avatar_cache = {}
+        self.diff_cache = {}
+        self.diff_cache_max_size = 50
         self.network_manager = QNetworkAccessManager()
         self.network_manager.finished.connect(self.on_avatar_downloaded)
         self.icon_manager = IconManager()
@@ -161,6 +163,12 @@ class RepositoryTab(QWidget):
         self.history_future = None
         self.history_branch_requested = ""
         self.git_op_future = None
+        self.diff_future = None
+        self.pending_diff_commit = None
+        self.diff_debounce_timer = QTimer(self)
+        self.diff_debounce_timer.setSingleShot(True)
+        self.diff_debounce_timer.setInterval(100)
+        self.diff_debounce_timer.timeout.connect(self._load_pending_diff)
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.busy_timer = QTimer(self)
         self.busy_timer.setSingleShot(True)
@@ -170,6 +178,13 @@ class RepositoryTab(QWidget):
         self.status_signals = StatusWorkerSignals()
         self.status_signals.finished.connect(self._on_status_future)
         self.init_ui()
+
+    def closeEvent(self, event):
+        self.auto_refresh_timer.stop()
+        self.busy_timer.stop()
+        if self.executor:
+            self.executor.shutdown(wait=False, cancel_futures=True)
+        super().closeEvent(event)
 
     def _show_busy(self):
         if self.parent_window and self.busy_message:
@@ -951,6 +966,7 @@ class RepositoryTab(QWidget):
         return header
     
     def create_middle_panel(self):
+        theme = get_current_theme()
         widget = QWidget()
         widget.setStyleSheet("background-color: palette(window);")
         widget.setMinimumWidth(400)
@@ -972,25 +988,25 @@ class RepositoryTab(QWidget):
         scroll.setMinimumHeight(600)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        scroll.setStyleSheet("""
-            QScrollArea {
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
                 background-color: palette(window);
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
-            }
-            QScrollBar:vertical {
+            }}
+            QScrollBar:vertical {{
                 background-color: palette(window);
                 width: 12px;
                 border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
+            }}
+            QScrollBar::handle:vertical {{
                 background-color: palette(text);
                 border-radius: 6px;
                 min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
+            }}
+            QScrollBar::handle:vertical:hover {{
                 background-color: {theme.colors['primary']};
-            }
+            }}
         """)
         
         self.commit_graph = CommitGraphWidget()
@@ -1005,6 +1021,7 @@ class RepositoryTab(QWidget):
         return widget
     
     def create_right_panel(self):
+        theme = get_current_theme()
         widget = QWidget()
         widget.setStyleSheet("background-color: palette(window);")
         widget.setMinimumWidth(400)
@@ -1070,13 +1087,13 @@ class RepositoryTab(QWidget):
         
         right_splitter = QSplitter(Qt.Orientation.Vertical)
         right_splitter.setHandleWidth(3)
-        right_splitter.setStyleSheet("""
-            QSplitter::handle {
+        right_splitter.setStyleSheet(f"""
+            QSplitter::handle {{
                 background-color: palette(text);
-            }
-            QSplitter::handle:hover {
+            }}
+            QSplitter::handle:hover {{
                 background-color: {theme.colors['primary']};
-            }
+            }}
         """)
         right_splitter.addWidget(info_group)
         right_splitter.addWidget(diff_group)
@@ -1139,10 +1156,7 @@ class RepositoryTab(QWidget):
         self.update_repo_info()
         self.load_history()
         
-        # Switch to repo view after a short delay to allow async tasks to start
-        # and give a smoother transition
         QTimer.singleShot(1000, self.show_repo_view)
-        self.load_history()
         self.check_lfs_status()
         self.update_plugin_indicators()
         
@@ -1205,6 +1219,7 @@ class RepositoryTab(QWidget):
         if not self.repo_path:
             print("[DEBUG] refresh_status: No repo_path")
             return
+        self._clear_file_diff_cache()
         if self.status_future and not self.status_future.done():
             print("[DEBUG] refresh_status: Worker running, marking pending")
             self.status_worker_pending = True
@@ -1212,6 +1227,11 @@ class RepositoryTab(QWidget):
         print("[DEBUG] refresh_status: Starting worker")
         self.status_worker_pending = False
         self._start_status_worker()
+    
+    def _clear_file_diff_cache(self):
+        keys_to_remove = [k for k in self.diff_cache if k.startswith("file:")]
+        for k in keys_to_remove:
+            del self.diff_cache[k]
 
     def _start_status_worker(self):
         if not self.repo_path:
@@ -1908,20 +1928,20 @@ class RepositoryTab(QWidget):
     def discard_selected_changes(self):
         checked_items = self.get_checked_items()
         if not checked_items:
-            QMessageBox.warning(self, "Aviso", "No hay archivos seleccionados")
+            QMessageBox.warning(self, tr('warning'), tr('no_files_selected'))
             return
         
         file_paths = [item.data(Qt.ItemDataRole.UserRole) for item in checked_items if item.data(Qt.ItemDataRole.UserRole)]
         
         if not file_paths:
-            QMessageBox.warning(self, "Aviso", "No hay archivos válidos seleccionados")
+            QMessageBox.warning(self, tr('warning'), tr('no_valid_files_selected'))
             return
         
         file_count = len(file_paths)
         reply = QMessageBox.question(
             self,
-            "Confirmar descarte",
-            f"¿Estás seguro de que deseas descartar los cambios en {file_count} archivo(s) seleccionado(s)?\n\nEsta acción no se puede deshacer.",
+            tr('confirm_discard'),
+            tr('confirm_discard_n_files', count=file_count),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -1938,7 +1958,7 @@ class RepositoryTab(QWidget):
             if errors:
                 QMessageBox.warning(self, tr('error'), "\n".join(errors))
             else:
-                QMessageBox.information(self, "Éxito", f"{file_count} archivo(s) descartado(s)")
+                QMessageBox.information(self, tr('success'), tr('files_discarded', count=file_count))
 
     def show_stash_dialog(self):
         """Show the stash management dialog"""
@@ -2168,21 +2188,71 @@ class RepositoryTab(QWidget):
         print(f"[DEBUG] _on_history_result: setting {len(formatted_commits)} commits on graph")
         self.commit_graph.set_commits(formatted_commits)
         self._stop_busy()
+        
+        self._preload_commit_diffs(formatted_commits[:10])
 
         if self.history_worker_pending:
             self.load_history()
+    
+    def _preload_commit_diffs(self, commits):
+        for commit in commits:
+            commit_hash = commit['hash']
+            if commit_hash not in self.diff_cache:
+                self.executor.submit(self._preload_single_diff, commit_hash)
+    
+    def _preload_single_diff(self, commit_hash):
+        try:
+            if commit_hash in self.diff_cache:
+                return
+            diff = self.git_manager.get_commit_diff(commit_hash)
+            formatted_diff = self.format_diff(diff)
+            if len(self.diff_cache) < self.diff_cache_max_size:
+                self.diff_cache[commit_hash] = formatted_diff
+        except Exception:
+            pass
             
     def on_graph_commit_clicked(self, commit_hash):
         if commit_hash:
-            diff = self.git_manager.get_commit_diff(commit_hash)
-            formatted_diff = self.format_diff(diff)
-            self.diff_view.setHtml(formatted_diff)
+            self._request_commit_diff(commit_hash)
     
     def on_commit_selected(self, item):
         commit_hash = item.data(Qt.ItemDataRole.UserRole)
         if commit_hash:
+            self._request_commit_diff(commit_hash)
+    
+    def _request_commit_diff(self, commit_hash):
+        self.pending_diff_commit = commit_hash
+        if commit_hash in self.diff_cache:
+            self.diff_view.setHtml(self.diff_cache[commit_hash])
+            return
+        self.diff_debounce_timer.start()
+    
+    def _load_pending_diff(self):
+        commit_hash = self.pending_diff_commit
+        if not commit_hash:
+            return
+        if commit_hash in self.diff_cache:
+            self.diff_view.setHtml(self.diff_cache[commit_hash])
+            return
+        self.executor.submit(self._fetch_and_display_diff, commit_hash)
+    
+    def _fetch_and_display_diff(self, commit_hash):
+        try:
             diff = self.git_manager.get_commit_diff(commit_hash)
             formatted_diff = self.format_diff(diff)
+            if len(self.diff_cache) >= self.diff_cache_max_size:
+                try:
+                    oldest_key = next(iter(self.diff_cache))
+                    del self.diff_cache[oldest_key]
+                except StopIteration:
+                    pass
+            self.diff_cache[commit_hash] = formatted_diff
+            QTimer.singleShot(0, lambda: self._update_diff_view(commit_hash, formatted_diff))
+        except Exception:
+            pass
+    
+    def _update_diff_view(self, commit_hash, formatted_diff):
+        if self.pending_diff_commit == commit_hash:
             self.diff_view.setHtml(formatted_diff)
     
     def on_file_selected(self, item):
@@ -2190,45 +2260,74 @@ class RepositoryTab(QWidget):
         if original_line:
             file_path = original_line.split(' ', 1)[1] if ' ' in original_line else original_line
             file_path = file_path.strip()
+            cache_key = f"file:{file_path}"
+            self.pending_diff_commit = cache_key
+            if cache_key in self.diff_cache:
+                self.diff_view.setHtml(self.diff_cache[cache_key])
+                return
+            self.executor.submit(self._fetch_and_display_file_diff, file_path, cache_key)
+    
+    def _fetch_and_display_file_diff(self, file_path, cache_key):
+        try:
             diff = self.git_manager.get_file_diff(file_path)
             formatted_diff = self.format_diff(diff)
-            self.diff_view.setHtml(formatted_diff)
+            if len(self.diff_cache) >= self.diff_cache_max_size:
+                try:
+                    oldest_key = next(iter(self.diff_cache))
+                    del self.diff_cache[oldest_key]
+                except StopIteration:
+                    pass
+            self.diff_cache[cache_key] = formatted_diff
+            QTimer.singleShot(0, lambda: self._update_diff_view(cache_key, formatted_diff))
+        except Exception:
+            pass
     
     def format_diff(self, diff_text):
+        import html
         theme = get_current_theme()
         lines = diff_text.split('\n')
         
-        html = f'<div style="font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5; color: {theme.colors["text"]};">'
+        colors = theme.colors
+        parts = [f'<div style="font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.5; color: {colors["text"]};">']
+        
+        style_commit = f'style="color: {colors["warning"]}; font-weight: bold; font-size: 14px; padding: 10px 0 5px 0;"'
+        style_author = f'style="color: {colors["text"]}; padding-bottom: 2px;"'
+        style_author_span = f'style="color: {colors["text_secondary"]};"'
+        style_date = f'style="color: {colors["text"]}; padding-bottom: 15px; border-bottom: 1px solid {colors["border"]}; margin-bottom: 15px;"'
+        style_diff_header = f'style="color: {colors["primary"]}; font-weight: bold; margin-top: 20px; padding: 8px; background-color: {colors["surface"]}; border-radius: 5px; border: 1px solid {colors["border"]};"'
+        style_meta = f'style="color: {colors["text_secondary"]}; padding-left: 10px; font-size: 11px;"'
+        style_file_marker = f'style="color: {colors["text_secondary"]}; padding-left: 10px;"'
+        style_hunk = f'style="color: {colors["secondary"]}; background-color: {colors["surface"]}; margin: 5px 0; padding: 4px 8px; border-radius: 3px;"'
+        style_add = f'style="background-color: {colors["diff_add_bg"]}; color: {colors["diff_add_text"]}; white-space: pre-wrap;"'
+        style_del = f'style="background-color: {colors["diff_del_bg"]}; color: {colors["diff_del_text"]}; white-space: pre-wrap;"'
+        style_default = 'style="white-space: pre-wrap;"'
         
         for line in lines:
-            # Escape HTML special characters
-            line_content = line.replace('<', '&lt;').replace('>', '&gt;')
+            line_content = html.escape(line)
             
             if line.startswith('commit '):
-                html += f'<div style="color: {theme.colors["warning"]}; font-weight: bold; font-size: 14px; padding: 10px 0 5px 0;">{line_content}</div>'
+                parts.append(f'<div {style_commit}>{line_content}</div>')
             elif line.startswith('Author: '):
-                html += f'<div style="color: {theme.colors["text"]}; padding-bottom: 2px;"><span style="color: {theme.colors["text_secondary"]};">Author: </span>{line_content[8:]}</div>'
+                parts.append(f'<div {style_author}><span {style_author_span}>Author: </span>{line_content[8:]}</div>')
             elif line.startswith('Date:   '):
-                html += f'<div style="color: {theme.colors["text"]}; padding-bottom: 15px; border-bottom: 1px solid {theme.colors["border"]}; margin-bottom: 15px;"><span style="color: {theme.colors["text_secondary"]};">Date: </span>{line_content[8:]}</div>'
+                parts.append(f'<div {style_date}><span {style_author_span}>Date: </span>{line_content[8:]}</div>')
             elif line.startswith('diff --git'):
-                html += f'<div style="color: {theme.colors["primary"]}; font-weight: bold; margin-top: 20px; padding: 8px; background-color: {theme.colors["surface"]}; border-radius: 5px; border: 1px solid {theme.colors["border"]};">{line_content}</div>'
+                parts.append(f'<div {style_diff_header}>{line_content}</div>')
             elif line.startswith('index ') or line.startswith('new file mode') or line.startswith('deleted file mode'):
-                 html += f'<div style="color: {theme.colors["text_secondary"]}; padding-left: 10px; font-size: 11px;">{line_content}</div>'
+                parts.append(f'<div {style_meta}>{line_content}</div>')
             elif line.startswith('---') or line.startswith('+++'):
-                html += f'<div style="color: {theme.colors["text_secondary"]}; padding-left: 10px;">{line_content}</div>'
+                parts.append(f'<div {style_file_marker}>{line_content}</div>')
             elif line.startswith('@@'):
-                html += f'<div style="color: {theme.colors["secondary"]}; background-color: {theme.colors["surface"]}; margin: 5px 0; padding: 4px 8px; border-radius: 3px;">{line_content}</div>'
+                parts.append(f'<div {style_hunk}>{line_content}</div>')
             elif line.startswith('+') and not line.startswith('+++'):
-                # Softer green background
-                html += f'<div style="background-color: {theme.colors["diff_add_bg"]}; color: {theme.colors["diff_add_text"]}; white-space: pre-wrap;">{line_content}</div>'
+                parts.append(f'<div {style_add}>{line_content}</div>')
             elif line.startswith('-') and not line.startswith('---'):
-                # Softer red background
-                html += f'<div style="background-color: {theme.colors["diff_del_bg"]}; color: {theme.colors["diff_del_text"]}; white-space: pre-wrap;">{line_content}</div>'
+                parts.append(f'<div {style_del}>{line_content}</div>')
             else:
-                html += f'<div style="white-space: pre-wrap;">{line_content}</div>'
+                parts.append(f'<div {style_default}>{line_content}</div>')
         
-        html += '</div>'
-        return html
+        parts.append('</div>')
+        return ''.join(parts)
     
     def show_commit_context_menu(self, commit_hash):
         if not commit_hash:
@@ -2405,7 +2504,9 @@ class RepositoryTab(QWidget):
     def copy_commit_hash(self, commit_hash):
         clipboard = QApplication.clipboard()
         clipboard.setText(commit_hash)
-        self.statusBar().showMessage(tr('hash_copied', hash=commit_hash[:7]), 2000) if hasattr(self, 'statusBar') else None
+        if self.parent_window:
+            self.parent_window.status_label.setText(tr('hash_copied', hash=commit_hash[:7]))
+            QTimer.singleShot(2000, lambda: self.parent_window.status_label.setText(tr('ready')))
     
     def show_branch_menu(self):
         branches = self.git_manager.get_all_branches()
@@ -2875,7 +2976,7 @@ class RepositoryTab(QWidget):
             else:
                 QMessageBox.information(self, action_data['name'], message)
         else:
-            QMessageBox.warning(self, "Error", message)
+            QMessageBox.warning(self, tr('error'), message)
         
     def check_lfs_status(self):
         if not self.repo_path or not hasattr(self, 'lfs_btn'):

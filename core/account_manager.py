@@ -223,7 +223,8 @@ class AccountManager:
                     'client_id': self.github_client_id,
                     'device_code': device_code,
                     'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
-                }
+                },
+                timeout=15
             )
             
             if response.status_code == 200:
@@ -247,7 +248,8 @@ class AccountManager:
                 headers={
                     'Authorization': f'token {token}',
                     'Accept': 'application/json'
-                }
+                },
+                timeout=15
             )
             
             if response.status_code == 200:
@@ -308,7 +310,8 @@ class AccountManager:
                     'client_id': client_id,
                     'device_code': device_code,
                     'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
-                }
+                },
+                timeout=15
             )
             
             if response.status_code == 200:
@@ -332,7 +335,8 @@ class AccountManager:
                 headers={
                     'Authorization': f'Bearer {token}',
                     'Accept': 'application/json'
-                }
+                },
+                timeout=15
             )
             
             if response.status_code == 200:

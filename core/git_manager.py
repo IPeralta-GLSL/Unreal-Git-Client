@@ -5,6 +5,17 @@ import fnmatch
 from pathlib import Path
 import re
 
+def _is_valid_git_ref(ref):
+    if not ref or not isinstance(ref, str):
+        return False
+    if len(ref) > 256:
+        return False
+    dangerous_chars = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', '\n', '\r', '\0']
+    for char in dangerous_chars:
+        if char in ref:
+            return False
+    return True
+
 class GitManager:
     def __init__(self):
         self.repo_path = None
@@ -90,20 +101,30 @@ class GitManager:
         return branches
     
     def create_branch(self, branch_name, from_commit=None):
+        if not _is_valid_git_ref(branch_name):
+            return False, "Invalid branch name"
         if from_commit:
+            if not _is_valid_git_ref(from_commit):
+                return False, "Invalid commit reference"
             return self.run_command(f"git branch \"{branch_name}\" {from_commit}")
         else:
             return self.run_command(f"git branch \"{branch_name}\"")
     
     def switch_branch(self, branch_name):
+        if not _is_valid_git_ref(branch_name):
+            return False, "Invalid branch name"
         clean_name = branch_name.replace('remotes/origin/', '')
         return self.run_command(f"git checkout \"{clean_name}\"")
     
     def delete_branch(self, branch_name, force=False):
+        if not _is_valid_git_ref(branch_name):
+            return False, "Invalid branch name"
         flag = "-D" if force else "-d"
         return self.run_command(f"git branch {flag} \"{branch_name}\"")
     
     def merge_branch(self, branch_name):
+        if not _is_valid_git_ref(branch_name):
+            return False, "Invalid branch name"
         return self.run_command(f"git merge \"{branch_name}\"")
     
     # ==================== STASH METHODS ====================
@@ -467,10 +488,14 @@ class GitManager:
         return commits
         
     def get_commit_diff(self, commit_hash):
+        if not _is_valid_git_ref(commit_hash):
+            return "Invalid commit hash"
         success, output = self.run_command(f"git show {commit_hash}")
         return output if success else "No se pudo obtener el diff"
     
     def reset_to_commit(self, commit_hash, mode='soft'):
+        if not _is_valid_git_ref(commit_hash):
+            return False, "Invalid commit hash"
         modes = {
             'soft': '--soft',
             'mixed': '--mixed',
@@ -480,9 +505,13 @@ class GitManager:
         return self.run_command(f"git reset {flag} {commit_hash}")
     
     def revert_commit(self, commit_hash):
+        if not _is_valid_git_ref(commit_hash):
+            return False, "Invalid commit hash"
         return self.run_command(f"git revert {commit_hash} --no-edit")
     
     def checkout_commit(self, commit_hash):
+        if not _is_valid_git_ref(commit_hash):
+            return False, "Invalid commit hash"
         return self.run_command(f"git checkout {commit_hash}")
         
     def clone_repository(self, url, path, progress_callback=None):
@@ -544,8 +573,6 @@ class GitManager:
                     return True, target_path
                 else:
                     return False, result.stderr
-        except Exception as e:
-            return False, str(e)
         except Exception as e:
             return False, str(e)
             
@@ -722,7 +749,7 @@ class GitManager:
         try:
             locks = json.loads(output)
             return locks
-        except:
+        except json.JSONDecodeError:
             return []
 
     def lfs_lock_file(self, file_path):

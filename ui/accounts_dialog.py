@@ -251,12 +251,12 @@ class AccountsDialog(QDialog):
         
         btn_layout = QHBoxLayout()
         
-        refresh_btn = QPushButton("Actualizar")
+        refresh_btn = QPushButton(tr('refresh'))
         refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise"))
         refresh_btn.clicked.connect(self.load_accounts)
         btn_layout.addWidget(refresh_btn)
         
-        remove_btn = QPushButton("Eliminar")
+        remove_btn = QPushButton(tr('delete'))
         remove_btn.setIcon(self.icon_manager.get_icon("trash"))
         remove_btn.clicked.connect(self.remove_selected_account)
         btn_layout.addWidget(remove_btn)
@@ -342,7 +342,7 @@ class AccountsDialog(QDialog):
             painter.end()
             github_logo_label.setPixmap(pixmap)
         
-        connect_btn = QPushButton(" Login con GitHub")
+        connect_btn = QPushButton(f" {tr('login_with_github')}")
         connect_btn.setProperty("class", "github")
         connect_btn.setMinimumHeight(55)
         connect_btn.clicked.connect(self.start_github_device_flow)
@@ -557,7 +557,7 @@ class AccountsDialog(QDialog):
             self.gitlab_app_secret.hide()
 
         # Botón de Login Principal
-        connect_browser_btn = QPushButton(" Login con GitLab")
+        connect_browser_btn = QPushButton(f" {tr('login_with_gitlab')}")
         connect_browser_btn.setMinimumHeight(55)
         connect_browser_btn.clicked.connect(self.connect_gitlab)
         connect_browser_btn.setStyleSheet("""
@@ -679,7 +679,7 @@ class AccountsDialog(QDialog):
         
         layout.addLayout(form_layout)
         
-        save_btn = QPushButton("Guardar Configuración Global")
+        save_btn = QPushButton(tr('save_global_config'))
         save_btn.setIcon(self.icon_manager.get_icon("check"))
         save_btn.setMinimumHeight(40)
         save_btn.clicked.connect(self.save_git_config)
@@ -697,7 +697,7 @@ class AccountsDialog(QDialog):
         """)
         layout.addWidget(save_btn)
         
-        current_group = QGroupBox("Configuración Actual")
+        current_group = QGroupBox(tr('current_config'))
         current_group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -737,7 +737,7 @@ class AccountsDialog(QDialog):
         accounts = self.account_manager.get_accounts()
         
         if not accounts:
-            item = QListWidgetItem("No hay cuentas conectadas")
+            item = QListWidgetItem(tr('no_connected_accounts'))
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.accounts_list.addItem(item)
             return
@@ -779,7 +779,7 @@ class AccountsDialog(QDialog):
                     painter.end()
                     
                     avatar_label.setPixmap(rounded_pixmap)
-                except:
+                except Exception:
                     avatar_label.setPixmap(self.icon_manager.get_pixmap("user", size=24))
                     avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     avatar_label.setStyleSheet("border-radius: 22px; background-color: palette(button);")
@@ -841,8 +841,8 @@ class AccountsDialog(QDialog):
         
         reply = QMessageBox.question(
             self,
-            "Eliminar Cuenta",
-            f"¿Eliminar la cuenta {account['username']} de {account['platform']}?",
+            tr('confirm_delete'),
+            tr('confirm_delete_account_question', username=account['username'], platform=account['platform']),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -1031,7 +1031,7 @@ class AccountsDialog(QDialog):
         client_secret = self.github_client_secret.text().strip()
         
         if not client_id or not client_secret:
-            QMessageBox.warning(self, "Error", "Por favor ingresa el Client ID y Client Secret")
+            QMessageBox.warning(self, tr('error'), tr('enter_client_id_secret'))
             return
         
         state = secrets.token_urlsafe(32)
@@ -1051,12 +1051,12 @@ class AccountsDialog(QDialog):
         gitlab_url = self.gitlab_url.text().strip()
         
         if not app_id or not app_secret:
-            QMessageBox.warning(self, "Error", "Ingresa Application ID y Secret")
+            QMessageBox.warning(self, tr('error'), tr('enter_app_id_secret'))
             return
         
         success, result = self.account_manager.start_oauth_server(8888)
         if not success:
-            QMessageBox.warning(self, "Error", f"No se pudo iniciar servidor OAuth:\n{result}")
+            QMessageBox.warning(self, tr('error'), f"{tr('oauth_server_error')}:\n{result}")
             return
         
         redirect_uri = "http://localhost:8888/callback"
@@ -1083,7 +1083,7 @@ class AccountsDialog(QDialog):
             elif self.oauth_attempts >= self.max_attempts:
                 self.oauth_timer.stop()
                 threading.Thread(target=self.account_manager.stop_oauth_server, daemon=True).start()
-                QMessageBox.warning(self, "Timeout", "Tiempo de espera agotado")
+                QMessageBox.warning(self, tr('timeout'), tr('timeout_expired'))
         
         self.oauth_timer.timeout.connect(check_oauth)
         self.oauth_timer.start(1000)
@@ -1123,18 +1123,18 @@ class AccountsDialog(QDialog):
                             
                             QMessageBox.information(
                                 self,
-                                "Éxito",
-                                f"Cuenta de GitHub conectada:\n{username}"
+                                tr('success'),
+                                f"{tr('github_account_added')}:\n{username}"
                             )
                             
                             self.load_accounts()
                             self.accounts_changed.emit()
                         else:
-                            QMessageBox.warning(self, "Error", "No se pudo obtener información del usuario")
+                            QMessageBox.warning(self, tr('error'), tr('error_get_user_info'))
                     else:
-                        QMessageBox.warning(self, "Error", "No se recibió token de acceso")
+                        QMessageBox.warning(self, tr('error'), tr('no_access_token'))
                 else:
-                    QMessageBox.warning(self, "Error", f"Error al intercambiar código: {response.status_code}")
+                    QMessageBox.warning(self, tr('error'), f"{tr('error_exchange_code')}: {response.status_code}")
                     
             elif platform == 'gitlab':
                 redirect_uri = "http://localhost:8888/callback"
@@ -1171,27 +1171,27 @@ class AccountsDialog(QDialog):
                             
                             QMessageBox.information(
                                 self,
-                                "Éxito",
-                                f"Cuenta de GitLab conectada:\n{username}"
+                                tr('success'),
+                                f"{tr('gitlab_account_added')}:\n{username}"
                             )
                             
                             self.load_accounts()
                             self.accounts_changed.emit()
                         else:
-                            QMessageBox.warning(self, "Error", "No se pudo obtener información del usuario")
+                            QMessageBox.warning(self, tr('error'), tr('error_get_user_info'))
                     else:
-                        QMessageBox.warning(self, "Error", "No se recibió token de acceso")
+                        QMessageBox.warning(self, tr('error'), tr('no_access_token'))
                 else:
-                    QMessageBox.warning(self, "Error", f"Error al intercambiar código: {response.status_code}")
+                    QMessageBox.warning(self, tr('error'), f"{tr('error_exchange_code')}: {response.status_code}")
                     
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Error en OAuth:\n{str(e)}")
+            QMessageBox.warning(self, tr('error'), f"{tr('oauth_error')}:\n{str(e)}")
     
     def add_github_token(self):
         token = self.github_token.text().strip()
         
         if not token:
-            QMessageBox.warning(self, "Error", "Ingresa un token válido")
+            QMessageBox.warning(self, tr('error'), tr('enter_valid_token'))
             return
         
         try:
@@ -1210,24 +1210,24 @@ class AccountsDialog(QDialog):
                 
                 QMessageBox.information(
                     self,
-                    "Éxito",
-                    f"Cuenta de GitHub agregada:\n{username}"
+                    tr('success'),
+                    f"{tr('github_account_added')}:\n{username}"
                 )
                 
                 self.github_token.clear()
                 self.load_accounts()
                 self.accounts_changed.emit()
             else:
-                QMessageBox.warning(self, "Error", "Token inválido o sin permisos")
+                QMessageBox.warning(self, tr('error'), tr('invalid_token'))
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Error al verificar token:\n{str(e)}")
+            QMessageBox.warning(self, tr('error'), f"{tr('error_verify_token')}:\n{str(e)}")
     
     def add_gitlab_token(self):
         token = self.gitlab_token.text().strip()
         gitlab_url = self.gitlab_url.text().strip()
         
         if not token:
-            QMessageBox.warning(self, "Error", "Ingresa un token válido")
+            QMessageBox.warning(self, tr('error'), tr('enter_valid_token'))
             return
         
         try:
@@ -1246,25 +1246,25 @@ class AccountsDialog(QDialog):
                 
                 QMessageBox.information(
                     self,
-                    "Éxito",
-                    f"Cuenta de GitLab agregada:\n{username}"
+                    tr('success'),
+                    f"{tr('gitlab_account_added')}:\n{username}"
                 )
                 
                 self.gitlab_token.clear()
                 self.load_accounts()
                 self.accounts_changed.emit()
             else:
-                QMessageBox.warning(self, "Error", "Token inválido o sin permisos")
+                QMessageBox.warning(self, tr('error'), tr('invalid_token'))
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Error al verificar token:\n{str(e)}")
+            QMessageBox.warning(self, tr('error'), f"{tr('error_verify_token')}:\n{str(e)}")
     
     def copy_code_to_clipboard(self, code):
         clipboard = QApplication.clipboard()
         clipboard.setText(code)
         QMessageBox.information(
             self, 
-            "Código copiado", 
-            f"El código '{code}' ha sido copiado al portapapeles."
+            tr('code_copied'), 
+            tr('code_copied_message', code=code)
         )
     
     def save_git_config(self):
@@ -1272,7 +1272,7 @@ class AccountsDialog(QDialog):
         email = self.git_email.text().strip()
         
         if not name or not email:
-            QMessageBox.warning(self, "Error", "Ingresa nombre y email")
+            QMessageBox.warning(self, tr('error'), tr('enter_name_email'))
             return
         
         try:
@@ -1288,13 +1288,13 @@ class AccountsDialog(QDialog):
             
             QMessageBox.information(
                 self,
-                "Éxito",
-                f"Configuración guardada:\n\nNombre: {name}\nEmail: {email}"
+                tr('success'),
+                tr('config_saved', name=name, email=email)
             )
             
             self.load_git_config()
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Error al guardar configuración:\n{str(e)}")
+            QMessageBox.warning(self, tr('error'), f"{tr('error_save_config')}:\n{str(e)}")
     
     def load_git_config(self):
         try:
@@ -1361,7 +1361,7 @@ class AccountsDialog(QDialog):
         
         btn_layout = QHBoxLayout()
         
-        refresh_btn = QPushButton("Actualizar")
+        refresh_btn = QPushButton(tr('refresh'))
         refresh_btn.setIcon(self.icon_manager.get_icon("arrows-clockwise"))
         refresh_btn.clicked.connect(self.load_plugins)
         btn_layout.addWidget(refresh_btn)
@@ -1389,7 +1389,7 @@ class AccountsDialog(QDialog):
         self.plugins_list.clear()
         
         if not self.plugin_manager:
-            item = QListWidgetItem("No hay plugin manager disponible")
+            item = QListWidgetItem(tr('no_plugin_manager'))
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.plugins_list.addItem(item)
             return
@@ -1397,7 +1397,7 @@ class AccountsDialog(QDialog):
         plugins = self.plugin_manager.get_plugins()
         
         if not plugins:
-            item = QListWidgetItem("No hay plugins instalados")
+            item = QListWidgetItem(tr('no_plugins_installed'))
             item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.plugins_list.addItem(item)
             return
@@ -1451,13 +1451,13 @@ class AccountsDialog(QDialog):
                 desc_label.setStyleSheet("font-size: 12px; color: palette(text);")
                 info_layout.addWidget(desc_label)
             
-            version_label = QLabel(f"Versión: {plugin.get('version', '1.0.0')}")
+            version_label = QLabel(f"{tr('version')}: {plugin.get('version', '1.0.0')}")
             version_label.setStyleSheet("font-size: 11px; color: palette(text);")
             info_layout.addWidget(version_label)
             
             plugin_layout.addLayout(info_layout, 1)
             
-            toggle_btn = QPushButton("Desactivar" if is_enabled else "Activar")
+            toggle_btn = QPushButton(tr('disable') if is_enabled else tr('enable'))
             toggle_btn.setFixedWidth(100)
             toggle_btn.clicked.connect(lambda checked, p=plugin['name']: self.toggle_plugin(p))
             toggle_btn.setStyleSheet(f"""
@@ -1491,21 +1491,20 @@ class AccountsDialog(QDialog):
             self.plugin_manager.disable_plugin(plugin_name)
             QMessageBox.information(
                 self,
-                "Plugin desactivado",
-                f"El plugin '{plugin_name}' ha sido desactivado.\nReinicia la aplicación para aplicar los cambios."
+                tr('plugin_disabled'),
+                tr('plugin_disabled_message', plugin=plugin_name)
             )
         else:
             self.plugin_manager.enable_plugin(plugin_name)
             QMessageBox.information(
                 self,
-                "Plugin activado",
-                f"El plugin '{plugin_name}' ha sido activado.\nReinicia la aplicación para aplicar los cambios."
+                tr('plugin_enabled'),
+                tr('plugin_enabled_message', plugin=plugin_name)
             )
         
         self.load_plugins()
     
     def create_appearance_section(self):
-        """Crea la sección de apariencia"""
         from ui.theme_manager import theme_manager
         
         widget = QWidget()
@@ -1513,11 +1512,11 @@ class AccountsDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        title = QLabel("Personalización de Apariencia")
+        title = QLabel(tr('appearance_customization'))
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: palette(link); margin-bottom: 10px;")
         layout.addWidget(title)
         
-        theme_group = QGroupBox("Tema de color")
+        theme_group = QGroupBox(tr('color_theme'))
         theme_group.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -1575,7 +1574,7 @@ class AccountsDialog(QDialog):
             
             theme_h_layout.addLayout(info_v_layout, 1)
             
-            select_btn = QPushButton("Seleccionado" if theme_name == current_theme else "Seleccionar")
+            select_btn = QPushButton(tr('selected') if theme_name == current_theme else tr('select'))
             select_btn.setFixedWidth(120)
             select_btn.setEnabled(theme_name != current_theme)
             select_btn.clicked.connect(lambda checked, t=theme_name: self.change_theme(t))
@@ -1621,7 +1620,7 @@ class AccountsDialog(QDialog):
         theme_group.setLayout(theme_layout)
         layout.addWidget(theme_group)
         
-        restart_info = QLabel("Los cambios de tema se aplican inmediatamente sin necesidad de reiniciar")
+        restart_info = QLabel(tr('theme_changes_instant'))
         restart_info.setStyleSheet("""
             background-color: palette(highlight);
             color: palette(bright-text);
@@ -1666,7 +1665,7 @@ class AccountsDialog(QDialog):
                     }
                 """)
             else:
-                btn.setText("Seleccionar")
+                btn.setText(tr('select'))
                 btn.setEnabled(True)
                 btn.setStyleSheet("""
                     QPushButton {

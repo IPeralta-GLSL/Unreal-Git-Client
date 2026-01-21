@@ -102,35 +102,35 @@ class UpdateChecker(QThread):
         return data["html_url"]
 
 def install_update(file_path):
-    """
-    Creates a batch file to replace the current executable with the new one and restart it.
-    """
     if platform.system() != "Windows":
         return False, "Auto-update only supported on Windows"
     
     if not getattr(sys, 'frozen', False):
         return False, "Cannot auto-update when running from source"
+    
+    if not os.path.isfile(file_path):
+        return False, "Update file not found"
         
     try:
         current_exe = sys.executable
         
-        # If running from python source, we can't really 'update' the exe in the same way
-        # But for the sake of the feature, we assume we are replacing the running executable
-        # or if running from source, maybe we are replacing a standalone exe that launched it?
-        # Let's assume standard frozen application behavior.
+        file_path_safe = file_path.replace('"', '')
+        current_exe_safe = current_exe.replace('"', '')
         
-        batch_script = f"""
-@echo off
+        if not os.path.isabs(file_path_safe) or not os.path.isabs(current_exe_safe):
+            return False, "Invalid file paths"
+        
+        batch_script = f'''@echo off
 :loop
-move /y "{file_path}" "{current_exe}" > nul 2>&1
+move /y "{file_path_safe}" "{current_exe_safe}" > nul 2>&1
 if errorlevel 1 (
     timeout /t 1 /nobreak >nul
     goto loop
 )
 timeout /t 3 /nobreak >nul
-start "" "{current_exe}"
+start "" "{current_exe_safe}"
 del "%~f0"
-"""
+'''
         batch_file = "update_installer.bat"
         with open(batch_file, "w") as f:
             f.write(batch_script)

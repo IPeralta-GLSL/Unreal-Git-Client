@@ -925,3 +925,48 @@ Traceback (most recent call last):
     self.status_signals.finished.emit({})
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-09 10:02:35,173 - core.updater - INFO - Checking for updates...
+2026-01-09 10:02:35,204 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-09 10:02:35,817 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-09 10:02:35,817 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-09 10:06:39,873 - core.updater - INFO - Checking for updates...
+2026-01-09 10:06:39,904 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-09 10:06:40,515 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-09 10:06:40,516 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-13 17:47:48,468 - core.updater - INFO - Checking for updates...
+2026-01-13 17:47:48,505 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-13 17:47:49,178 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-13 17:47:49,179 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-20 14:38:17,258 - core.updater - INFO - Checking for updates...
+2026-01-20 14:38:17,291 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-20 14:38:17,921 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-20 14:38:17,922 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-20 14:59:59,422 - core.updater - INFO - Checking for updates...
+2026-01-20 14:59:59,443 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-20 15:00:00,020 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-20 15:00:00,021 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-20 15:01:05,886 - core.updater - INFO - Checking for updates...
+2026-01-20 15:01:05,914 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-20 15:01:06,500 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-20 15:01:06,501 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-20 15:10:06,863 - core.updater - INFO - Checking for updates...
+2026-01-20 15:10:06,882 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-20 15:10:07,459 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-20 15:10:07,460 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-20 15:11:35,551 - concurrent.futures - ERROR - exception calling callback for <Future at 0x1d25c4ea0a0 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 1258, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 1261, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
