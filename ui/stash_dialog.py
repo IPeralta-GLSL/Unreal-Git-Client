@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QLineEdit, QListWidget, QListWidgetItem,
-                             QFrame, QCheckBox, QMessageBox, QTextEdit, QSplitter,
-                             QWidget, QSizePolicy)
+                             QFrame, QCheckBox, QMessageBox, QTextEdit,
+                             QWidget, QSizePolicy, QSpacerItem)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QCursor
 from ui.theme import get_current_theme
@@ -17,7 +17,8 @@ class StashDialog(QDialog):
         self.theme = get_current_theme()
         
         self.setWindowTitle(tr('stash'))
-        self.setMinimumSize(650, 550)
+        self.setMinimumSize(480, 500)
+        self.setMaximumSize(580, 620)
         self.setup_ui()
         self.load_stashes()
         
@@ -31,72 +32,74 @@ class StashDialog(QDialog):
         """)
         
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(16)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
-        # Header with icon and description
-        header = QHBoxLayout()
-        header.setSpacing(12)
-        
-        header_icon = QLabel()
-        header_icon.setPixmap(self.icon_manager.get_icon("archive", size=32).pixmap(32, 32))
-        header.addWidget(header_icon)
-        
-        header_text = QVBoxLayout()
-        header_text.setSpacing(2)
-        
-        title = QLabel(tr('stash_title'))
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {theme.colors['text']};")
-        header_text.addWidget(title)
-        
-        subtitle = QLabel(tr('stash_description'))
-        subtitle.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 12px;")
-        subtitle.setWordWrap(True)
-        header_text.addWidget(subtitle)
-        
-        header.addLayout(header_text, 1)
-        layout.addLayout(header)
-        
-        # Separator
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"background-color: {theme.colors['border']};")
-        sep.setFixedHeight(1)
-        layout.addWidget(sep)
-        
-        # ===== GUARDAR Section =====
-        save_section = QFrame()
-        save_section.setStyleSheet(f"""
+        # ===== HEADER =====
+        header_frame = QFrame()
+        header_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {theme.colors['surface']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 8px;
+                border-bottom: 1px solid {theme.colors['border']};
             }}
         """)
-        save_layout = QVBoxLayout(save_section)
-        save_layout.setContentsMargins(16, 12, 16, 12)
-        save_layout.setSpacing(10)
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(16, 12, 16, 12)
+        header_layout.setSpacing(10)
         
+        header_icon = QLabel()
+        header_icon.setPixmap(self.icon_manager.get_icon("archive", size=20).pixmap(20, 20))
+        header_layout.addWidget(header_icon)
+        
+        title = QLabel(tr('stash_title'))
+        title.setFont(QFont("Segoe UI", 13, QFont.Weight.DemiBold))
+        title.setStyleSheet(f"color: {theme.colors['text']};")
+        header_layout.addWidget(title)
+        
+        header_layout.addStretch()
+        layout.addWidget(header_frame)
+        
+        # ===== CONTENT =====
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(16, 12, 16, 12)
+        content_layout.setSpacing(12)
+        
+        # Description
+        desc = QLabel(tr('stash_description'))
+        desc.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px;")
+        desc.setWordWrap(True)
+        content_layout.addWidget(desc)
+        
+        # ===== GUARDAR =====
+        save_frame = QFrame()
+        save_frame.setObjectName("sectionFrame")
+        save_frame.setStyleSheet(f"""
+            QFrame#sectionFrame {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+            }}
+        """)
+        save_layout = QVBoxLayout(save_frame)
+        save_layout.setContentsMargins(12, 10, 12, 10)
+        save_layout.setSpacing(8)
+        
+        # Save header
         save_header = QHBoxLayout()
+        save_header.setSpacing(6)
         save_icon = QLabel()
-        save_icon.setPixmap(self.icon_manager.get_icon("download", size=18).pixmap(18, 18))
+        save_icon.setPixmap(self.icon_manager.get_icon("download", size=14).pixmap(14, 14))
         save_header.addWidget(save_icon)
-        save_title = QLabel(tr('stash_save_title'))
-        save_title.setFont(QFont("Segoe UI", 12, QFont.Weight.DemiBold))
-        save_title.setStyleSheet(f"color: {theme.colors['text']}; border: none;")
+        save_title = QLabel(tr('stash_save_section'))
+        save_title.setStyleSheet(f"color: {theme.colors['text']}; font-weight: 600; font-size: 12px;")
         save_header.addWidget(save_title)
         save_header.addStretch()
         save_layout.addLayout(save_header)
         
-        save_desc = QLabel(tr('stash_save_desc'))
-        save_desc.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px; border: none;")
-        save_desc.setWordWrap(True)
-        save_layout.addWidget(save_desc)
-        
-        # Input row
+        # Input + Button row
         input_row = QHBoxLayout()
-        input_row.setSpacing(10)
+        input_row.setSpacing(8)
         
         self.message_input = QLineEdit()
         self.message_input.setPlaceholderText(tr('stash_message_placeholder'))
@@ -105,9 +108,9 @@ class StashDialog(QDialog):
                 background-color: {theme.colors['background']};
                 color: {theme.colors['text']};
                 border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                padding: 10px 12px;
-                font-size: 13px;
+                border-radius: 4px;
+                padding: 8px 10px;
+                font-size: 12px;
             }}
             QLineEdit:focus {{
                 border-color: {theme.colors['primary']};
@@ -116,18 +119,17 @@ class StashDialog(QDialog):
         input_row.addWidget(self.message_input, 1)
         
         self.save_stash_btn = QPushButton(tr('stash_save_btn'))
-        self.save_stash_btn.setIcon(self.icon_manager.get_icon("archive", size=16))
+        self.save_stash_btn.setIcon(self.icon_manager.get_icon("archive", size=14))
         self.save_stash_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.save_stash_btn.setMinimumHeight(40)
         self.save_stash_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {theme.colors['primary']};
                 color: {theme.colors['text_inverse']};
                 border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-weight: bold;
-                font-size: 13px;
+                border-radius: 4px;
+                padding: 8px 14px;
+                font-weight: 600;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['primary_hover']};
@@ -138,66 +140,68 @@ class StashDialog(QDialog):
         
         save_layout.addLayout(input_row)
         
-        # Options
+        # Checkbox
         self.include_untracked = QCheckBox(tr('include_untracked'))
         self.include_untracked.setChecked(True)
         self.include_untracked.setStyleSheet(f"""
             QCheckBox {{
                 color: {theme.colors['text_secondary']};
                 font-size: 11px;
-                border: none;
+            }}
+            QCheckBox::indicator {{
+                width: 14px;
+                height: 14px;
             }}
         """)
         save_layout.addWidget(self.include_untracked)
         
-        layout.addWidget(save_section)
+        content_layout.addWidget(save_frame)
         
-        # ===== RESTAURAR Section =====
-        restore_section = QFrame()
-        restore_section.setStyleSheet(f"""
-            QFrame {{
+        # ===== RESTAURAR =====
+        restore_frame = QFrame()
+        restore_frame.setObjectName("sectionFrame")
+        restore_frame.setStyleSheet(f"""
+            QFrame#sectionFrame {{
                 background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
-                border-radius: 8px;
+                border-radius: 6px;
             }}
         """)
-        restore_layout = QVBoxLayout(restore_section)
-        restore_layout.setContentsMargins(16, 12, 16, 12)
-        restore_layout.setSpacing(10)
+        restore_layout = QVBoxLayout(restore_frame)
+        restore_layout.setContentsMargins(12, 10, 12, 10)
+        restore_layout.setSpacing(8)
         
+        # Restore header
         restore_header = QHBoxLayout()
+        restore_header.setSpacing(6)
         restore_icon = QLabel()
-        restore_icon.setPixmap(self.icon_manager.get_icon("upload", size=18).pixmap(18, 18))
+        restore_icon.setPixmap(self.icon_manager.get_icon("upload", size=14).pixmap(14, 14))
         restore_header.addWidget(restore_icon)
-        restore_title = QLabel(tr('stash_restore_title'))
-        restore_title.setFont(QFont("Segoe UI", 12, QFont.Weight.DemiBold))
-        restore_title.setStyleSheet(f"color: {theme.colors['text']}; border: none;")
+        restore_title = QLabel(tr('stash_restore_section'))
+        restore_title.setStyleSheet(f"color: {theme.colors['text']}; font-weight: 600; font-size: 12px;")
         restore_header.addWidget(restore_title)
-        
         self.stash_count_label = QLabel("(0)")
-        self.stash_count_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 12px; border: none;")
+        self.stash_count_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px;")
         restore_header.addWidget(self.stash_count_label)
-        
         restore_header.addStretch()
         restore_layout.addLayout(restore_header)
         
         # Stash list
         self.stash_list = QListWidget()
-        self.stash_list.setMinimumHeight(120)
-        self.stash_list.setMaximumHeight(180)
+        self.stash_list.setMinimumHeight(90)
+        self.stash_list.setMaximumHeight(130)
         self.stash_list.setStyleSheet(f"""
             QListWidget {{
                 background-color: {theme.colors['background']};
                 border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                padding: 4px;
+                border-radius: 4px;
+                padding: 2px;
+                font-size: 12px;
             }}
             QListWidget::item {{
-                background-color: transparent;
                 color: {theme.colors['text']};
-                padding: 8px 10px;
-                border-radius: 4px;
-                margin: 1px 0px;
+                padding: 6px 8px;
+                border-radius: 3px;
             }}
             QListWidget::item:selected {{
                 background-color: {theme.colors['primary']};
@@ -210,12 +214,12 @@ class StashDialog(QDialog):
         self.stash_list.itemSelectionChanged.connect(self.on_stash_selected)
         restore_layout.addWidget(self.stash_list)
         
-        # Action buttons row
+        # Action buttons
         actions_row = QHBoxLayout()
-        actions_row.setSpacing(8)
+        actions_row.setSpacing(6)
         
         self.pop_btn = QPushButton(tr('stash_restore_btn'))
-        self.pop_btn.setIcon(self.icon_manager.get_icon("upload", size=16))
+        self.pop_btn.setIcon(self.icon_manager.get_icon("upload", size=14))
         self.pop_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.pop_btn.setToolTip(tr('stash_pop_tooltip'))
         self.pop_btn.clicked.connect(self.pop_stash)
@@ -223,7 +227,7 @@ class StashDialog(QDialog):
         actions_row.addWidget(self.pop_btn)
         
         self.apply_btn = QPushButton(tr('stash_apply_btn'))
-        self.apply_btn.setIcon(self.icon_manager.get_icon("copy", size=16))
+        self.apply_btn.setIcon(self.icon_manager.get_icon("copy", size=14))
         self.apply_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.apply_btn.setToolTip(tr('stash_apply_tooltip'))
         self.apply_btn.clicked.connect(self.apply_stash)
@@ -232,73 +236,107 @@ class StashDialog(QDialog):
         
         actions_row.addStretch()
         
-        self.drop_btn = QPushButton(tr('stash_delete_btn'))
-        self.drop_btn.setIcon(self.icon_manager.get_icon("trash", size=16))
+        self.drop_btn = QPushButton()
+        self.drop_btn.setIcon(self.icon_manager.get_icon("trash", size=14))
         self.drop_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.drop_btn.setToolTip(tr('stash_delete_btn'))
+        self.drop_btn.setFixedSize(30, 30)
         self.drop_btn.clicked.connect(self.drop_stash)
-        self.style_action_btn(self.drop_btn, "danger")
+        self.style_icon_btn(self.drop_btn, "danger")
         actions_row.addWidget(self.drop_btn)
         
-        self.clear_btn = QPushButton(tr('stash_clear_btn'))
-        self.clear_btn.setIcon(self.icon_manager.get_icon("x-circle", size=16))
+        self.clear_btn = QPushButton()
+        self.clear_btn.setIcon(self.icon_manager.get_icon("x-circle", size=14))
         self.clear_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.clear_btn.setToolTip(tr('stash_clear_btn'))
+        self.clear_btn.setFixedSize(30, 30)
         self.clear_btn.clicked.connect(self.clear_stashes)
-        self.style_action_btn(self.clear_btn, "danger")
+        self.style_icon_btn(self.clear_btn, "danger")
         actions_row.addWidget(self.clear_btn)
         
         restore_layout.addLayout(actions_row)
         
-        layout.addWidget(restore_section)
+        content_layout.addWidget(restore_frame)
         
-        # Preview area (collapsible feel)
+        # ===== PREVIEW =====
+        preview_frame = QFrame()
+        preview_frame.setObjectName("sectionFrame")
+        preview_frame.setStyleSheet(f"""
+            QFrame#sectionFrame {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 6px;
+            }}
+        """)
+        preview_layout = QVBoxLayout(preview_frame)
+        preview_layout.setContentsMargins(12, 10, 12, 10)
+        preview_layout.setSpacing(6)
+        
         preview_header = QHBoxLayout()
+        preview_header.setSpacing(6)
         preview_icon = QLabel()
         preview_icon.setPixmap(self.icon_manager.get_icon("eye", size=14).pixmap(14, 14))
         preview_header.addWidget(preview_icon)
-        preview_label = QLabel(tr('stash_preview'))
-        preview_label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px;")
-        preview_header.addWidget(preview_label)
+        preview_title = QLabel(tr('stash_preview'))
+        preview_title.setStyleSheet(f"color: {theme.colors['text']}; font-weight: 600; font-size: 12px;")
+        preview_header.addWidget(preview_title)
         preview_header.addStretch()
-        layout.addLayout(preview_header)
+        preview_layout.addLayout(preview_header)
         
         self.preview = QTextEdit()
         self.preview.setReadOnly(True)
-        self.preview.setFont(QFont("Cascadia Code", 10))
-        self.preview.setMinimumHeight(100)
-        self.preview.setMaximumHeight(150)
+        self.preview.setFont(QFont("Cascadia Code", 9))
+        self.preview.setMinimumHeight(70)
+        self.preview.setMaximumHeight(100)
         self.preview.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {theme.colors['surface']};
+                background-color: {theme.colors['background']};
                 color: {theme.colors['text']};
                 border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                padding: 8px;
+                border-radius: 4px;
+                padding: 6px;
             }}
         """)
         self.preview.setPlaceholderText(tr('stash_preview_placeholder'))
-        layout.addWidget(self.preview)
+        preview_layout.addWidget(self.preview)
         
-        # Close button
-        close_row = QHBoxLayout()
-        close_row.addStretch()
+        content_layout.addWidget(preview_frame)
+        
+        content_layout.addStretch()
+        layout.addWidget(content, 1)
+        
+        # ===== FOOTER =====
+        footer_frame = QFrame()
+        footer_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border-top: 1px solid {theme.colors['border']};
+            }}
+        """)
+        footer_layout = QHBoxLayout(footer_frame)
+        footer_layout.setContentsMargins(16, 10, 16, 10)
+        
+        footer_layout.addStretch()
+        
         close_btn = QPushButton(tr('close'))
         close_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        close_btn.setMinimumWidth(100)
         close_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {theme.colors['surface']};
+                background-color: transparent;
                 color: {theme.colors['text']};
                 border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                padding: 10px 24px;
+                border-radius: 4px;
+                padding: 7px 18px;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {theme.colors['surface_hover']};
             }}
         """)
         close_btn.clicked.connect(self.accept)
-        close_row.addWidget(close_btn)
-        layout.addLayout(close_row)
+        footer_layout.addWidget(close_btn)
+        
+        layout.addWidget(footer_frame)
         
         self.update_buttons_state()
         
@@ -307,21 +345,25 @@ class StashDialog(QDialog):
         if style_type == "success":
             bg = theme.colors['success']
             bg_hover = theme.colors.get('success_hover', '#45a049')
+            text = theme.colors['text_inverse']
         elif style_type == "danger":
             bg = theme.colors['danger']
             bg_hover = theme.colors.get('danger_hover', '#c0392b')
+            text = theme.colors['text_inverse']
         else:
-            bg = theme.colors['surface']
-            bg_hover = theme.colors['surface_hover']
+            bg = theme.colors['surface_hover']
+            bg_hover = theme.colors['border']
+            text = theme.colors['text']
         
         btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {bg};
-                color: {theme.colors['text_inverse'] if style_type != "normal" else theme.colors['text']};
-                border: 1px solid {theme.colors['border']};
+                color: {text};
+                border: none;
                 border-radius: 4px;
                 padding: 6px 12px;
-                font-size: 12px;
+                font-size: 11px;
+                font-weight: 500;
             }}
             QPushButton:hover {{
                 background-color: {bg_hover};
@@ -329,6 +371,31 @@ class StashDialog(QDialog):
             QPushButton:disabled {{
                 background-color: {theme.colors['surface']};
                 color: {theme.colors['text_secondary']};
+            }}
+        """)
+        
+    def style_icon_btn(self, btn, style_type):
+        theme = self.theme
+        if style_type == "danger":
+            bg = "transparent"
+            bg_hover = f"{theme.colors['danger']}20"
+        else:
+            bg = "transparent"
+            bg_hover = theme.colors['surface_hover']
+        
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {bg};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: {bg_hover};
+                border-color: {theme.colors['danger'] if style_type == 'danger' else theme.colors['border']};
+            }}
+            QPushButton:disabled {{
+                background-color: transparent;
+                border-color: {theme.colors['border']};
             }}
         """)
         
@@ -345,7 +412,7 @@ class StashDialog(QDialog):
             self.stash_list.addItem(item)
         else:
             for stash in stashes:
-                item = QListWidgetItem(f"📦 {stash['message']}")
+                item = QListWidgetItem(stash['message'])
                 item.setData(Qt.ItemDataRole.UserRole, stash['index'])
                 item.setToolTip(f"{stash['index']} - {stash.get('date', '')}")
                 self.stash_list.addItem(item)

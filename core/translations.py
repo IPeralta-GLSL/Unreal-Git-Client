@@ -74,16 +74,15 @@ class TranslationManager:
                 
                 # Stash
                 'stash': 'Stash',
-                'stash_title': 'Caja Temporal (Stash)',
-                'stash_description': 'Guarda tus cambios temporalmente sin hacer commit. Útil cuando necesitas cambiar de rama pero no quieres perder tu trabajo actual.',
-                'stash_save_title': '📥 Guardar cambios',
-                'stash_save_desc': 'Guarda todos los cambios actuales en una caja temporal',
-                'stash_restore_title': '📤 Restaurar cambios',
+                'stash_title': 'Caja Temporal',
+                'stash_description': 'Guarda tus cambios temporalmente sin hacer commit. Útil para cambiar de rama sin perder tu trabajo.',
+                'stash_save_section': 'Guardar cambios',
+                'stash_restore_section': 'Restaurar cambios',
                 'stash_save_btn': 'Guardar',
                 'stash_restore_btn': 'Restaurar',
                 'stash_apply_btn': 'Copiar',
                 'stash_delete_btn': 'Eliminar',
-                'stash_clear_btn': 'Limpiar',
+                'stash_clear_btn': 'Limpiar todo',
                 'stash_pop_tooltip': 'Restaura los cambios y elimina el stash',
                 'stash_apply_tooltip': 'Restaura los cambios pero mantiene el stash',
                 'stash_preview': 'Vista previa',
@@ -105,7 +104,7 @@ class TranslationManager:
                 'stash_cleared': 'Todos los stashes eliminados',
                 'confirm_stash_clear': '¿Eliminar TODOS los stashes?\n\nEsta acción no se puede deshacer.',
                 'confirm_stash_drop': '¿Eliminar este stash?\n\n{stash}',
-                'include_untracked': 'Incluir archivos nuevos (sin seguimiento)',
+                'include_untracked': 'Incluir archivos nuevos',
                 
                 # Conflicts
                 'conflicts': 'CONFLICTOS',
@@ -639,16 +638,15 @@ class TranslationManager:
                 
                 # Stash
                 'stash': 'Stash',
-                'stash_title': 'Temporary Box (Stash)',
-                'stash_description': 'Save your changes temporarily without committing. Useful when you need to switch branches but don\'t want to lose your current work.',
-                'stash_save_title': '📥 Save changes',
-                'stash_save_desc': 'Save all current changes to a temporary box',
-                'stash_restore_title': '📤 Restore changes',
+                'stash_title': 'Temporary Box',
+                'stash_description': 'Save your changes temporarily without committing. Useful for switching branches without losing your work.',
+                'stash_save_section': 'Save changes',
+                'stash_restore_section': 'Restore changes',
                 'stash_save_btn': 'Save',
                 'stash_restore_btn': 'Restore',
                 'stash_apply_btn': 'Copy',
                 'stash_delete_btn': 'Delete',
-                'stash_clear_btn': 'Clear',
+                'stash_clear_btn': 'Clear all',
                 'stash_pop_tooltip': 'Restore changes and remove stash',
                 'stash_apply_tooltip': 'Restore changes but keep stash',
                 'stash_preview': 'Preview',
@@ -670,7 +668,7 @@ class TranslationManager:
                 'stash_cleared': 'All stashes cleared',
                 'confirm_stash_clear': 'Delete ALL stashes?\n\nThis action cannot be undone.',
                 'confirm_stash_drop': 'Delete this stash?\n\n{stash}',
-                'include_untracked': 'Include new files (untracked)',
+                'include_untracked': 'Include new files',
                 
                 # Conflicts
                 'conflicts': 'CONFLICTS',

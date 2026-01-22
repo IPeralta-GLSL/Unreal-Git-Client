@@ -1155,3 +1155,7 @@ RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
 2026-01-22 14:47:06,631 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2026-01-22 14:47:07,248 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
 2026-01-22 14:47:07,249 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
+2026-01-22 14:57:59,725 - core.updater - INFO - Checking for updates...
+2026-01-22 14:57:59,843 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-22 14:58:00,445 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 200 863
+2026-01-22 14:58:00,446 - core.updater - INFO - Latest version: 1.2.8, Current version: v1.2.8
