@@ -157,28 +157,19 @@ class CommitFileItem(QFrame):
         self.header = QFrame()
         self.header.setObjectName("commitFileHeader")
         header_layout = QHBoxLayout(self.header)
-        header_layout.setContentsMargins(12, 10, 12, 10)
-        header_layout.setSpacing(10)
+        header_layout.setContentsMargins(8, 6, 8, 6)
+        header_layout.setSpacing(8)
         
         self.expand_icon = QLabel()
-        self.expand_icon.setFixedSize(16, 16)
+        self.expand_icon.setFixedSize(12, 12)
         header_layout.addWidget(self.expand_icon)
         
-        self.file_icon = QLabel()
-        self.file_icon.setFixedSize(16, 16)
-        header_layout.addWidget(self.file_icon)
+        self.status_dot = QLabel()
+        self.status_dot.setFixedSize(8, 8)
+        header_layout.addWidget(self.status_dot)
         
         self.file_label = QLabel(self.file_path)
-        self.file_label.setStyleSheet(f"""
-            font-family: 'Cascadia Code', 'Consolas', monospace;
-            font-size: 12px;
-        """)
         header_layout.addWidget(self.file_label, 1)
-        
-        self.state_badge = QLabel()
-        self.state_badge.setFixedHeight(20)
-        self.state_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        header_layout.addWidget(self.state_badge)
         
         self.main_layout.addWidget(self.header)
         
@@ -191,16 +182,15 @@ class CommitFileItem(QFrame):
         
         self.diff_view = QTextEdit()
         self.diff_view.setReadOnly(True)
-        self.diff_view.setMinimumHeight(100)
-        self.diff_view.setMaximumHeight(400)
+        self.diff_view.setMinimumHeight(80)
+        self.diff_view.setMaximumHeight(300)
         self.diff_view.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {self.theme.colors['background']};
                 border: none;
-                border-top: 1px solid {self.theme.colors['border']};
                 font-family: 'Cascadia Code', 'Consolas', monospace;
                 font-size: 11px;
-                padding: 8px;
+                padding: 6px 8px;
             }}
         """)
         diff_layout.addWidget(self.diff_view)
@@ -216,51 +206,42 @@ class CommitFileItem(QFrame):
         is_renamed = self.status == 'R'
         
         if is_added:
-            icon_name, color, badge_text, badge_bg = "file-plus", "#4ec9b0", "A", "#4ec9b030"
+            color = "#3fb950"
         elif is_deleted:
-            icon_name, color, badge_text, badge_bg = "file-x", "#f48771", "D", "#f4877130"
+            color = "#f85149"
         elif is_renamed:
-            icon_name, color, badge_text, badge_bg = "file-plus", "#569cd6", "R", "#569cd630"
+            color = "#a371f7"
         elif is_modified:
-            icon_name, color, badge_text, badge_bg = "file-text", "#dcdcaa", "M", "#dcdcaa30"
+            color = "#d29922"
         else:
-            icon_name, color, badge_text, badge_bg = "file", "#858585", "?", "#85858530"
-            
-        self.file_icon.setPixmap(self.icon_manager.get_icon(icon_name, size=16).pixmap(16, 16))
+            color = "#848d97"
+        
+        self.status_dot.setStyleSheet(f"""
+            background-color: {color};
+            border-radius: 4px;
+        """)
+        
         self.file_label.setStyleSheet(f"""
-            color: {color};
-            font-family: 'Cascadia Code', 'Consolas', monospace;
+            color: {self.theme.colors['text']};
+            font-family: 'Segoe UI', sans-serif;
             font-size: 12px;
         """)
         
-        self.state_badge.setText(badge_text)
-        self.state_badge.setStyleSheet(f"""
-            QLabel {{
-                background-color: {badge_bg};
-                color: {color};
-                border-radius: 4px;
-                padding: 2px 8px;
-                font-size: 10px;
-                font-weight: bold;
-            }}
-        """)
-        
         expand_icon = "caret-right" if not self.is_expanded else "caret-down"
-        self.expand_icon.setPixmap(self.icon_manager.get_icon(expand_icon, size=14).pixmap(14, 14))
+        self.expand_icon.setPixmap(self.icon_manager.get_icon(expand_icon, size=12).pixmap(12, 12))
         
     def update_style(self):
-        expanded_bg = f"{self.theme.colors['primary']}15" if self.is_expanded else self.theme.colors['surface']
-        expanded_border = self.theme.colors['primary'] if self.is_expanded else self.theme.colors['border']
+        hover_bg = f"{self.theme.colors['text']}08"
+        expanded_bg = f"{self.theme.colors['text']}05" if self.is_expanded else "transparent"
+        
         self.setStyleSheet(f"""
             QFrame#commitFileItem {{
                 background-color: {expanded_bg};
-                border: 1px solid {expanded_border};
-                border-radius: 8px;
-                margin: 2px 0px;
+                border: none;
+                border-bottom: 1px solid {self.theme.colors['border']}50;
             }}
             QFrame#commitFileItem:hover {{
-                background-color: {self.theme.colors['primary']}20;
-                border-color: {self.theme.colors['primary']}80;
+                background-color: {hover_bg};
             }}
             QFrame#commitFileHeader {{
                 background-color: transparent;
@@ -268,8 +249,9 @@ class CommitFileItem(QFrame):
             }}
             QFrame#commitDiffContainer {{
                 background-color: {self.theme.colors['background']};
-                border-top: 1px solid {self.theme.colors['border']};
-                border-radius: 0px 0px 7px 7px;
+                border: none;
+                margin: 0px 8px 8px 8px;
+                border-radius: 4px;
             }}
         """)
         
