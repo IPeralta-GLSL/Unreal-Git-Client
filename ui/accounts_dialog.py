@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QListWidget, QListWidgetItem, QMessageBox,
                              QInputDialog, QLineEdit, QTabWidget, QWidget,
-                             QTextEdit, QGroupBox, QFrame, QApplication, QComboBox, QFormLayout)
+                             QTextEdit, QGroupBox, QFrame, QApplication, QComboBox, QFormLayout,
+                             QCheckBox, QFileDialog)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPoint
 from PyQt6.QtGui import QFont, QPixmap, QPainter, QPainterPath
 from PyQt6.QtSvg import QSvgRenderer
@@ -170,9 +171,135 @@ class AccountsDialog(QDialog):
         language_group.setLayout(language_layout)
         layout.addWidget(language_group)
         
+        options_group = QGroupBox(tr('clone_options'))
+        options_layout = QVBoxLayout()
+        
+        self.create_folder_check = QCheckBox(tr('create_repo_folder'))
+        self.create_folder_check.setChecked(self.settings_manager.get_create_repo_folder())
+        self.create_folder_check.stateChanged.connect(self.on_create_folder_changed)
+        options_layout.addWidget(self.create_folder_check)
+        
+        create_folder_note = QLabel(tr('create_repo_folder_note'))
+        create_folder_note.setWordWrap(True)
+        create_folder_note.setStyleSheet("color: palette(mid); font-size: 11px; padding-left: 20px;")
+        options_layout.addWidget(create_folder_note)
+        
+        self.allow_non_empty_check = QCheckBox(tr('allow_non_empty_clone'))
+        self.allow_non_empty_check.setChecked(self.settings_manager.get_allow_non_empty_clone())
+        self.allow_non_empty_check.stateChanged.connect(self.on_allow_non_empty_changed)
+        options_layout.addWidget(self.allow_non_empty_check)
+        
+        non_empty_note = QLabel(tr('allow_non_empty_clone_note'))
+        non_empty_note.setWordWrap(True)
+        non_empty_note.setStyleSheet("color: palette(mid); font-size: 11px; padding-left: 20px;")
+        options_layout.addWidget(non_empty_note)
+        
+        options_group.setLayout(options_layout)
+        layout.addWidget(options_group)
+        
+        paths_group = QGroupBox(tr('saved_clone_paths'))
+        paths_layout = QVBoxLayout()
+        
+        add_path_layout = QHBoxLayout()
+        self.new_path_input = QLineEdit()
+        self.new_path_input.setPlaceholderText(tr('enter_path_or_browse'))
+        add_path_layout.addWidget(self.new_path_input)
+        
+        browse_btn = QPushButton(tr('browse'))
+        browse_btn.setMaximumWidth(100)
+        browse_btn.clicked.connect(self.browse_clone_path)
+        add_path_layout.addWidget(browse_btn)
+        
+        add_btn = QPushButton(tr('add'))
+        add_btn.setMaximumWidth(80)
+        add_btn.clicked.connect(self.add_clone_path)
+        add_path_layout.addWidget(add_btn)
+        
+        paths_layout.addLayout(add_path_layout)
+        
+        self.clone_paths_list = QListWidget()
+        self.clone_paths_list.setMinimumHeight(120)
+        paths_layout.addWidget(self.clone_paths_list)
+        
+        list_buttons = QHBoxLayout()
+        
+        set_default_btn = QPushButton(tr('set_as_default'))
+        set_default_btn.clicked.connect(self.set_default_clone_path)
+        list_buttons.addWidget(set_default_btn)
+        
+        remove_btn = QPushButton(tr('remove'))
+        remove_btn.clicked.connect(self.remove_clone_path)
+        list_buttons.addWidget(remove_btn)
+        
+        list_buttons.addStretch()
+        paths_layout.addLayout(list_buttons)
+        
+        paths_group.setLayout(paths_layout)
+        layout.addWidget(paths_group)
+        
+        self.load_clone_paths()
+        
         layout.addStretch()
         
         return widget
+    
+    def browse_clone_path(self):
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            tr('select_folder'),
+            self.new_path_input.text() or os.path.expanduser("~")
+        )
+        if folder:
+            self.new_path_input.setText(folder)
+    
+    def add_clone_path(self):
+        path = self.new_path_input.text().strip()
+        if not path:
+            return
+        if not os.path.isdir(path):
+            QMessageBox.warning(self, tr('error'), tr('path_not_valid'))
+            return
+        if self.settings_manager.add_clone_path(path):
+            self.new_path_input.clear()
+            self.load_clone_paths()
+        else:
+            QMessageBox.information(self, tr('info'), tr('path_already_exists'))
+    
+    def remove_clone_path(self):
+        current = self.clone_paths_list.currentItem()
+        if not current:
+            return
+        path = current.data(Qt.ItemDataRole.UserRole)
+        self.settings_manager.remove_clone_path(path)
+        self.load_clone_paths()
+    
+    def set_default_clone_path(self):
+        current = self.clone_paths_list.currentItem()
+        if not current:
+            return
+        path = current.data(Qt.ItemDataRole.UserRole)
+        self.settings_manager.set_default_clone_path(path)
+        self.load_clone_paths()
+    
+    def load_clone_paths(self):
+        self.clone_paths_list.clear()
+        paths = self.settings_manager.get_clone_paths()
+        default_path = self.settings_manager.get_default_clone_path()
+        
+        for path in paths:
+            is_default = path == default_path
+            display = f"★ {path}" if is_default else path
+            item = QListWidgetItem(display)
+            item.setData(Qt.ItemDataRole.UserRole, path)
+            if is_default:
+                item.setToolTip(tr('default_path'))
+            self.clone_paths_list.addItem(item)
+    
+    def on_create_folder_changed(self, state):
+        self.settings_manager.set_create_repo_folder(state == Qt.CheckState.Checked.value)
+    
+    def on_allow_non_empty_changed(self, state):
+        self.settings_manager.set_allow_non_empty_clone(state == Qt.CheckState.Checked.value)
     
     def on_language_changed(self, index):
         language_code = self.language_combo.itemData(index)

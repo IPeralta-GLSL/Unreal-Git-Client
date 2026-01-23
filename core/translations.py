@@ -573,6 +573,24 @@ class TranslationManager:
                 # Repo info dialog
                 'copy_path': 'Copiar ruta',
                 'copied': 'Copiado',
+                
+                # Clone paths settings
+                'clone_paths': 'Rutas de Clonación',
+                'clone_paths_settings': 'Configurar rutas donde clonar repositorios',
+                'clone_options': 'Opciones de Clonación',
+                'create_repo_folder': 'Crear carpeta con nombre del repositorio',
+                'create_repo_folder_note': 'Se creará una subcarpeta con el nombre del repo dentro de la ruta seleccionada',
+                'allow_non_empty_clone': 'Permitir clonar en carpetas no vacías',
+                'allow_non_empty_clone_note': 'Por defecto Git requiere una carpeta vacía. Activar con precaución.',
+                'saved_clone_paths': 'Rutas Guardadas',
+                'enter_path_or_browse': 'Ingresa una ruta o usa Explorar',
+                'set_as_default': 'Marcar como predeterminada',
+                'default_path': '(predeterminada)',
+                'path_not_valid': 'La ruta ingresada no es válida',
+                'path_already_exists': 'Esta ruta ya está en la lista',
+                'folder_not_empty': 'Carpeta no vacía',
+                'folder_not_empty_msg': 'La carpeta de destino no está vacía. ¿Deseas continuar de todas formas?',
+                'add': 'Agregar',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -1138,6 +1156,24 @@ class TranslationManager:
                 # Repo info dialog
                 'copy_path': 'Copy path',
                 'copied': 'Copied',
+                
+                # Clone paths settings
+                'clone_paths': 'Clone Paths',
+                'clone_paths_settings': 'Configure paths where to clone repositories',
+                'clone_options': 'Clone Options',
+                'create_repo_folder': 'Create folder with repository name',
+                'create_repo_folder_note': 'A subfolder with the repo name will be created inside the selected path',
+                'allow_non_empty_clone': 'Allow cloning into non-empty folders',
+                'allow_non_empty_clone_note': 'By default Git requires an empty folder. Enable with caution.',
+                'saved_clone_paths': 'Saved Paths',
+                'enter_path_or_browse': 'Enter a path or use Browse',
+                'set_as_default': 'Set as default',
+                'default_path': '(default)',
+                'path_not_valid': 'The entered path is not valid',
+                'path_already_exists': 'This path is already in the list',
+                'folder_not_empty': 'Folder not empty',
+                'folder_not_empty_msg': 'The destination folder is not empty. Do you want to continue anyway?',
+                'add': 'Add',
             }
         }
         

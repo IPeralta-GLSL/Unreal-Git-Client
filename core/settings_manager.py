@@ -165,3 +165,52 @@ class SettingsManager:
         settings = self.load_settings()
         settings['language'] = language_code
         self.save_settings(settings)
+    
+    def get_clone_paths(self):
+        settings = self.load_settings()
+        return settings.get('clone_paths', [])
+    
+    def add_clone_path(self, path):
+        settings = self.load_settings()
+        paths = settings.get('clone_paths', [])
+        if path not in paths:
+            paths.append(path)
+            settings['clone_paths'] = paths
+            self.save_settings(settings)
+            return True
+        return False
+    
+    def remove_clone_path(self, path):
+        settings = self.load_settings()
+        paths = settings.get('clone_paths', [])
+        if path in paths:
+            paths.remove(path)
+            settings['clone_paths'] = paths
+            self.save_settings(settings)
+    
+    def get_default_clone_path(self):
+        settings = self.load_settings()
+        return settings.get('default_clone_path', '')
+    
+    def set_default_clone_path(self, path):
+        settings = self.load_settings()
+        settings['default_clone_path'] = path
+        self.save_settings(settings)
+    
+    def get_create_repo_folder(self):
+        settings = self.load_settings()
+        return settings.get('create_repo_folder', True)
+    
+    def set_create_repo_folder(self, value):
+        settings = self.load_settings()
+        settings['create_repo_folder'] = value
+        self.save_settings(settings)
+    
+    def get_allow_non_empty_clone(self):
+        settings = self.load_settings()
+        return settings.get('allow_non_empty_clone', False)
+    
+    def set_allow_non_empty_clone(self, value):
+        settings = self.load_settings()
+        settings['allow_non_empty_clone'] = value
+        self.save_settings(settings)
