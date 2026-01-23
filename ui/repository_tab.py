@@ -467,16 +467,84 @@ class RepositoryTab(QWidget):
     def create_clone_view(self):
         theme = get_current_theme()
         container = QWidget()
-        container.setStyleSheet(f"background-color: {theme.colors['background']};")
         
         main_layout = QVBoxLayout(container)
-        main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        content = QFrame()
-        content.setFixedWidth(500)
-        content.setStyleSheet(f"""
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet(f"""
+            QScrollArea {{
+                border: none;
+                background-color: palette(window);
+            }}
+            QScrollBar:vertical {{
+                background-color: transparent;
+                width: 14px;
+                margin: 2px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: palette(mid);
+                border-radius: 7px;
+                min-height: 40px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+            }}
+        """)
+        
+        scroll_widget = QWidget()
+        layout = QVBoxLayout(scroll_widget)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        layout.setSpacing(24)
+        layout.setContentsMargins(50, 40, 50, 50)
+        
+        header_container = QWidget()
+        header_container.setMaximumWidth(600)
+        header_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        header_layout = QHBoxLayout(header_container)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(16)
+        
+        title_container = QWidget()
+        title_layout = QVBoxLayout(title_container)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(4)
+        
+        title_row = QHBoxLayout()
+        title_row.setSpacing(12)
+        
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("download", 28))
+        title_row.addWidget(icon_label)
+        
+        self.clone_title = QLabel(tr('clone_repository'))
+        self.clone_title.setStyleSheet(f"""
+            font-size: 24px;
+            font-weight: bold;
+            color: {theme.colors['text']};
+        """)
+        title_row.addWidget(self.clone_title)
+        title_row.addStretch()
+        title_layout.addLayout(title_row)
+        
+        self.clone_description = QLabel(tr('clone_description'))
+        self.clone_description.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 14px;")
+        self.clone_description.setWordWrap(True)
+        title_layout.addWidget(self.clone_description)
+        
+        header_layout.addWidget(title_container, 1)
+        layout.addWidget(header_container)
+        
+        form_container = QFrame()
+        form_container.setMaximumWidth(600)
+        form_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        form_container.setStyleSheet(f"""
             QFrame {{
                 background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
@@ -484,65 +552,28 @@ class RepositoryTab(QWidget):
             }}
         """)
         
-        layout = QVBoxLayout(content)
-        layout.setSpacing(16)
-        layout.setContentsMargins(32, 32, 32, 32)
+        form_layout = QVBoxLayout(form_container)
+        form_layout.setSpacing(20)
+        form_layout.setContentsMargins(24, 24, 24, 24)
         
-        header_layout = QHBoxLayout()
+        url_section = QWidget()
+        url_layout = QVBoxLayout(url_section)
+        url_layout.setContentsMargins(0, 0, 0, 0)
+        url_layout.setSpacing(8)
         
-        back_btn = QPushButton()
-        back_btn.setIcon(self.icon_manager.get_icon("arrow-left", size=20))
-        back_btn.setFixedSize(36, 36)
-        back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        back_btn.clicked.connect(self.show_home_view)
-        back_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                border: none;
-                border-radius: 8px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['surface_hover']};
-            }}
-        """)
-        header_layout.addWidget(back_btn)
-        
-        icon_label = QLabel()
-        icon_label.setPixmap(self.icon_manager.get_pixmap("git-fork", 32))
-        header_layout.addWidget(icon_label)
-        
-        header_layout.addSpacing(12)
-        
-        self.clone_title = QLabel(tr('clone_repository'))
-        self.clone_title.setStyleSheet(f"""
-            font-size: 20px;
-            font-weight: bold;
-            color: {theme.colors['text']};
-        """)
-        header_layout.addWidget(self.clone_title)
-        header_layout.addStretch()
-        layout.addLayout(header_layout)
-        
-        self.clone_description = QLabel(tr('clone_description'))
-        self.clone_description.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 13px;")
-        self.clone_description.setWordWrap(True)
-        layout.addWidget(self.clone_description)
-        
-        layout.addSpacing(8)
-        
-        self.clone_url_label = QLabel(tr('repository_url') + ":")
-        self.clone_url_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold;")
-        layout.addWidget(self.clone_url_label)
+        self.clone_url_label = QLabel(tr('repository_url'))
+        self.clone_url_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px;")
+        url_layout.addWidget(self.clone_url_label)
         
         self.clone_url_input = QLineEdit()
         self.clone_url_input.setPlaceholderText("https://github.com/user/repo.git")
-        self.clone_url_input.setMinimumHeight(42)
+        self.clone_url_input.setMinimumHeight(44)
         self.clone_url_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {theme.colors['background']};
                 border: 1px solid {theme.colors['border']};
                 border-radius: 8px;
-                padding: 8px 12px;
+                padding: 10px 14px;
                 font-size: 14px;
                 color: {theme.colors['text']};
             }}
@@ -550,24 +581,30 @@ class RepositoryTab(QWidget):
                 border-color: {theme.colors['primary']};
             }}
         """)
-        layout.addWidget(self.clone_url_input)
+        url_layout.addWidget(self.clone_url_input)
+        form_layout.addWidget(url_section)
         
-        self.clone_path_label = QLabel(tr('destination_folder') + ":")
-        self.clone_path_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold;")
-        layout.addWidget(self.clone_path_label)
+        path_section = QWidget()
+        path_layout_v = QVBoxLayout(path_section)
+        path_layout_v.setContentsMargins(0, 0, 0, 0)
+        path_layout_v.setSpacing(8)
         
-        path_layout = QHBoxLayout()
-        path_layout.setSpacing(8)
+        self.clone_path_label = QLabel(tr('destination_folder'))
+        self.clone_path_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold; font-size: 13px;")
+        path_layout_v.addWidget(self.clone_path_label)
+        
+        path_row = QHBoxLayout()
+        path_row.setSpacing(10)
         
         self.clone_path_combo = QComboBox()
         self.clone_path_combo.setEditable(True)
-        self.clone_path_combo.setMinimumHeight(42)
+        self.clone_path_combo.setMinimumHeight(44)
         self.clone_path_combo.setStyleSheet(f"""
             QComboBox {{
                 background-color: {theme.colors['background']};
                 border: 1px solid {theme.colors['border']};
                 border-radius: 8px;
-                padding: 8px 12px;
+                padding: 10px 14px;
                 font-size: 14px;
                 color: {theme.colors['text']};
             }}
@@ -576,37 +613,44 @@ class RepositoryTab(QWidget):
             }}
             QComboBox::drop-down {{
                 border: none;
-                padding-right: 10px;
+                padding-right: 12px;
             }}
             QComboBox QAbstractItemView {{
                 background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
                 selection-background-color: {theme.colors['primary']};
+                border-radius: 8px;
             }}
         """)
-        path_layout.addWidget(self.clone_path_combo, 1)
+        path_row.addWidget(self.clone_path_combo, 1)
         
         browse_btn = QPushButton(tr('browse'))
         browse_btn.setIcon(self.icon_manager.get_icon("folder-open", size=16))
-        browse_btn.setMinimumHeight(42)
-        browse_btn.setMinimumWidth(100)
+        browse_btn.setMinimumHeight(44)
+        browse_btn.setMinimumWidth(110)
         browse_btn.clicked.connect(self.browse_clone_folder)
         theme.apply_button_style(browse_btn, 'default')
-        path_layout.addWidget(browse_btn)
+        path_row.addWidget(browse_btn)
         
-        layout.addLayout(path_layout)
+        path_layout_v.addLayout(path_row)
+        form_layout.addWidget(path_section)
+        
+        options_section = QWidget()
+        options_layout = QVBoxLayout(options_section)
+        options_layout.setContentsMargins(0, 0, 0, 0)
+        options_layout.setSpacing(8)
         
         self.clone_create_folder_check = QCheckBox(tr('create_repo_folder'))
         self.clone_create_folder_check.setStyleSheet(f"""
             QCheckBox {{
                 color: {theme.colors['text']};
                 font-size: 13px;
-                spacing: 8px;
+                spacing: 10px;
             }}
             QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
-                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
                 border: 2px solid {theme.colors['border']};
             }}
             QCheckBox::indicator:checked {{
@@ -615,41 +659,80 @@ class RepositoryTab(QWidget):
             }}
         """)
         self.clone_create_folder_check.stateChanged.connect(self.update_clone_helper)
-        layout.addWidget(self.clone_create_folder_check)
+        options_layout.addWidget(self.clone_create_folder_check)
         
         self.clone_helper_text = QLabel(tr('clone_helper'))
         self.clone_helper_text.setStyleSheet(f"""
             color: {theme.colors['text_secondary']};
-            font-size: 11px;
-            font-style: italic;
-            padding-left: 26px;
+            font-size: 12px;
+            padding-left: 30px;
         """)
         self.clone_helper_text.setWordWrap(True)
-        layout.addWidget(self.clone_helper_text)
+        options_layout.addWidget(self.clone_helper_text)
         
-        layout.addSpacing(16)
+        options_layout.addSpacing(8)
         
-        buttons_layout = QHBoxLayout()
+        self.clone_allow_non_empty_check = QCheckBox(tr('allow_non_empty_clone'))
+        self.clone_allow_non_empty_check.setStyleSheet(f"""
+            QCheckBox {{
+                color: {theme.colors['text']};
+                font-size: 13px;
+                spacing: 10px;
+            }}
+            QCheckBox::indicator {{
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                border: 2px solid {theme.colors['border']};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {theme.colors['primary']};
+                border-color: {theme.colors['primary']};
+            }}
+        """)
+        options_layout.addWidget(self.clone_allow_non_empty_check)
+        
+        clone_non_empty_note = QLabel(tr('allow_non_empty_clone_note'))
+        clone_non_empty_note.setStyleSheet(f"""
+            color: {theme.colors['text_secondary']};
+            font-size: 12px;
+            padding-left: 30px;
+        """)
+        clone_non_empty_note.setWordWrap(True)
+        options_layout.addWidget(clone_non_empty_note)
+        
+        form_layout.addWidget(options_section)
+        
+        layout.addWidget(form_container)
+        
+        buttons_container = QWidget()
+        buttons_container.setMaximumWidth(600)
+        buttons_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        buttons_layout = QHBoxLayout(buttons_container)
+        buttons_layout.setContentsMargins(0, 8, 0, 0)
+        buttons_layout.setSpacing(12)
         buttons_layout.addStretch()
         
         self.clone_cancel_btn = QPushButton(tr('cancel'))
-        self.clone_cancel_btn.setMinimumHeight(42)
-        self.clone_cancel_btn.setMinimumWidth(100)
+        self.clone_cancel_btn.setMinimumHeight(44)
+        self.clone_cancel_btn.setMinimumWidth(110)
         self.clone_cancel_btn.clicked.connect(self.show_home_view)
         theme.apply_button_style(self.clone_cancel_btn, 'default')
         buttons_layout.addWidget(self.clone_cancel_btn)
         
         self.clone_start_btn = QPushButton(tr('clone_repository'))
         self.clone_start_btn.setIcon(self.icon_manager.get_icon("download", size=18))
-        self.clone_start_btn.setMinimumHeight(42)
-        self.clone_start_btn.setMinimumWidth(160)
+        self.clone_start_btn.setMinimumHeight(44)
+        self.clone_start_btn.setMinimumWidth(180)
         self.clone_start_btn.clicked.connect(self.start_clone)
         theme.apply_button_style(self.clone_start_btn, 'primary')
         buttons_layout.addWidget(self.clone_start_btn)
         
-        layout.addLayout(buttons_layout)
+        layout.addWidget(buttons_container)
+        layout.addStretch()
         
-        main_layout.addWidget(content)
+        scroll.setWidget(scroll_widget)
+        main_layout.addWidget(scroll)
         
         return container
 
@@ -1751,6 +1834,7 @@ class RepositoryTab(QWidget):
                 self.clone_path_combo.setCurrentText(os.path.expanduser("~"))
             
             self.clone_create_folder_check.setChecked(self.settings_manager.get_create_repo_folder())
+            self.clone_allow_non_empty_check.setChecked(self.settings_manager.get_allow_non_empty_clone())
         
         self.clone_url_input.clear()
         self.update_clone_helper()
@@ -1760,9 +1844,8 @@ class RepositoryTab(QWidget):
     def update_clone_helper(self):
         if self.clone_create_folder_check.isChecked():
             self.clone_helper_text.setText(tr('clone_helper'))
-            self.clone_helper_text.setVisible(True)
         else:
-            self.clone_helper_text.setVisible(False)
+            self.clone_helper_text.setText(tr('clone_helper_direct'))
     
     def browse_clone_folder(self):
         current_path = self.clone_path_combo.currentText()
@@ -1808,7 +1891,7 @@ class RepositoryTab(QWidget):
             if repo_name:
                 final_path = os.path.join(path, repo_name)
         
-        allow_non_empty = self.settings_manager.get_allow_non_empty_clone() if self.settings_manager else False
+        allow_non_empty = self.clone_allow_non_empty_check.isChecked()
         if os.path.isdir(final_path) and os.listdir(final_path) and not allow_non_empty:
             reply = QMessageBox.question(
                 self,

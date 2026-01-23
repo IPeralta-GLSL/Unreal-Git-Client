@@ -171,6 +171,7 @@ class TranslationManager:
                 
                 'downloading_update': 'Descargando actualización...',
                 'cancel': 'Cancelar',
+                'back': 'Volver',
                 'update_failed': 'Error de actualización',
                 'download_failed': 'Error de descarga',
                 
@@ -413,6 +414,7 @@ class TranslationManager:
                 'browse': 'Explorar',
                 'cancel': 'Cancelar',
                 'clone_helper': 'El repositorio se clonará en una nueva carpeta dentro de la ubicación seleccionada',
+                'clone_helper_direct': 'El repositorio se clonará directamente en la carpeta seleccionada',
                 'select_folder': 'Seleccionar Carpeta',
                 'clone_url_required': 'Debes ingresar la URL del repositorio',
                 'clone_path_required': 'Debes seleccionar una carpeta de destino',
@@ -992,10 +994,12 @@ class TranslationManager:
                 'destination_folder': 'Destination Folder',
                 'browse': 'Browse',
                 'cancel': 'Cancel',
+                'back': 'Back',
                 'downloading_update': 'Downloading update...',
                 'update_failed': 'Update failed',
                 'download_failed': 'Download failed',
                 'clone_helper': 'The repository will be cloned into a new folder within the selected location',
+                'clone_helper_direct': 'The repository will be cloned directly into the selected folder',
                 'select_folder': 'Select Folder',
                 'clone_url_required': 'You must enter the repository URL',
                 'clone_path_required': 'You must select a destination folder',
