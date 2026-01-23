@@ -19,6 +19,8 @@ class TranslationManager:
                 
                 'open_repository': 'Abrir Repositorio',
                 'clone_repository': 'Clonar Repositorio',
+                'open_in_explorer': 'Abrir en Explorador',
+                'remove_from_list': 'Eliminar de la lista',
                 'settings': 'Ajustes',
                 'exit': 'Salir',
                 'close': 'Cerrar',
@@ -607,6 +609,8 @@ class TranslationManager:
                 
                 'open_repository': 'Open Repository',
                 'clone_repository': 'Clone Repository',
+                'open_in_explorer': 'Open in Explorer',
+                'remove_from_list': 'Remove from list',
                 'settings': 'Settings',
                 'exit': 'Exit',
                 'close': 'Close',

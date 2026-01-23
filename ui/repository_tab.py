@@ -380,6 +380,7 @@ class RepositoryTab(QWidget):
         self.home_view.open_repo_requested.connect(self.on_home_open_repo)
         self.home_view.clone_repo_requested.connect(self.on_home_clone_repo)
         self.home_view.open_recent_repo.connect(self.load_repository)
+        self.home_view.folder_dropped.connect(self.load_repository)
         self.stacked_widget.addWidget(self.home_view)
         
         # Loading View

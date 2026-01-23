@@ -1,21 +1,27 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                             QLabel, QFrame, QSizePolicy, QScrollArea, QGraphicsDropShadowEffect)
-from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty, QPointF
-from PyQt6.QtGui import QFont, QColor
+                             QLabel, QFrame, QSizePolicy, QScrollArea, QGraphicsDropShadowEffect,
+                             QMenu)
+from PyQt6.QtCore import Qt, pyqtSignal, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty, QPointF, QUrl
+from PyQt6.QtGui import QFont, QColor, QAction, QDesktopServices
 from ui.icon_manager import IconManager
 from ui.theme import get_current_theme
 from core.translations import tr
 import os
+import subprocess
+import platform
 
 class HomeView(QWidget):
     open_repo_requested = pyqtSignal()
     clone_repo_requested = pyqtSignal()
     open_recent_repo = pyqtSignal(str)
+    remove_recent_repo = pyqtSignal(str)
+    folder_dropped = pyqtSignal(str)
     
     def __init__(self, settings_manager=None, parent=None):
         super().__init__(parent)
         self.settings_manager = settings_manager
         self.icon_manager = IconManager()
+        self.setAcceptDrops(True)
         self.init_ui()
         
     def init_ui(self):
@@ -476,7 +482,67 @@ class HomeView(QWidget):
         btn.setLayout(btn_layout)
         btn.clicked.connect(lambda: self.open_recent_repo.emit(repo_path))
         
+        btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        btn.customContextMenuRequested.connect(lambda pos: self.show_repo_context_menu(btn, repo_path, pos))
+        
         return btn
+    
+    def show_repo_context_menu(self, button, repo_path, pos):
+        theme = get_current_theme()
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 8px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                padding: 8px 16px;
+                border-radius: 4px;
+                color: {theme.colors['text']};
+            }}
+            QMenu::item:selected {{
+                background-color: {theme.colors['primary']};
+                color: white;
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {theme.colors['border']};
+                margin: 4px 8px;
+            }}
+        """)
+        
+        open_action = QAction(self.icon_manager.get_icon("folder-open"), tr('open_repository'), self)
+        open_action.triggered.connect(lambda: self.open_recent_repo.emit(repo_path))
+        menu.addAction(open_action)
+        
+        open_folder_action = QAction(self.icon_manager.get_icon("folder"), tr('open_in_explorer'), self)
+        open_folder_action.triggered.connect(lambda: self.open_folder_in_explorer(repo_path))
+        menu.addAction(open_folder_action)
+        
+        menu.addSeparator()
+        
+        remove_action = QAction(self.icon_manager.get_icon("trash"), tr('remove_from_list'), self)
+        remove_action.triggered.connect(lambda: self.remove_repo_from_list(repo_path))
+        menu.addAction(remove_action)
+        
+        menu.exec(button.mapToGlobal(pos))
+    
+    def open_folder_in_explorer(self, path):
+        if os.path.exists(path):
+            if platform.system() == 'Windows':
+                subprocess.run(['explorer', path])
+            elif platform.system() == 'Darwin':
+                subprocess.run(['open', path])
+            else:
+                subprocess.run(['xdg-open', path])
+    
+    def remove_repo_from_list(self, repo_path):
+        if self.settings_manager:
+            self.settings_manager.remove_recent_repo(repo_path)
+            self.refresh_recent_repos()
+        self.remove_recent_repo.emit(repo_path)
     
     def refresh_recent_repos(self):
         self.init_ui()
@@ -616,3 +682,30 @@ class HomeView(QWidget):
         
         if hasattr(self, 'version_label'):
             self.version_label.setText(tr('version_text'))
+    
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                if os.path.isdir(path):
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+    
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+    
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                if os.path.isdir(path):
+                    git_dir = os.path.join(path, '.git')
+                    if os.path.exists(git_dir):
+                        self.folder_dropped.emit(path)
+                        event.acceptProposedAction()
+                        return
+            event.ignore()
