@@ -26,63 +26,31 @@ class HomeView(QWidget):
         
     def init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(60, 30, 60, 30)
+        main_layout.setSpacing(25)
         
         theme = get_current_theme()
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet(f"""
-            QScrollArea {{
-                border: none;
-                background-color: palette(window);
-            }}
-            QScrollBar:vertical {{
-                background-color: transparent;
-                width: 14px;
-                margin: 2px;
-            }}
-            QScrollBar::handle:vertical {{
-                background-color: palette(mid);
-                border-radius: 7px;
-                min-height: 40px;
-            }}
-            QScrollBar::handle:vertical:hover {{
-                background-color: {theme.colors['surface_hover']};
-            }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0px;
-            }}
-        """)
-        
-        scroll_widget = QWidget()
-        layout = QVBoxLayout(scroll_widget)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
-        layout.setSpacing(35)
-        layout.setContentsMargins(50, 60, 50, 50)
         
         header_container = QWidget()
-        header_container.setMaximumWidth(1000)
         header_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         header_layout = QVBoxLayout(header_container)
         header_layout.setSpacing(12)
+        header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         self.title = QLabel(tr('git_client'))
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.title.setWordWrap(True)
         
-        layout.addWidget(header_container)
+        main_layout.addWidget(header_container)
         
         buttons_container = QWidget()
-        buttons_container.setMaximumWidth(1000)
         buttons_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         buttons_layout = QHBoxLayout(buttons_container)
-        buttons_layout.setSpacing(20)
+        buttons_layout.setSpacing(30)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         
-        theme = get_current_theme()
+        buttons_layout.addStretch()
         
         self.open_btn = self.create_action_button(
             tr('open_repository_btn'),
@@ -90,6 +58,7 @@ class HomeView(QWidget):
             theme.colors['primary'],
             "folder-open"
         )
+        self.open_btn.setMaximumWidth(280)
         self.open_btn.clicked.connect(self.open_repo_requested.emit)
         buttons_layout.addWidget(self.open_btn)
         
@@ -99,16 +68,18 @@ class HomeView(QWidget):
             "#16825d",
             "download"
         )
+        self.clone_btn.setMaximumWidth(280)
         self.clone_btn.clicked.connect(self.clone_repo_requested.emit)
         buttons_layout.addWidget(self.clone_btn)
         
-        layout.addWidget(buttons_container)
+        buttons_layout.addStretch()
+        
+        main_layout.addWidget(buttons_container)
         
         content_splitter = QWidget()
-        content_splitter.setMaximumWidth(1300)
         content_splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         content_layout = QHBoxLayout(content_splitter)
-        content_layout.setSpacing(25)
+        content_layout.setSpacing(40)
         content_layout.setContentsMargins(0, 0, 0, 0)
         
         left_panel = QWidget()
@@ -117,51 +88,11 @@ class HomeView(QWidget):
         left_layout.setSpacing(12)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
-        recent_section = self.create_recent_repos_section()
-        if recent_section:
-            left_layout.addWidget(recent_section)
-            self.no_recent_placeholder = None
-        else:
-            placeholder_frame = QFrame()
-            placeholder_frame.setStyleSheet("""
-                QFrame {
-                    background-color: palette(base);
-                    border-radius: 12px;
-                    border: none;
-                }
-            """)
-            placeholder_layout = QVBoxLayout(placeholder_frame)
-            placeholder_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            placeholder_layout.setSpacing(15)
-            placeholder_layout.setContentsMargins(40, 60, 40, 60)
-            
-            empty_icon = QLabel()
-            empty_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=64))
-            empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            placeholder_layout.addWidget(empty_icon)
-            
-            self.no_recent_placeholder = QLabel(tr('no_recent_repos'))
-            self.no_recent_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.no_recent_placeholder.setWordWrap(True)
-            self.no_recent_placeholder.setStyleSheet("""
-                color: palette(text); 
-                font-size: 15px; 
-                font-weight: 500;
-            """)
-            placeholder_layout.addWidget(self.no_recent_placeholder)
-            
-            self.hint_label = QLabel(tr('home_hint'))
-            self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.hint_label.setWordWrap(True)
-            self.hint_label.setStyleSheet("""
-                color: palette(mid); 
-                font-size: 12px;
-            """)
-            placeholder_layout.addWidget(self.hint_label)
-            
-            left_layout.addWidget(placeholder_frame)
-        
-        left_layout.addStretch()
+        self.recent_section_container = QWidget()
+        self.recent_section_layout = QVBoxLayout(self.recent_section_container)
+        self.recent_section_layout.setContentsMargins(0, 0, 0, 0)
+        self.update_recent_repos_section()
+        left_layout.addWidget(self.recent_section_container)
         
         right_panel = QWidget()
         right_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -237,15 +168,12 @@ class HomeView(QWidget):
         content_layout.addWidget(left_panel, stretch=3)
         content_layout.addWidget(right_panel, stretch=2)
         
-        layout.addWidget(content_splitter)
-        
-        layout.addStretch()
+        main_layout.addWidget(content_splitter, 1)
         
         footer = QWidget()
-        footer.setMaximumWidth(1000)
         footer_layout = QVBoxLayout(footer)
         footer_layout.setSpacing(8)
-        footer_layout.setContentsMargins(0, 30, 0, 0)
+        footer_layout.setContentsMargins(0, 15, 0, 0)
         
         shortcuts_container = QFrame()
         shortcuts_container.setStyleSheet("""
@@ -280,16 +208,69 @@ class HomeView(QWidget):
         """)
         footer_layout.addWidget(self.version_label)
         
-        layout.addWidget(footer)
-        
-        scroll.setWidget(scroll_widget)
-        main_layout.addWidget(scroll)
+        footer_row = QHBoxLayout()
+        footer_row.addStretch()
+        footer_row.addWidget(footer)
+        footer_row.addStretch()
+        main_layout.addLayout(footer_row)
         
         self.setStyleSheet("""
             QWidget {
                 background-color: palette(window);
             }
         """)
+    
+    def update_recent_repos_section(self):
+        while self.recent_section_layout.count():
+            child = self.recent_section_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        recent_section = self.create_recent_repos_section()
+        if recent_section:
+            self.recent_section_layout.addWidget(recent_section)
+            self.no_recent_placeholder = None
+        else:
+            theme = get_current_theme()
+            placeholder_frame = QFrame()
+            placeholder_frame.setStyleSheet("""
+                QFrame {
+                    background-color: palette(base);
+                    border-radius: 12px;
+                    border: none;
+                }
+            """)
+            placeholder_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            placeholder_layout = QVBoxLayout(placeholder_frame)
+            placeholder_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder_layout.setSpacing(15)
+            placeholder_layout.setContentsMargins(40, 60, 40, 60)
+            
+            empty_icon = QLabel()
+            empty_icon.setPixmap(self.icon_manager.get_pixmap("folders", size=64))
+            empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder_layout.addWidget(empty_icon)
+            
+            self.no_recent_placeholder = QLabel(tr('no_recent_repos'))
+            self.no_recent_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.no_recent_placeholder.setWordWrap(True)
+            self.no_recent_placeholder.setStyleSheet("""
+                color: palette(text); 
+                font-size: 15px; 
+                font-weight: 500;
+            """)
+            placeholder_layout.addWidget(self.no_recent_placeholder)
+            
+            self.hint_label = QLabel(tr('home_hint'))
+            self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.hint_label.setWordWrap(True)
+            self.hint_label.setStyleSheet("""
+                color: palette(mid); 
+                font-size: 12px;
+            """)
+            placeholder_layout.addWidget(self.hint_label)
+            
+            self.recent_section_layout.addWidget(placeholder_frame)
     
     def create_recent_repos_section(self):
         if not self.settings_manager:
@@ -541,11 +522,11 @@ class HomeView(QWidget):
     def remove_repo_from_list(self, repo_path):
         if self.settings_manager:
             self.settings_manager.remove_recent_repo(repo_path)
-            self.refresh_recent_repos()
+            self.update_recent_repos_section()
         self.remove_recent_repo.emit(repo_path)
     
     def refresh_recent_repos(self):
-        self.init_ui()
+        self.update_recent_repos_section()
         
     def create_action_button(self, text, description, color, icon_name=None):
         theme = get_current_theme()
