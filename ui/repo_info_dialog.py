@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QFrame, QApplication, QGraphicsDropShadowEffect)
-from PyQt6.QtCore import Qt, QPoint, QTimer, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QFont, QCursor, QColor
+                             QPushButton, QFrame, QApplication)
+from PyQt6.QtCore import Qt, QPoint, QTimer
+from PyQt6.QtGui import QFont, QCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import tr
@@ -27,11 +27,11 @@ class RepoInfoPopup(QFrame):
     def setup_ui(self):
         theme = self.theme
         
-        # Main container with shadow
+        # Main container
         self.setStyleSheet("background: transparent;")
         
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
         # Content frame
         content = QFrame()
@@ -43,14 +43,6 @@ class RepoInfoPopup(QFrame):
                 border-radius: 10px;
             }}
         """)
-        
-        # Add shadow effect
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(20)
-        shadow.setXOffset(0)
-        shadow.setYOffset(4)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        content.setGraphicsEffect(shadow)
         
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(16, 14, 16, 14)

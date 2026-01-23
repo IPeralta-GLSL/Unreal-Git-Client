@@ -1595,8 +1595,8 @@ class RepositoryTab(QWidget):
         
         self._ai_popup = AIChatPopup(self.plugin_manager, self.repo_path, self)
         
-        # Position to the left of the AI button
-        button_pos = self.ai_chat_btn.mapToGlobal(QPoint(0, self.ai_chat_btn.height()))
+        # Position below the AI button (centered)
+        button_pos = self.ai_chat_btn.mapToGlobal(QPoint(self.ai_chat_btn.width() // 2, self.ai_chat_btn.height()))
         self._ai_popup.show_at(button_pos)
     
     def show_repo_info_dialog(self):

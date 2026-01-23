@@ -1,8 +1,7 @@
 from PyQt6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QApplication, QGraphicsDropShadowEffect,
-                             QSizeGrip, QWidget)
+                             QPushButton, QApplication, QWidget)
 from PyQt6.QtCore import Qt, QPoint, QSize, QEvent
-from PyQt6.QtGui import QFont, QCursor, QColor
+from PyQt6.QtGui import QFont, QCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import tr
@@ -33,7 +32,7 @@ class AIChatPopup(QFrame):
         self.setFixedSize(380, 500)
         
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
         # Content frame
         self.content = QFrame()
@@ -45,14 +44,6 @@ class AIChatPopup(QFrame):
                 border-radius: 12px;
             }}
         """)
-        
-        # Add shadow
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(25)
-        shadow.setXOffset(0)
-        shadow.setYOffset(6)
-        shadow.setColor(QColor(0, 0, 0, 100))
-        self.content.setGraphicsEffect(shadow)
         
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -163,26 +154,24 @@ class AIChatPopup(QFrame):
         self.chat_container_layout.addWidget(msg)
     
     def show_at(self, global_pos: QPoint):
-        """Show popup at specified position."""
-        self.adjustSize()
-        
+        """Show popup at specified position, adjusting to stay on screen."""
         screen = QApplication.screenAt(global_pos)
         if screen:
             screen_rect = screen.availableGeometry()
         else:
             screen_rect = QApplication.primaryScreen().availableGeometry()
         
-        # Position to the left of the button, aligned with bottom
-        x = global_pos.x() - self.width()
-        y = global_pos.y() - self.height() + 40
+        # Center horizontally below the button
+        x = global_pos.x() - self.width() // 2
+        y = global_pos.y() + 10
         
-        # Keep within screen
+        # Keep within screen bounds
+        if x + self.width() > screen_rect.right():
+            x = screen_rect.right() - self.width() - 10
         if x < screen_rect.left():
-            x = global_pos.x() + 10
-        if y < screen_rect.top():
-            y = screen_rect.top() + 10
+            x = screen_rect.left() + 10
         if y + self.height() > screen_rect.bottom():
-            y = screen_rect.bottom() - self.height() - 10
+            y = global_pos.y() - self.height() - 10
         
         self.move(x, y)
         self.show()
