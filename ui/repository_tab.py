@@ -14,6 +14,7 @@ from ui.icon_manager import IconManager
 from ui.commit_graph_widget import CommitGraphWidget
 from ui.lfs_tracking_dialog import LFSTrackingDialog, LFSLocksDialog
 from ui.stash_dialog import StashDialog
+from ui.repo_info_dialog import RepoInfoDialog
 from ui.theme import get_current_theme
 from core.translations import tr
 import os
@@ -661,6 +662,17 @@ class RepositoryTab(QWidget):
         self.ai_chat_btn.setToolTip("AI Chat Assistant")
         self.ai_chat_btn.clicked.connect(self.toggle_ai_sidebar)
         layout.addWidget(self.ai_chat_btn)
+        
+        # Info button
+        self.info_btn = QPushButton()
+        self.info_btn.setIcon(self.icon_manager.get_icon("info", size=18))
+        self.info_btn.setMinimumHeight(36)
+        self.info_btn.setMinimumWidth(40)
+        self.info_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.info_btn.setStyleSheet(button_style)
+        self.info_btn.setToolTip(tr('info_title'))
+        self.info_btn.clicked.connect(self.show_repo_info_dialog)
+        layout.addWidget(self.info_btn)
         
         layout.addStretch()
         
@@ -1405,25 +1417,9 @@ class RepositoryTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        self.info_header = self.create_section_header(tr('info_title'), tr('info_subtitle'), "folder")
-        info_container = QWidget()
-        info_container.setStyleSheet("background-color: palette(base); padding: 15px;")
-        info_container.setMinimumHeight(100)
-        info_container.setMaximumHeight(150)
-        info_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        info_layout = QVBoxLayout(info_container)
-        
+        # Keep repo_info as a hidden label for backward compatibility
         self.repo_info = QLabel(tr('no_repo_loaded'))
-        self.repo_info.setWordWrap(True)
-        self.repo_info.setStyleSheet("color: palette(window-text); line-height: 1.6;")
-        info_layout.addWidget(self.repo_info)
-        
-        info_group = QWidget()
-        info_group_layout = QVBoxLayout(info_group)
-        info_group_layout.setContentsMargins(0, 0, 0, 0)
-        info_group_layout.setSpacing(0)
-        info_group_layout.addWidget(self.info_header)
-        info_group_layout.addWidget(info_container)
+        self.repo_info.hide()
         
         self.right_stack = QStackedWidget()
         
@@ -1433,23 +1429,7 @@ class RepositoryTab(QWidget):
         history_diff_page = self._create_history_diff_view()
         self.right_stack.addWidget(history_diff_page)
         
-        right_splitter = QSplitter(Qt.Orientation.Vertical)
-        right_splitter.setHandleWidth(3)
-        right_splitter.setStyleSheet(f"""
-            QSplitter::handle {{
-                background-color: palette(text);
-            }}
-            QSplitter::handle:hover {{
-                background-color: {theme.colors['primary']};
-            }}
-        """)
-        right_splitter.addWidget(info_group)
-        right_splitter.addWidget(self.right_stack)
-        right_splitter.setStretchFactor(0, 1)
-        right_splitter.setStretchFactor(1, 4)
-        right_splitter.setSizes([150, 600])
-        
-        layout.addWidget(right_splitter)
+        layout.addWidget(self.right_stack)
         
         self.apply_right_panel_styles()
         
@@ -1628,6 +1608,14 @@ class RepositoryTab(QWidget):
                 if len(sizes) >= 3:
                     sizes[-1] = max(sizes[-1], 320)
                     self.repo_splitter.setSizes(sizes)
+    
+    def show_repo_info_dialog(self):
+        """Show repository information dialog."""
+        if not self.repo_path:
+            QMessageBox.information(self, tr('info_title'), tr('no_repo_loaded'))
+            return
+        dialog = RepoInfoDialog(self.git_manager, self.repo_path, self)
+        dialog.exec()
         
     def load_sidebar_plugins(self):
         if not self.plugin_manager or not self.repo_path:
@@ -1846,36 +1834,46 @@ class RepositoryTab(QWidget):
                 icon_name = "warning"
                 color = "#d16969"
                 tooltip = tr('conflicted')
+                status_badge = "C"
             elif is_renamed:
                 icon_name = "file-plus"
                 color = "#569cd6"
                 tooltip = tr('renamed')
+                status_badge = "R"
             elif is_added:
                 icon_name = "file-plus"
                 color = "#4ec9b0"
                 tooltip = tr('added')
+                status_badge = "A"
             elif is_deleted:
                 icon_name = "file-x"
                 color = "#f48771"
                 tooltip = tr('deleted')
+                status_badge = "D"
             elif is_modified:
                 icon_name = "file-text"
                 color = "#dcdcaa"
                 tooltip = tr('modified')
+                status_badge = "M"
             elif is_untracked:
                 icon_name = "file"
                 color = "#858585"
                 tooltip = tr('untracked')
+                status_badge = "?"
             else:
                 icon_name = "file"
                 color = "#858585"
                 tooltip = tr('untracked')
+                status_badge = "?"
 
             if is_large:
                 icon_name = "warning"
                 tooltip = f"{tooltip} - LARGE FILE (>100MB)"
 
-            item = QListWidgetItem(file_path)
+            # Format display with status badge
+            display_text = f"[{status_badge}] {file_path}"
+            
+            item = QListWidgetItem(display_text)
             item.setIcon(self.icon_manager.get_icon(icon_name, size=16))
             item.setToolTip(f"{tooltip}: {file_path} ({state})")
             item.setForeground(QColor(color))

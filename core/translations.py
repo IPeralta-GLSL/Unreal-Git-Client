@@ -569,6 +569,10 @@ class TranslationManager:
                 'checkout_commit_tooltip': 'Ver el repositorio como estaba en este commit',
                 'create_branch_from_here': 'Crear rama desde aquí',
                 'create_branch_from_here_tooltip': 'Crear una nueva rama a partir de este commit',
+                
+                # Repo info dialog
+                'copy_path': 'Copiar ruta',
+                'open_folder': 'Abrir carpeta',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -1130,6 +1134,10 @@ class TranslationManager:
                 'checkout_commit_tooltip': 'View the repository as it was at this commit',
                 'create_branch_from_here': 'Create branch from here',
                 'create_branch_from_here_tooltip': 'Create a new branch starting from this commit',
+                
+                # Repo info dialog
+                'copy_path': 'Copy path',
+                'open_folder': 'Open folder',
             }
         }
         
