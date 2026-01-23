@@ -572,7 +572,7 @@ class TranslationManager:
                 
                 # Repo info dialog
                 'copy_path': 'Copiar ruta',
-                'open_folder': 'Abrir carpeta',
+                'copied': 'Copiado',
             },
             'en': {
                 'app_name': 'Git Client',
@@ -1137,7 +1137,7 @@ class TranslationManager:
                 
                 # Repo info dialog
                 'copy_path': 'Copy path',
-                'open_folder': 'Open folder',
+                'copied': 'Copied',
             }
         }
         

@@ -1,16 +1,15 @@
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QFrame, QWidget, QGridLayout,
-                             QSizePolicy, QApplication)
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QCursor
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+                             QPushButton, QFrame, QApplication, QGraphicsDropShadowEffect)
+from PyQt6.QtCore import Qt, QPoint, QTimer, QPropertyAnimation, QEasingCurve
+from PyQt6.QtGui import QFont, QCursor, QColor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import tr
 import os
 
 
-class RepoInfoDialog(QDialog):
-    """Dialog to display repository information."""
+class RepoInfoPopup(QFrame):
+    """Popup widget to display repository information."""
     
     def __init__(self, git_manager, repo_path, parent=None):
         super().__init__(parent)
@@ -19,128 +18,131 @@ class RepoInfoDialog(QDialog):
         self.icon_manager = IconManager()
         self.theme = get_current_theme()
         
-        self.setWindowTitle(tr('info_title'))
-        self.setMinimumSize(450, 280)
-        self.setMaximumSize(550, 350)
+        self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        
         self.setup_ui()
         self.load_info()
         
     def setup_ui(self):
         theme = self.theme
         
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: {theme.colors['background']};
-            }}
-        """)
+        # Main container with shadow
+        self.setStyleSheet("background: transparent;")
         
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(8, 8, 8, 8)
         
-        # ===== HEADER =====
-        header_frame = QFrame()
-        header_frame.setStyleSheet(f"""
-            QFrame {{
+        # Content frame
+        content = QFrame()
+        content.setObjectName("popupContent")
+        content.setStyleSheet(f"""
+            QFrame#popupContent {{
                 background-color: {theme.colors['surface']};
-                border-bottom: 1px solid {theme.colors['border']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 10px;
             }}
         """)
-        header_layout = QHBoxLayout(header_frame)
-        header_layout.setContentsMargins(16, 12, 16, 12)
-        header_layout.setSpacing(10)
+        
+        # Add shadow effect
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setXOffset(0)
+        shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        content.setGraphicsEffect(shadow)
+        
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(16, 14, 16, 14)
+        content_layout.setSpacing(12)
+        
+        # Header
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(8)
         
         header_icon = QLabel()
-        header_icon.setPixmap(self.icon_manager.get_icon("folder", size=20).pixmap(20, 20))
+        header_icon.setPixmap(self.icon_manager.get_icon("folder", size=18).pixmap(18, 18))
         header_layout.addWidget(header_icon)
         
         title = QLabel(tr('info_title'))
-        title.setFont(QFont("Segoe UI", 13, QFont.Weight.DemiBold))
+        title.setFont(QFont("Segoe UI", 11, QFont.Weight.DemiBold))
         title.setStyleSheet(f"color: {theme.colors['text']};")
         header_layout.addWidget(title)
         
         header_layout.addStretch()
-        layout.addWidget(header_frame)
         
-        # ===== CONTENT =====
-        content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(16, 16, 16, 16)
-        content_layout.setSpacing(16)
-        
-        # Info frame
-        info_frame = QFrame()
-        info_frame.setObjectName("infoFrame")
-        info_frame.setStyleSheet(f"""
-            QFrame#infoFrame {{
-                background-color: {theme.colors['surface']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 8px;
+        # Close button
+        close_btn = QPushButton("×")
+        close_btn.setFixedSize(20, 20)
+        close_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent;
+                color: {theme.colors['text_secondary']};
+                border: none;
+                font-size: 16px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                color: {theme.colors['text']};
+                background-color: {theme.colors['surface_hover']};
+                border-radius: 10px;
             }}
         """)
-        info_layout = QVBoxLayout(info_frame)
-        info_layout.setContentsMargins(16, 14, 16, 14)
-        info_layout.setSpacing(14)
+        close_btn.clicked.connect(self.close)
+        header_layout.addWidget(close_btn)
         
-        # Repository path
+        content_layout.addLayout(header_layout)
+        
+        # Separator
+        separator = QFrame()
+        separator.setFixedHeight(1)
+        separator.setStyleSheet(f"background-color: {theme.colors['border']};")
+        content_layout.addWidget(separator)
+        
+        # Info rows
         self.path_row = self._create_info_row("folder", tr('path'), "")
-        info_layout.addLayout(self.path_row['layout'])
+        content_layout.addLayout(self.path_row['layout'])
         
-        # Current branch
         self.branch_row = self._create_info_row("git-branch", tr('current_branch_info'), "")
-        info_layout.addLayout(self.branch_row['layout'])
+        content_layout.addLayout(self.branch_row['layout'])
         
-        # Remote URL
         self.remote_row = self._create_info_row("globe", tr('remote'), "")
-        info_layout.addLayout(self.remote_row['layout'])
+        content_layout.addLayout(self.remote_row['layout'])
         
-        # Last commit
         self.commit_row = self._create_info_row("git-commit", tr('last_commit'), "")
-        info_layout.addLayout(self.commit_row['layout'])
+        content_layout.addLayout(self.commit_row['layout'])
         
-        content_layout.addWidget(info_frame)
-        content_layout.addStretch()
+        # Footer with copy button
+        footer_layout = QHBoxLayout()
+        footer_layout.setContentsMargins(0, 4, 0, 0)
         
-        layout.addWidget(content, 1)
-        
-        # ===== FOOTER =====
-        footer_frame = QFrame()
-        footer_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {theme.colors['surface']};
-                border-top: 1px solid {theme.colors['border']};
+        copy_btn = QPushButton(tr('copy_path'))
+        copy_btn.setIcon(self.icon_manager.get_icon("copy", size=12))
+        copy_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        copy_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {theme.colors['primary']};
+                border: none;
+                padding: 4px 8px;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['primary']}20;
+                border-radius: 4px;
             }}
         """)
-        footer_layout = QHBoxLayout(footer_frame)
-        footer_layout.setContentsMargins(16, 10, 16, 10)
-        footer_layout.setSpacing(8)
-        
-        # Copy path button
-        copy_btn = QPushButton(tr('copy_path'))
-        copy_btn.setIcon(self.icon_manager.get_icon("copy", size=14))
-        copy_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        copy_btn.setStyleSheet(self._get_secondary_button_style())
         copy_btn.clicked.connect(self.copy_path)
         footer_layout.addWidget(copy_btn)
         
-        # Open folder button
-        open_btn = QPushButton(tr('open_folder'))
-        open_btn.setIcon(self.icon_manager.get_icon("folder-open", size=14))
-        open_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        open_btn.setStyleSheet(self._get_secondary_button_style())
-        open_btn.clicked.connect(self.open_folder)
-        footer_layout.addWidget(open_btn)
-        
         footer_layout.addStretch()
+        content_layout.addLayout(footer_layout)
         
-        # Close button
-        close_btn = QPushButton(tr('close'))
-        close_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        close_btn.setStyleSheet(self._get_primary_button_style())
-        close_btn.clicked.connect(self.accept)
-        footer_layout.addWidget(close_btn)
+        main_layout.addWidget(content)
         
-        layout.addWidget(footer_frame)
+        # Set fixed width
+        self.setFixedWidth(340)
     
     def _create_info_row(self, icon_name: str, label_text: str, value_text: str) -> dict:
         """Create an info row with icon, label, and value."""
@@ -148,22 +150,23 @@ class RepoInfoDialog(QDialog):
         
         row_layout = QHBoxLayout()
         row_layout.setSpacing(8)
+        row_layout.setContentsMargins(0, 0, 0, 0)
         
         # Icon
         icon_label = QLabel()
-        icon_label.setPixmap(self.icon_manager.get_icon(icon_name, size=16).pixmap(16, 16))
-        icon_label.setFixedWidth(20)
+        icon_label.setPixmap(self.icon_manager.get_icon(icon_name, size=14).pixmap(14, 14))
+        icon_label.setFixedWidth(18)
         row_layout.addWidget(icon_label)
         
         # Label
         label = QLabel(f"{label_text}:")
-        label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 12px; font-weight: 500;")
-        label.setFixedWidth(100)
+        label.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 11px;")
+        label.setFixedWidth(70)
         row_layout.addWidget(label)
         
         # Value
         value = QLabel(value_text)
-        value.setStyleSheet(f"color: {theme.colors['text']}; font-size: 12px;")
+        value.setStyleSheet(f"color: {theme.colors['text']}; font-size: 11px;")
         value.setWordWrap(True)
         value.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         row_layout.addWidget(value, 1)
@@ -177,8 +180,9 @@ class RepoInfoDialog(QDialog):
             
         info = self.git_manager.get_repository_info()
         
-        # Update path
-        self.path_row['value'].setText(self.repo_path)
+        # Update path - show only last part
+        path_display = os.path.basename(self.repo_path) or self.repo_path
+        self.path_row['value'].setText(path_display)
         self.path_row['value'].setToolTip(self.repo_path)
         
         # Update branch
@@ -188,8 +192,7 @@ class RepoInfoDialog(QDialog):
         # Update remote
         remote = info.get('remote', 'N/A')
         if remote and remote != 'N/A':
-            # Truncate long URLs
-            display_remote = remote if len(remote) < 45 else remote[:42] + "..."
+            display_remote = remote if len(remote) < 35 else remote[:32] + "..."
             self.remote_row['value'].setText(display_remote)
             self.remote_row['value'].setToolTip(remote)
         else:
@@ -198,8 +201,7 @@ class RepoInfoDialog(QDialog):
         # Update last commit
         last_commit = info.get('last_commit', 'N/A')
         if last_commit and last_commit != 'N/A':
-            # Truncate long commit messages
-            display_commit = last_commit if len(last_commit) < 50 else last_commit[:47] + "..."
+            display_commit = last_commit if len(last_commit) < 40 else last_commit[:37] + "..."
             self.commit_row['value'].setText(display_commit)
             self.commit_row['value'].setToolTip(last_commit)
         else:
@@ -210,57 +212,33 @@ class RepoInfoDialog(QDialog):
         if self.repo_path:
             clipboard = QApplication.clipboard()
             clipboard.setText(self.repo_path)
+            # Brief visual feedback
+            self.path_row['value'].setText("✓ " + tr('copied') if tr('copied') != 'copied' else "✓ Copied!")
+            QTimer.singleShot(1000, lambda: self.path_row['value'].setText(os.path.basename(self.repo_path)))
     
-    def open_folder(self):
-        """Open repository folder in file explorer."""
-        if self.repo_path and os.path.exists(self.repo_path):
-            import subprocess
-            import platform
-            if platform.system() == 'Windows':
-                subprocess.Popen(['explorer', self.repo_path])
-            elif platform.system() == 'Darwin':
-                subprocess.Popen(['open', self.repo_path])
-            else:
-                subprocess.Popen(['xdg-open', self.repo_path])
-    
-    def _get_primary_button_style(self) -> str:
-        """Get style for primary buttons."""
-        theme = self.theme
-        return f"""
-            QPushButton {{
-                background-color: {theme.colors['primary']};
-                color: {theme.colors['text_inverse']};
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-size: 12px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['primary_hover']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['primary_pressed']};
-            }}
-        """
-    
-    def _get_secondary_button_style(self) -> str:
-        """Get style for secondary buttons."""
-        theme = self.theme
-        return f"""
-            QPushButton {{
-                background-color: {theme.colors['surface']};
-                color: {theme.colors['text']};
-                border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: {theme.colors['surface_hover']};
-                border-color: {theme.colors['text_secondary']};
-            }}
-            QPushButton:pressed {{
-                background-color: {theme.colors['background']};
-            }}
-        """
+    def show_at(self, global_pos: QPoint):
+        """Show popup at specified position, adjusting to stay on screen."""
+        self.adjustSize()
+        
+        # Get screen geometry
+        screen = QApplication.screenAt(global_pos)
+        if screen:
+            screen_rect = screen.availableGeometry()
+        else:
+            screen_rect = QApplication.primaryScreen().availableGeometry()
+        
+        # Adjust position to keep popup on screen
+        x = global_pos.x() - self.width() // 2
+        y = global_pos.y() + 10
+        
+        # Keep within screen bounds
+        if x + self.width() > screen_rect.right():
+            x = screen_rect.right() - self.width() - 10
+        if x < screen_rect.left():
+            x = screen_rect.left() + 10
+        if y + self.height() > screen_rect.bottom():
+            y = global_pos.y() - self.height() - 10
+        
+        self.move(x, y)
+        self.show()
+
