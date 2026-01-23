@@ -78,6 +78,11 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1000, 600)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowSystemMenuHint)
         
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(__file__), "Icons", "git-branch.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+        
         self.setup_statusbar()
         self.setup_central_widget()
         self.setup_tray_icon()

@@ -1,6 +1,7 @@
 import sys
 import traceback
 import logging
+import os
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtGui import QIcon
 from ui.main_window import MainWindow
@@ -30,6 +31,10 @@ def main():
         app.setApplicationName("Git Client")
         app.setOrganizationName("GitClient")
         app.setQuitOnLastWindowClosed(False)
+        
+        icon_path = os.path.join(os.path.dirname(__file__), "ui", "Icons", "git-branch.ico")
+        if os.path.exists(icon_path):
+            app.setWindowIcon(QIcon(icon_path))
         
         print("Loading settings...")
         settings_manager = SettingsManager()
