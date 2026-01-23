@@ -5,6 +5,8 @@ import webbrowser
 import os
 import sys
 import subprocess
+import tempfile
+import time
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 from core.version import CURRENT_VERSION
 
@@ -113,29 +115,92 @@ def install_update(file_path):
         
     try:
         current_exe = sys.executable
+        current_dir = os.path.dirname(current_exe)
         
-        file_path_safe = file_path.replace('"', '')
-        current_exe_safe = current_exe.replace('"', '')
+        # Normalize paths
+        file_path = os.path.normpath(os.path.abspath(file_path))
+        current_exe = os.path.normpath(os.path.abspath(current_exe))
         
-        if not os.path.isabs(file_path_safe) or not os.path.isabs(current_exe_safe):
+        if not os.path.isabs(file_path) or not os.path.isabs(current_exe):
             return False, "Invalid file paths"
         
-        batch_script = f'''@echo off
-:loop
-move /y "{file_path_safe}" "{current_exe_safe}" > nul 2>&1
-if errorlevel 1 (
-    timeout /t 1 /nobreak >nul
-    goto loop
-)
-timeout /t 3 /nobreak >nul
-start "" "{current_exe_safe}"
-del "%~f0"
+        # Create a more robust PowerShell script for the update
+        ps_script = f'''
+$ErrorActionPreference = "Stop"
+$newExe = "{file_path}"
+$targetExe = "{current_exe}"
+$maxRetries = 30
+$retryCount = 0
+
+Write-Host "Waiting for application to close..."
+
+# Wait for the process to exit
+while ($retryCount -lt $maxRetries) {{
+    $processes = Get-Process | Where-Object {{ $_.Path -eq $targetExe }} -ErrorAction SilentlyContinue
+    if (-not $processes) {{
+        break
+    }}
+    Start-Sleep -Seconds 1
+    $retryCount++
+}}
+
+if ($retryCount -ge $maxRetries) {{
+    Write-Host "Timeout waiting for app to close. Forcing..."
+    Get-Process | Where-Object {{ $_.Path -eq $targetExe }} | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+}}
+
+Write-Host "Replacing executable..."
+
+# Try to replace the file
+$replaceRetries = 0
+$replaced = $false
+while ($replaceRetries -lt 10 -and -not $replaced) {{
+    try {{
+        Copy-Item -Path $newExe -Destination $targetExe -Force
+        $replaced = $true
+        Write-Host "File replaced successfully"
+    }} catch {{
+        Write-Host "Retry $replaceRetries..."
+        Start-Sleep -Seconds 1
+        $replaceRetries++
+    }}
+}}
+
+if (-not $replaced) {{
+    Write-Host "Failed to replace file"
+    Read-Host "Press Enter to exit"
+    exit 1
+}}
+
+# Clean up the downloaded file
+try {{
+    Remove-Item -Path $newExe -Force -ErrorAction SilentlyContinue
+}} catch {{}}
+
+Write-Host "Starting updated application..."
+Start-Sleep -Seconds 1
+
+# Start the new version
+Start-Process -FilePath $targetExe
+
+Write-Host "Update complete!"
+Start-Sleep -Seconds 2
 '''
-        batch_file = "update_installer.bat"
-        with open(batch_file, "w") as f:
-            f.write(batch_script)
-            
-        subprocess.Popen([batch_file], shell=True)
+        
+        # Write PowerShell script to temp file
+        script_path = os.path.join(tempfile.gettempdir(), "ugc_update.ps1")
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(ps_script)
+        
+        # Execute PowerShell script in a new window
+        subprocess.Popen(
+            ["powershell", "-ExecutionPolicy", "Bypass", "-File", script_path],
+            creationflags=subprocess.CREATE_NEW_CONSOLE,
+            cwd=current_dir
+        )
+        
         return True, "Update started"
     except Exception as e:
+        logger.error(f"Error installing update: {e}")
         return False, str(e)
