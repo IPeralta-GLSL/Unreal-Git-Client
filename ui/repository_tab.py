@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
                              QListWidget, QTextEdit, QPushButton, QLabel,
                              QGroupBox, QLineEdit, QMessageBox, QListWidgetItem,
                              QProgressDialog, QScrollArea, QFrame, QCheckBox, QStackedWidget,
-                             QProgressBar,
+                             QProgressBar, QComboBox, QFileDialog,
                              QSizePolicy, QMenu, QInputDialog, QApplication, QDialog,
                              QTableWidget, QTableWidgetItem, QHeaderView, QGridLayout)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QPoint, QByteArray, QUrl, QTimer, QObject
@@ -385,6 +385,10 @@ class RepositoryTab(QWidget):
         # Loading View
         self.loading_view = self.create_loading_view()
         self.stacked_widget.addWidget(self.loading_view)
+        
+        # Clone View
+        self.clone_view = self.create_clone_view()
+        self.stacked_widget.addWidget(self.clone_view)
 
         self.repo_view = QWidget()
         repo_layout = QVBoxLayout(self.repo_view)
@@ -457,6 +461,195 @@ class RepositoryTab(QWidget):
             }}
         """)
         layout.addWidget(self.loading_progress)
+        
+        return container
+    
+    def create_clone_view(self):
+        theme = get_current_theme()
+        container = QWidget()
+        container.setStyleSheet(f"background-color: {theme.colors['background']};")
+        
+        main_layout = QVBoxLayout(container)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        content = QFrame()
+        content.setFixedWidth(500)
+        content.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 12px;
+            }}
+        """)
+        
+        layout = QVBoxLayout(content)
+        layout.setSpacing(16)
+        layout.setContentsMargins(32, 32, 32, 32)
+        
+        header_layout = QHBoxLayout()
+        
+        back_btn = QPushButton()
+        back_btn.setIcon(self.icon_manager.get_icon("arrow-left", size=20))
+        back_btn.setFixedSize(36, 36)
+        back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        back_btn.clicked.connect(self.show_home_view)
+        back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: none;
+                border-radius: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+            }}
+        """)
+        header_layout.addWidget(back_btn)
+        
+        icon_label = QLabel()
+        icon_label.setPixmap(self.icon_manager.get_pixmap("git-fork", 32))
+        header_layout.addWidget(icon_label)
+        
+        header_layout.addSpacing(12)
+        
+        self.clone_title = QLabel(tr('clone_repository'))
+        self.clone_title.setStyleSheet(f"""
+            font-size: 20px;
+            font-weight: bold;
+            color: {theme.colors['text']};
+        """)
+        header_layout.addWidget(self.clone_title)
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
+        
+        self.clone_description = QLabel(tr('clone_description'))
+        self.clone_description.setStyleSheet(f"color: {theme.colors['text_secondary']}; font-size: 13px;")
+        self.clone_description.setWordWrap(True)
+        layout.addWidget(self.clone_description)
+        
+        layout.addSpacing(8)
+        
+        self.clone_url_label = QLabel(tr('repository_url') + ":")
+        self.clone_url_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold;")
+        layout.addWidget(self.clone_url_label)
+        
+        self.clone_url_input = QLineEdit()
+        self.clone_url_input.setPlaceholderText("https://github.com/user/repo.git")
+        self.clone_url_input.setMinimumHeight(42)
+        self.clone_url_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: {theme.colors['text']};
+            }}
+            QLineEdit:focus {{
+                border-color: {theme.colors['primary']};
+            }}
+        """)
+        layout.addWidget(self.clone_url_input)
+        
+        self.clone_path_label = QLabel(tr('destination_folder') + ":")
+        self.clone_path_label.setStyleSheet(f"color: {theme.colors['text']}; font-weight: bold;")
+        layout.addWidget(self.clone_path_label)
+        
+        path_layout = QHBoxLayout()
+        path_layout.setSpacing(8)
+        
+        self.clone_path_combo = QComboBox()
+        self.clone_path_combo.setEditable(True)
+        self.clone_path_combo.setMinimumHeight(42)
+        self.clone_path_combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {theme.colors['background']};
+                border: 1px solid {theme.colors['border']};
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 14px;
+                color: {theme.colors['text']};
+            }}
+            QComboBox:focus {{
+                border-color: {theme.colors['primary']};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                padding-right: 10px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {theme.colors['surface']};
+                border: 1px solid {theme.colors['border']};
+                selection-background-color: {theme.colors['primary']};
+            }}
+        """)
+        path_layout.addWidget(self.clone_path_combo, 1)
+        
+        browse_btn = QPushButton(tr('browse'))
+        browse_btn.setIcon(self.icon_manager.get_icon("folder-open", size=16))
+        browse_btn.setMinimumHeight(42)
+        browse_btn.setMinimumWidth(100)
+        browse_btn.clicked.connect(self.browse_clone_folder)
+        theme.apply_button_style(browse_btn, 'default')
+        path_layout.addWidget(browse_btn)
+        
+        layout.addLayout(path_layout)
+        
+        self.clone_create_folder_check = QCheckBox(tr('create_repo_folder'))
+        self.clone_create_folder_check.setStyleSheet(f"""
+            QCheckBox {{
+                color: {theme.colors['text']};
+                font-size: 13px;
+                spacing: 8px;
+            }}
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                border: 2px solid {theme.colors['border']};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {theme.colors['primary']};
+                border-color: {theme.colors['primary']};
+            }}
+        """)
+        self.clone_create_folder_check.stateChanged.connect(self.update_clone_helper)
+        layout.addWidget(self.clone_create_folder_check)
+        
+        self.clone_helper_text = QLabel(tr('clone_helper'))
+        self.clone_helper_text.setStyleSheet(f"""
+            color: {theme.colors['text_secondary']};
+            font-size: 11px;
+            font-style: italic;
+            padding-left: 26px;
+        """)
+        self.clone_helper_text.setWordWrap(True)
+        layout.addWidget(self.clone_helper_text)
+        
+        layout.addSpacing(16)
+        
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+        
+        self.clone_cancel_btn = QPushButton(tr('cancel'))
+        self.clone_cancel_btn.setMinimumHeight(42)
+        self.clone_cancel_btn.setMinimumWidth(100)
+        self.clone_cancel_btn.clicked.connect(self.show_home_view)
+        theme.apply_button_style(self.clone_cancel_btn, 'default')
+        buttons_layout.addWidget(self.clone_cancel_btn)
+        
+        self.clone_start_btn = QPushButton(tr('clone_repository'))
+        self.clone_start_btn.setIcon(self.icon_manager.get_icon("download", size=18))
+        self.clone_start_btn.setMinimumHeight(42)
+        self.clone_start_btn.setMinimumWidth(160)
+        self.clone_start_btn.clicked.connect(self.start_clone)
+        theme.apply_button_style(self.clone_start_btn, 'primary')
+        buttons_layout.addWidget(self.clone_start_btn)
+        
+        layout.addLayout(buttons_layout)
+        
+        main_layout.addWidget(content)
         
         return container
 
@@ -1540,14 +1733,117 @@ class RepositoryTab(QWidget):
             self.auto_refresh_timer.start()
         if self.repo_path:
             self.refresh_status()
+    
+    def show_clone_view(self):
+        if self.settings_manager:
+            self.clone_path_combo.clear()
+            paths = self.settings_manager.get_clone_paths()
+            default_path = self.settings_manager.get_default_clone_path()
+            
+            if default_path and os.path.isdir(default_path):
+                self.clone_path_combo.addItem(default_path)
+            
+            for path in paths:
+                if path != default_path and os.path.isdir(path):
+                    self.clone_path_combo.addItem(path)
+            
+            if self.clone_path_combo.count() == 0:
+                self.clone_path_combo.setCurrentText(os.path.expanduser("~"))
+            
+            self.clone_create_folder_check.setChecked(self.settings_manager.get_create_repo_folder())
+        
+        self.clone_url_input.clear()
+        self.update_clone_helper()
+        self.stacked_widget.setCurrentWidget(self.clone_view)
+        self.clone_url_input.setFocus()
+    
+    def update_clone_helper(self):
+        if self.clone_create_folder_check.isChecked():
+            self.clone_helper_text.setText(tr('clone_helper'))
+            self.clone_helper_text.setVisible(True)
+        else:
+            self.clone_helper_text.setVisible(False)
+    
+    def browse_clone_folder(self):
+        current_path = self.clone_path_combo.currentText()
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            tr('select_folder'),
+            current_path if os.path.isdir(current_path) else os.path.expanduser("~")
+        )
+        if folder:
+            self.clone_path_combo.setCurrentText(folder)
+    
+    def get_repo_name_from_url(self, url):
+        url = url.strip()
+        if url.endswith('.git'):
+            url = url[:-4]
+        match = re.search(r'/([^/]+)/?$', url)
+        if match:
+            return match.group(1)
+        return None
+    
+    def start_clone(self):
+        url = self.clone_url_input.text().strip()
+        path = self.clone_path_combo.currentText().strip()
+        
+        if not url:
+            QMessageBox.warning(self, tr('error'), tr('clone_url_required'))
+            self.clone_url_input.setFocus()
+            return
+        
+        if not path:
+            QMessageBox.warning(self, tr('error'), tr('clone_path_required'))
+            self.clone_path_combo.setFocus()
+            return
+        
+        if not os.path.isdir(path):
+            QMessageBox.warning(self, tr('error'), tr('clone_path_invalid'))
+            self.clone_path_combo.setFocus()
+            return
+        
+        final_path = path
+        if self.clone_create_folder_check.isChecked():
+            repo_name = self.get_repo_name_from_url(url)
+            if repo_name:
+                final_path = os.path.join(path, repo_name)
+        
+        allow_non_empty = self.settings_manager.get_allow_non_empty_clone() if self.settings_manager else False
+        if os.path.isdir(final_path) and os.listdir(final_path) and not allow_non_empty:
+            reply = QMessageBox.question(
+                self,
+                tr('folder_not_empty'),
+                tr('folder_not_empty_msg'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+        
+        self.show_loading(tr('cloning_repository'), url)
+        
+        self.clone_thread = CloneThread(self.git_manager, url, final_path)
+        self.clone_thread.progress.connect(self.on_clone_progress)
+        self.clone_thread.finished.connect(lambda success, msg: self.on_clone_finished(success, msg, final_path))
+        self.clone_thread.start()
+    
+    def on_clone_progress(self, message):
+        self.loading_details.setText(message)
+    
+    def on_clone_finished(self, success, message, path):
+        if success:
+            self.load_repository(path)
+            if self.parent_window:
+                self.parent_window.status_bar.showMessage(f"{tr('success_clone')}: {path}", 5000)
+        else:
+            self.show_home_view()
+            QMessageBox.critical(self, tr('error_clone'), message)
         
     def on_home_open_repo(self):
         if self.parent_window:
             self.parent_window.open_repository()
             
     def on_home_clone_repo(self):
-        if self.parent_window:
-            self.parent_window.clone_repository()
+        self.show_clone_view()
     
     def load_repository(self, path):
         self.show_loading(tr('loading_repository'), path)

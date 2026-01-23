@@ -1244,3 +1244,11 @@ RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
 2026-01-23 12:39:32,183 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2026-01-23 12:39:32,772 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
 2026-01-23 12:39:32,773 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-23 12:41:51,958 - core.updater - INFO - Checking for updates...
+2026-01-23 12:41:52,092 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-23 12:41:52,739 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-23 12:41:52,740 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-23 12:46:32,164 - core.updater - INFO - Checking for updates...
+2026-01-23 12:46:32,300 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-23 12:46:32,893 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-23 12:46:32,894 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
