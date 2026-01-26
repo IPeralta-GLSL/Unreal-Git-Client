@@ -1907,13 +1907,13 @@ class RepositoryTab(QWidget):
         
         self.clone_thread = CloneThread(self.git_manager, url, final_path)
         self.clone_thread.progress.connect(self.on_clone_progress)
-        self.clone_thread.finished.connect(lambda success, msg: self.on_clone_finished(success, msg, final_path))
+        self.clone_thread.finished.connect(lambda success, msg: self.handle_clone_finished(success, msg, final_path))
         self.clone_thread.start()
     
     def on_clone_progress(self, message):
         self.loading_details.setText(message)
     
-    def on_clone_finished(self, success, message, path):
+    def handle_clone_finished(self, success, message, path):
         if success:
             self.load_repository(path)
             if self.parent_window:
@@ -2451,6 +2451,13 @@ class RepositoryTab(QWidget):
         lfs_action.triggered.connect(lambda: self.add_to_lfs(file_path))
         menu.addAction(lfs_action)
         
+        menu.addSeparator()
+        
+        discard_all_action = QAction(tr('discard_all_changes'), self)
+        discard_all_action.setIcon(self.icon_manager.get_icon("trash", size=16))
+        discard_all_action.triggered.connect(self.discard_all_with_confirmation)
+        menu.addAction(discard_all_action)
+        
         menu.exec(self.changes_list.mapToGlobal(position))
 
     def show_in_folder(self, file_path):
@@ -2787,6 +2794,37 @@ class RepositoryTab(QWidget):
                 QMessageBox.warning(self, tr('error'), "\n".join(errors))
             else:
                 QMessageBox.information(self, tr('success'), tr('files_discarded', count=file_count))
+
+    def discard_all_with_confirmation(self):
+        """Discard all changes in the repository with confirmation"""
+        count = self.changes_list.count()
+        if count == 0:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            tr('confirm_discard'),
+            tr('confirm_discard_all', count=count),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Stop auto-refresh to avoid git lock conflicts
+            was_active = self.auto_refresh_timer.isActive()
+            if was_active:
+                self.auto_refresh_timer.stop()
+            
+            try:
+                success, message = self.git_manager.discard_all()
+                if success:
+                    self.refresh_status()
+                    QMessageBox.information(self, tr('success'), tr('files_discarded', count=count))
+                else:
+                    QMessageBox.warning(self, tr('error'), message)
+            finally:
+                if was_active:
+                    self.auto_refresh_timer.start()
 
     def show_stash_dialog(self):
         """Show the stash management dialog"""

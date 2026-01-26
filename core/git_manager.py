@@ -548,8 +548,7 @@ class GitManager:
         
     def clone_repository(self, url, path, progress_callback=None):
         try:
-            repo_name = url.rstrip('/').split('/')[-1].replace('.git', '')
-            target_path = os.path.join(path, repo_name)
+            target_path = path
             
             if progress_callback:
                 if progress_callback: progress_callback(f"Cloning into {target_path}...")
@@ -874,6 +873,17 @@ class GitManager:
                     return True, "File already removed"
             except Exception as e:
                 return False, str(e)
+
+    def discard_all(self):
+        # 1. Revert tracked files
+        success1, msg1 = self.run_command(['git', 'checkout', '.'])
+        # 2. Remove untracked files and directories
+        success2, msg2 = self.run_command(['git', 'clean', '-fd'])
+        
+        if success1 and success2:
+            return True, "All changes discarded"
+        else:
+            return False, f"{msg1}\n{msg2}"
 
     def stage_file(self, file_path):
         return self.stage_files(file_path)
