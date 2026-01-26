@@ -18,6 +18,7 @@ from ui.repo_info_dialog import RepoInfoPopup
 from ui.ai_chat_popup import AIChatPopup
 from ui.theme import get_current_theme
 from core.translations import tr
+from core.git_worker import GitWorker
 import os
 import sys
 import hashlib
@@ -2867,22 +2868,38 @@ class RepositoryTab(QWidget):
         else:
             message = summary
 
-        # 1. Unstage all (to ensure clean state based on selection)
-        self.git_manager.unstage_all()
+        # Show progress
+        self.busy_message = "Committing changes..."
+        self.busy_timer.start()
         
-        # 2. Stage selected files
-        success, result = self.git_manager.stage_files(files_to_stage)
-        if not success:
-            QMessageBox.warning(self, tr('error'), tr('error_staging_files', message=result))
-            return
+        # Run commit in background thread
+        def commit_operation():
+            # 1. Unstage all (to ensure clean state based on selection)
+            self.git_manager.unstage_all()
+            
+            # 2. Stage selected files
+            success, result = self.git_manager.stage_files(files_to_stage)
+            if not success:
+                return False, result
 
-        # 3. Commit
-        success, result = self.git_manager.commit(message)
+            # 3. Commit
+            return self.git_manager.commit(message)
+        
+        self._commit_worker = GitWorker(commit_operation, parent=self)
+        self._commit_worker.signals.finished.connect(self._on_commit_finished)
+        self._commit_worker.start()
+    
+    def _on_commit_finished(self, success, result):
+        """Handle commit completion."""
+        self._stop_busy()
+        
         if success:
             self.commit_summary.clear()
             self.commit_message.clear()
             self.refresh_status()
             self.load_history()
+            if self.parent_window:
+                self.parent_window.status_label.setText(tr('commit_success') if 'commit_success' in dir(tr) else "Commit successful")
         else:
             QMessageBox.warning(self, tr('error'), result)
             
@@ -2953,6 +2970,8 @@ class RepositoryTab(QWidget):
             QTimer.singleShot(5000, self.parent_window.progress_label.clear)
             
         if success:
+            # Fetch to update remote tracking refs (fixes ahead/behind counter after push)
+            self.git_manager.fetch()
             self.refresh_status()
             self.load_history()
             QMessageBox.information(self, tr('success'), tr('push_success'))
