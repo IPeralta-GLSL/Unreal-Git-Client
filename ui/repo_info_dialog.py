@@ -1,12 +1,23 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QFrame, QApplication)
-from PyQt6.QtCore import Qt, QPoint, QTimer
+from PyQt6.QtCore import Qt, QPoint, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QCursor
 from ui.theme import get_current_theme
 from ui.icon_manager import IconManager
 from core.translations import tr
 import os
 
+
+class RepoInfoWorker(QThread):
+    finished = pyqtSignal(dict)
+    
+    def __init__(self, git_manager, parent=None):
+        super().__init__(parent)
+        self.git_manager = git_manager
+        
+    def run(self):
+        info = self.git_manager.get_repository_info()
+        self.finished.emit(info)
 
 class RepoInfoPopup(QFrame):
     """Popup widget to display repository information."""
@@ -18,12 +29,68 @@ class RepoInfoPopup(QFrame):
         self.icon_manager = IconManager()
         self.theme = get_current_theme()
         
+        self.worker = None # Initialize worker reference
+        
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
         self.setup_ui()
         self.load_info()
+# ... (skipping setup_ui, it's unchanged)
+    def load_info(self):
+        """Load repository information asynchronously."""
+        if not self.repo_path:
+            return
+            
+        # Update path immediately (doesn't require git)
+        path_display = os.path.basename(self.repo_path) or self.repo_path
+        self.path_row['value'].setText(path_display)
+        self.path_row['value'].setToolTip(self.repo_path)
         
+        # Check if worker is already running
+        try:
+            if self.worker is not None and self.worker.isRunning():
+                return
+        except RuntimeError:
+            self.worker = None
+
+        # Start background worker for git info
+        self.worker = RepoInfoWorker(self.git_manager, parent=self)
+        self.worker.finished.connect(self.on_info_loaded)
+        self.worker.finished.connect(self.cleanup_worker)
+        self.worker.start()
+        
+    def cleanup_worker(self):
+        # Determine if we should delete
+        if self.worker:
+            self.worker.deleteLater()
+            # Don't set self.worker to None here immediately if we want to rely on parent deletion,
+            # but connecting deleteLater is good. 
+            # Ideally we decouple the python reference when finished.
+            self.worker = None
+            
+    def on_info_loaded(self, info):
+        # Update branch
+        branch = info.get('branch', 'N/A')
+        self.branch_row['value'].setText(branch)
+        
+        # Update remote
+        remote = info.get('remote', 'N/A')
+        if remote and remote != 'N/A':
+            display_remote = remote if len(remote) < 35 else remote[:32] + "..."
+            self.remote_row['value'].setText(display_remote)
+            self.remote_row['value'].setToolTip(remote)
+        else:
+            self.remote_row['value'].setText('N/A')
+        
+        # Update last commit
+        last_commit = info.get('last_commit', 'N/A')
+        if last_commit and last_commit != 'N/A':
+            display_commit = last_commit if len(last_commit) < 40 else last_commit[:37] + "..."
+            self.commit_row['value'].setText(display_commit)
+            self.commit_row['value'].setToolTip(last_commit)
+        else:
+            self.commit_row['value'].setText('N/A')
     def setup_ui(self):
         theme = self.theme
         
@@ -93,16 +160,16 @@ class RepoInfoPopup(QFrame):
         content_layout.addWidget(separator)
         
         # Info rows
-        self.path_row = self._create_info_row("folder", tr('path'), "")
+        self.path_row = self._create_info_row("folder", tr('path'), "Loading...")
         content_layout.addLayout(self.path_row['layout'])
         
-        self.branch_row = self._create_info_row("git-branch", tr('current_branch_info'), "")
+        self.branch_row = self._create_info_row("git-branch", tr('current_branch_info'), "Loading...")
         content_layout.addLayout(self.branch_row['layout'])
         
-        self.remote_row = self._create_info_row("globe", tr('remote'), "")
+        self.remote_row = self._create_info_row("globe", tr('remote'), "Loading...")
         content_layout.addLayout(self.remote_row['layout'])
         
-        self.commit_row = self._create_info_row("git-commit", tr('last_commit'), "")
+        self.commit_row = self._create_info_row("git-commit", tr('last_commit'), "Loading...")
         content_layout.addLayout(self.commit_row['layout'])
         
         # Footer with copy button
@@ -165,39 +232,7 @@ class RepoInfoPopup(QFrame):
         
         return {'layout': row_layout, 'value': value}
     
-    def load_info(self):
-        """Load repository information."""
-        if not self.repo_path:
-            return
-            
-        info = self.git_manager.get_repository_info()
-        
-        # Update path - show only last part
-        path_display = os.path.basename(self.repo_path) or self.repo_path
-        self.path_row['value'].setText(path_display)
-        self.path_row['value'].setToolTip(self.repo_path)
-        
-        # Update branch
-        branch = info.get('branch', 'N/A')
-        self.branch_row['value'].setText(branch)
-        
-        # Update remote
-        remote = info.get('remote', 'N/A')
-        if remote and remote != 'N/A':
-            display_remote = remote if len(remote) < 35 else remote[:32] + "..."
-            self.remote_row['value'].setText(display_remote)
-            self.remote_row['value'].setToolTip(remote)
-        else:
-            self.remote_row['value'].setText('N/A')
-        
-        # Update last commit
-        last_commit = info.get('last_commit', 'N/A')
-        if last_commit and last_commit != 'N/A':
-            display_commit = last_commit if len(last_commit) < 40 else last_commit[:37] + "..."
-            self.commit_row['value'].setText(display_commit)
-            self.commit_row['value'].setToolTip(last_commit)
-        else:
-            self.commit_row['value'].setText('N/A')
+
     
     def copy_path(self):
         """Copy repository path to clipboard."""

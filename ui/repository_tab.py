@@ -1962,38 +1962,44 @@ class RepositoryTab(QWidget):
         self.update_plugin_indicators()
         
     def toggle_ai_sidebar(self):
-        """Show AI chat popup."""
+        """Show/Hide AI chat popup."""
         if not self.repo_path:
             QMessageBox.information(self, "AI Assistant", tr('no_repo_loaded'))
             return
         
-        # Close existing popup if any
-        if hasattr(self, '_ai_popup') and self._ai_popup:
+        # Create if doesn't exist
+        if not hasattr(self, '_ai_popup') or not self._ai_popup:
+            self._ai_popup = AIChatPopup(self.plugin_manager, self.repo_path, self)
+        
+        # Toggle visibility
+        if self._ai_popup.isVisible():
             self._ai_popup.close()
-            self._ai_popup = None
-            return
-        
-        self._ai_popup = AIChatPopup(self.plugin_manager, self.repo_path, self)
-        
-        # Position below the AI button (centered)
-        button_pos = self.ai_chat_btn.mapToGlobal(QPoint(self.ai_chat_btn.width() // 2, self.ai_chat_btn.height()))
-        self._ai_popup.show_at(button_pos)
+        else:
+            # Position below the AI button (centered)
+            button_pos = self.ai_chat_btn.mapToGlobal(QPoint(self.ai_chat_btn.width() // 2, self.ai_chat_btn.height()))
+            self._ai_popup.show_at(button_pos)
     
     def show_repo_info_dialog(self):
-        """Show repository information popup."""
+        """Show/Hide repository information popup."""
         if not self.repo_path:
             QMessageBox.information(self, tr('info_title'), tr('no_repo_loaded'))
             return
         
-        # Close existing popup if any
-        if hasattr(self, '_info_popup') and self._info_popup:
+        # Create if doesn't exist
+        if not hasattr(self, '_info_popup') or not self._info_popup:
+            self._info_popup = RepoInfoPopup(self.git_manager, self.repo_path, self)
+        
+        # Toggle visibility
+        if self._info_popup.isVisible():
             self._info_popup.close()
-        
-        self._info_popup = RepoInfoPopup(self.git_manager, self.repo_path, self)
-        
-        # Position below the info button
-        button_pos = self.info_btn.mapToGlobal(QPoint(self.info_btn.width() // 2, self.info_btn.height()))
-        self._info_popup.show_at(button_pos)
+        else:
+            # Refresh info when showing
+            if hasattr(self._info_popup, 'load_info'):
+                self._info_popup.load_info()
+                
+            # Position below the info button
+            button_pos = self.info_btn.mapToGlobal(QPoint(self.info_btn.width() // 2, self.info_btn.height()))
+            self._info_popup.show_at(button_pos)
         
     def get_action_button_style(self, highlight=False):
         theme = get_current_theme()

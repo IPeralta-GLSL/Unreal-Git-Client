@@ -367,16 +367,20 @@ class GitManager:
     def pull(self):
         return self.run_command(['git', 'pull'])
         
+
     def push(self, progress_callback=None):
+        """Push changes to remote with auto-upstream handling"""
         if progress_callback:
             try:
+                # Use --porcelain or just parse output to detect upstream error
+                # Since we stream output, we need to accumulate it to check for errors
+                
+                # Standard Popen setup
                 kwargs = {
-                    'cwd': self.repo_path,
                     'stdout': subprocess.PIPE,
-                    'stderr': subprocess.STDOUT,
+                    'stderr': subprocess.STDOUT,  # Merge stderr to stdout to capture git errors
+                    'cwd': self.repo_path,
                     'text': True,
-                    'encoding': 'utf-8',
-                    'errors': 'replace',
                     'bufsize': 1
                 }
                 
@@ -400,6 +404,14 @@ class GitManager:
                 process.wait()
                 full_output = ''.join(output_lines)
                 
+                # Check for "no upstream branch" error
+                if process.returncode != 0 and "no upstream branch" in full_output:
+                    progress_callback("Setting upstream branch...")
+                    current_branch = self.get_current_branch()
+                    if current_branch:
+                        # Retry with --set-upstream (longer timeout for network ops)
+                        return self.run_command(['git', 'push', '--set-upstream', 'origin', current_branch], timeout=300)
+
                 if process.returncode == 0:
                     return True, full_output or "Push completed successfully"
                 else:
@@ -407,7 +419,13 @@ class GitManager:
             except Exception as e:
                 return False, str(e)
         else:
-            return self.run_command(['git', 'push'])
+            # Non-callback version
+            success, output = self.run_command(['git', 'push'], timeout=300)
+            if not success and "no upstream branch" in output:
+                current_branch = self.get_current_branch()
+                if current_branch:
+                     return self.run_command(['git', 'push', '--set-upstream', 'origin', current_branch], timeout=300)
+            return success, output
         
     def fetch(self):
         return self.run_command(['git', 'fetch'])

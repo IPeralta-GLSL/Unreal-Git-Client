@@ -1403,3 +1403,135 @@ RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
 2026-01-26 11:28:04,830 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2026-01-26 11:28:05,444 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
 2026-01-26 11:28:05,444 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 12:57:03,422 - concurrent.futures - ERROR - exception calling callback for <Future at 0x2808aa36050 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2069, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2072, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-26 12:57:05,359 - concurrent.futures - ERROR - exception calling callback for <Future at 0x2808aa363d0 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2069, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2072, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-26 12:57:14,010 - core.updater - INFO - Checking for updates...
+2026-01-26 12:57:14,137 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 12:57:14,729 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 12:57:14,729 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 12:58:11,929 - concurrent.futures - ERROR - exception calling callback for <Future at 0x1989c148a50 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2069, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2072, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-26 12:58:23,028 - core.updater - INFO - Checking for updates...
+2026-01-26 12:58:23,190 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 12:58:23,787 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 12:58:23,788 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 12:58:38,421 - concurrent.futures - ERROR - exception calling callback for <Future at 0x24cdf886f30 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2069, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2072, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-26 15:02:27,175 - core.updater - INFO - Checking for updates...
+2026-01-26 15:02:27,338 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 15:02:27,966 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 15:02:27,967 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 15:02:53,968 - concurrent.futures - ERROR - exception calling callback for <Future at 0x290822c1630 state=finished returned dict>
+Traceback (most recent call last):
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2069, in on_done
+    self.status_signals.finished.emit(summary)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 334, in _invoke_callbacks
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "c:\Users\AMD\Documents\Git\Unreal-Git-Client\ui\repository_tab.py", line 2072, in on_done
+    self.status_signals.finished.emit({})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
+2026-01-26 15:52:41,790 - core.updater - INFO - Checking for updates...
+2026-01-26 15:52:41,995 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 15:52:42,599 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 15:52:42,599 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 15:53:30,067 - core.updater - INFO - Checking for updates...
+2026-01-26 15:53:30,202 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 15:53:30,814 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 15:53:30,815 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 15:55:12,144 - core.updater - INFO - Checking for updates...
+2026-01-26 15:55:12,306 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 15:55:12,951 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 15:55:12,951 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 16:05:39,256 - core.updater - INFO - Checking for updates...
+2026-01-26 16:05:39,436 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 16:05:40,063 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 16:05:40,064 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 16:06:01,057 - core.updater - INFO - Checking for updates...
+2026-01-26 16:06:01,217 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 16:06:01,828 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 16:06:01,828 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 16:08:42,990 - core.updater - INFO - Checking for updates...
+2026-01-26 16:08:43,166 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 16:08:44,173 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 16:08:44,174 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 16:13:12,300 - core.updater - INFO - Checking for updates...
+2026-01-26 16:13:12,458 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 16:13:12,472 - core.updater - ERROR - Error checking for updates: HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x0000012F77F91E80>: Failed to resolve 'api.github.com' ([Errno 11001] getaddrinfo failed)"))
+2026-01-26 16:25:54,950 - core.updater - INFO - Checking for updates...
+2026-01-26 16:25:55,089 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 16:25:55,671 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 16:25:55,671 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-26 16:31:35,428 - core.updater - INFO - Checking for updates...
+2026-01-26 16:31:35,572 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-26 16:31:36,154 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-26 16:31:36,154 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
