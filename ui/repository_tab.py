@@ -62,65 +62,88 @@ class PushThread(QThread):
         self.finished.emit(success, message)
 
 
-class PushProgressDialog(QDialog):
+class PushPopup(QFrame):
+    """Modern push progress popup positioned below the button."""
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         theme = get_current_theme()
+        self.icon_manager = IconManager()
 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setModal(True)
-        self.resize(560, 160)
+        self.resize(380, 200)
 
+        # Main container
+        self.setStyleSheet("background: transparent;")
+        
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
 
         self.container = QFrame()
         self.container.setStyleSheet(f"""
             QFrame {{
-                background-color: {theme.colors['background']};
+                background-color: {theme.colors['surface']};
                 border: 1px solid {theme.colors['border']};
-                border-radius: 10px;
+                border-radius: 12px;
             }}
         """)
         outer.addWidget(self.container)
 
         layout = QVBoxLayout(self.container)
-        layout.setContentsMargins(16, 14, 16, 16)
-        layout.setSpacing(10)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # Icon
+        icon_label = QLabel()
+        icon = self.icon_manager.get_icon("upload", size=42)
+        if icon.isNull():
+            icon = self.icon_manager.get_icon("git-pull-request", size=42)
+        icon_label.setPixmap(icon.pixmap(42, 42))
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
+
+        # Title
         title = QLabel(tr('push'))
-        title.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet(f"color: {theme.colors['text']};")
         layout.addWidget(title)
 
+        # Status message
         self.message_label = QLabel(tr('pushing_changes'))
+        self.message_label.setFont(QFont("Segoe UI", 10))
+        self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.message_label.setStyleSheet(f"color: {theme.colors['text_secondary']};")
         layout.addWidget(self.message_label)
 
+        # Details (percentage, speed, etc.)
         self.details_label = QLabel("")
-        self.details_label.setStyleSheet(f"color: {theme.colors['text']};")
+        self.details_label.setFont(QFont("Segoe UI", 10, QFont.Weight.DemiBold))
+        self.details_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.details_label.setStyleSheet(f"color: {theme.colors['primary']};")
         self.details_label.setWordWrap(True)
         layout.addWidget(self.details_label)
 
+        # Slim progress bar
         self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 0)
-        self.progress_bar.setFixedHeight(18)
-        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate by default
+        self.progress_bar.setFixedHeight(4)
+        self.progress_bar.setFixedWidth(280)
+        self.progress_bar.setTextVisible(False)
         self.progress_bar.setStyleSheet(f"""
             QProgressBar {{
-                border: 1px solid {theme.colors['border']};
-                border-radius: 6px;
-                text-align: center;
-                background-color: {theme.colors['surface']};
-                color: {theme.colors['text']};
+                border: none;
+                background-color: {theme.colors['background']};
+                border-radius: 2px;
             }}
             QProgressBar::chunk {{
                 background-color: {theme.colors['primary']};
-                border-radius: 5px;
+                border-radius: 2px;
             }}
         """)
-        layout.addWidget(self.progress_bar)
+        layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def set_details(self, text: str):
         self.details_label.setText(text or "")
@@ -135,6 +158,52 @@ class PushProgressDialog(QDialog):
         if self.progress_bar.maximum() != 100:
             self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(percent)
+
+    def show_at(self, global_pos: QPoint):
+        """Show popup positioned below the target point."""
+        # Calculate X to center horizontally relative to target or self width
+        # But commonly we want to center relative to the button
+        # Here we just set position first
+        x = global_pos.x() - self.width() // 2
+        y = global_pos.y() + 10
+        
+        # Adjust to screen bounds
+        screen = QApplication.screenAt(global_pos)
+        if screen:
+            geo = screen.availableGeometry()
+            if x + self.width() > geo.right():
+                x = geo.right() - self.width() - 10
+            if x < geo.left():
+                x = geo.left() + 10
+            if y + self.height() > geo.bottom():
+                # If no space below, try above? For now just clamp
+                y = geo.bottom() - self.height() - 10
+        
+        self.move(x, y)
+        self.show()
+
+# ... (CommitFileItem class remains)
+
+# ... (inside RepositoryTab class)
+
+    def do_push(self):
+        # Create popup if needed (or recreate to be safe/reset state)
+        if hasattr(self, 'push_dialog') and self.push_dialog:
+             self.push_dialog.close()
+        
+        self.push_dialog = PushPopup(self)
+        
+        # Calculate position below push button
+        if hasattr(self, 'push_btn') and self.push_btn:
+            button_pos = self.push_btn.mapToGlobal(QPoint(self.push_btn.width() // 2, self.push_btn.height()))
+            self.push_dialog.show_at(button_pos)
+        else:
+            self.push_dialog.show() # Fallback
+        
+        self.push_thread = PushThread(self.git_manager)
+        self.push_thread.progress.connect(self.on_push_progress)
+        self.push_thread.finished.connect(self.on_push_finished)
+        self.push_thread.start()
 
 
 class CommitFileItem(QFrame):
@@ -2917,8 +2986,18 @@ class RepositoryTab(QWidget):
         self.run_git_operation(self.git_manager.pull, "Pulling changes...")
             
     def do_push(self):
-        self.push_dialog = PushProgressDialog(self)
-        self.push_dialog.show()
+        # Create popup if needed (or recreate to be safe/reset state)
+        if hasattr(self, 'push_dialog') and self.push_dialog:
+             self.push_dialog.close()
+        
+        self.push_dialog = PushPopup(self)
+        
+        # Calculate position below push button
+        if hasattr(self, 'push_btn') and self.push_btn:
+            button_pos = self.push_btn.mapToGlobal(QPoint(self.push_btn.width() // 2, self.push_btn.height()))
+            self.push_dialog.show_at(button_pos)
+        else:
+            self.push_dialog.show() # Fallback
         
         self.push_thread = PushThread(self.git_manager)
         self.push_thread.progress.connect(self.on_push_progress)
