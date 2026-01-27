@@ -1495,6 +1495,9 @@ class RepositoryTab(QWidget):
         commit_layout.setContentsMargins(12, 12, 12, 12)
         commit_layout.setSpacing(10)
         
+        input_row = QHBoxLayout()
+        input_row.setSpacing(8)
+
         self.commit_summary = QLineEdit()
         self.commit_summary.setPlaceholderText(tr('commit_summary_placeholder'))
         self.commit_summary.setStyleSheet(f"""
@@ -1515,7 +1518,36 @@ class RepositoryTab(QWidget):
                 border-color: {theme.colors['text_secondary']};
             }}
         """)
-        commit_layout.addWidget(self.commit_summary)
+        input_row.addWidget(self.commit_summary)
+        
+        # AI Generation Button
+        self.ai_commit_btn = QPushButton()
+        self.ai_commit_btn.setIcon(self.icon_manager.get_icon("lightbulb", size=18))
+        self.ai_commit_btn.setFixedSize(40, 40)
+        self.ai_commit_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.ai_commit_btn.setToolTip("Generate commit message with AI")
+        self.ai_commit_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme.colors['surface']};
+                border: 2px solid {theme.colors['border']};
+                border-radius: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme.colors['surface_hover']};
+                border-color: {theme.colors['primary']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.colors['primary']}20;
+            }}
+            QPushButton:disabled {{
+                background-color: {theme.colors['background']};
+                opacity: 0.5;
+            }}
+        """)
+        self.ai_commit_btn.clicked.connect(self.generate_ai_commit)
+        input_row.addWidget(self.ai_commit_btn)
+        
+        commit_layout.addLayout(input_row)
 
         self.commit_message = QTextEdit()
         self.commit_message.setPlaceholderText(tr('commit_placeholder'))
@@ -4419,3 +4451,114 @@ class RepositoryTab(QWidget):
                 self.refresh_status()
             else:
                 QMessageBox.warning(self, tr('error'), message)
+    def generate_ai_commit(self):
+        """Generate commit message using AI."""
+        if not self.plugin_manager:
+            return
+            
+        # Get AI plugin
+        plugins = self.plugin_manager.get_all_plugins()
+        ai_plugin = None
+        
+        # Try finding by key first
+        if "ai_assistant" in plugins:
+            ai_plugin = plugins["ai_assistant"]
+        else:
+            # Fallback to name check
+            for name, p in plugins.items():
+                if hasattr(p, 'get_name') and p.get_name() == "AI Assistant":
+                    ai_plugin = p
+                    break
+                
+        if not ai_plugin:
+            QMessageBox.warning(self, tr('error'), "AI Assistant plugin not found.")
+            return
+            
+        repo_path = self.repo_path
+        
+        # Check if we already have a helper
+        if not hasattr(self, 'ai_helper') or not self.ai_helper:
+            # Check existing widgets in plugin to reuse model
+            # Accessing private chat_widgets if possible, or just create new
+            if hasattr(ai_plugin, 'chat_widgets'):
+                existing = [w for w in ai_plugin.chat_widgets.values() if getattr(w, 'repo_path', '') == repo_path]
+                if existing:
+                    self.ai_helper = existing[0]
+            
+            if not getattr(self, 'ai_helper', None):
+                # Create one
+                if hasattr(ai_plugin, 'get_sidebar_widget'):
+                    self.ai_helper = ai_plugin.get_sidebar_widget(repo_path)
+
+        if not self.ai_helper:
+            return
+
+        # Get diff
+        success, diff = self.git_manager.run_command("git diff --cached")
+        
+        # If no staged changes, check if we have selected files in the UI and get their diffs
+        if not success or not diff.strip():
+            checked_items = self.get_checked_items()
+            
+            if checked_items:
+                # Collect diffs for selected files
+                diff_parts = []
+                for item in checked_items[:10]: # Limit to 10 files to avoid massive diffs
+                    file_path = item.data(Qt.ItemDataRole.UserRole)
+                    
+                    if file_path:
+                        # Try to get diff for this file (works for modified)
+                        # Use -- to safely separate path
+                        f_success, f_diff = self.git_manager.run_command(f"git diff HEAD -- \"{file_path}\"")
+                        
+                        if f_success and f_diff.strip():
+                            diff_parts.append(f_diff)
+                        else:
+                            # Might be untracked, try to read content
+                            try:
+                                full_path = os.path.join(self.repo_path, file_path)
+                                if os.path.exists(full_path) and os.path.getsize(full_path) < 50000: # Limit size
+                                    with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                        content = f.read()
+                                        diff_parts.append(f"New file: {os.path.basename(file_path)}\n{content[:2000]}")
+                            except Exception:
+                                pass
+                                
+                if diff_parts:
+                    diff = "\n".join(diff_parts)
+                    success = True
+
+        if not success or not diff.strip():
+             QMessageBox.information(self, tr('info'), "No staged or selected changes to generate message for.")
+             return
+             
+        self.ai_commit_btn.setEnabled(False)
+        original_placeholder = self.commit_summary.placeholderText()
+        self.commit_summary.setPlaceholderText("Generating with AI...")
+        
+        def on_result(text):
+            self.ai_commit_btn.setEnabled(True)
+            self.commit_summary.setPlaceholderText(original_placeholder)
+            
+            if text.startswith("Error"):
+                QMessageBox.warning(self, tr('error'), text)
+                return
+                
+            # Parse summary and details
+            # Remove any markdown code blocks if present (though we asked not to)
+            clean_text = text.replace("```", "").strip()
+            
+            parts = clean_text.split('\n\n', 1)
+            summary = parts[0].strip()
+            details = parts[1].strip() if len(parts) > 1 else ""
+            
+            self.commit_summary.setText(summary)
+            self.commit_message.setPlainText(details)
+            
+        # Call the method we added to ChatWidget
+        if hasattr(self.ai_helper, 'generate_commit_message'):
+            self.ai_helper.generate_commit_message(diff, on_result)
+        else:
+            self.ai_commit_btn.setEnabled(True)
+            self.commit_summary.setPlaceholderText(original_placeholder)
+            QMessageBox.warning(self, tr('error'), "AI Widget does not support generation.")

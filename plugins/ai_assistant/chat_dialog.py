@@ -500,9 +500,55 @@ class ChatWidget(QWidget):
         self.worker = Worker(self.llm, self.messages)
         self.worker.text_received.connect(self.on_text_received)
         self.worker.finished.connect(self.on_generation_finished)
-
+        
         self.current_response = ""
         self.worker.start()
+        
+    def generate_commit_message(self, diff_text, callback):
+        """Generate a commit message based on diff and call callback with result."""
+        if not LLAMA_AVAILABLE:
+            if callback: callback("Error: AI model not loaded (missing dependencies).")
+            return
+            
+        if not self.llm:
+            # Try to init if not loaded
+            self.init_model()
+            if not self.llm:
+                if callback: callback("Error: AI model not loaded.")
+                return
+
+        prompt = (
+            "You are a git commit message generator. "
+            "Generate a concise and descriptive commit message for the following changes. "
+            "Use the format: <summary> (max 50 chars)\\n\\n<details>."
+            "Do not include markdown code blocks or quotes in the output, just the raw message.\n\n"
+            f"Changes:\n{diff_text[:4000]}" # Limit context to avoid overflow
+        )
+        
+        # Temporary worker for this specific request
+        # We don't want to mess up the main chat history
+        messages = [{"role": "system", "content": prompt}]
+        
+        worker = Worker(self.llm, messages)
+        # We need to keep a reference to avoid GC?
+        self._commit_worker = worker 
+        
+        accumulated_text = [] # list is mutable closure
+        
+        def on_text(t):
+            accumulated_text.append(t)
+            
+        def on_finished():
+            full_text = "".join(accumulated_text).strip()
+            # Cleanup
+            if self._commit_worker == worker:
+                self._commit_worker = None
+            if callback:
+                callback(full_text)
+                
+        worker.text_received.connect(on_text)
+        worker.finished.connect(on_finished)
+        worker.start()
         
     def on_text_received(self, text):
         self.current_response += text
