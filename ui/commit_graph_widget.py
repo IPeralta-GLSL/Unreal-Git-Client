@@ -28,8 +28,13 @@ class CommitGraphWidget(QWidget):
         self.graph_width = 130
         self.avatar_size = 36
         self.selected_commit = None
+        self.current_head_hash = None
         self.hovered_commit = None
         self.avatars = {}
+        
+    def set_current_head(self, commit_hash):
+        self.current_head_hash = commit_hash
+        self.update()
         
     def set_commits(self, commits):
         self.commits = commits
@@ -115,6 +120,18 @@ class CommitGraphWidget(QWidget):
         
         theme = get_current_theme()
         # Use theme colors for selection/hover
+        
+        # Highlighting for current HEAD (where we are checked out)
+        if self.current_head_hash == commit.get('hash'):
+            # Use success color with low opacity? or accent
+            c = QColor(theme.colors['success'])
+            c.setAlpha(30)
+            painter.fillRect(rect, c)
+            
+            # Add a left border/indicator
+            painter.setPen(QPen(QColor(theme.colors['success']), 4))
+            painter.drawLine(0, int(y - self.row_height/2 + 2), 0, int(y + self.row_height/2 - 2))
+            
         if self.selected_commit == commit.get('hash'):
             # Use surface_selected color with transparency
             c = QColor(theme.colors['surface_selected'])

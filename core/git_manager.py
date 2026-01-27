@@ -81,6 +81,11 @@ class GitManager:
             return summary['branch']
         success, output = self.run_command("git branch --show-current")
         return output if success else "unknown"
+
+    def get_head_hash(self):
+        """Get the full hash of the current HEAD."""
+        success, output = self.run_command("git rev-parse HEAD")
+        return output.strip() if success else None
     
     def get_all_branches(self):
         success, output = self.run_command("git branch -a")
@@ -475,6 +480,7 @@ class GitManager:
         success, result = self.run_command([
             'git',
             'log',
+            '--all',
             '--no-color',
             '--pretty=format:%H|||%an|||%ae|||%ad|||%s',
             '--date=relative',

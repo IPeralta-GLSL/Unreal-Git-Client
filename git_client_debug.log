@@ -1624,3 +1624,51 @@ RuntimeError: wrapped C/C++ object of type StatusWorkerSignals has been deleted
 2026-01-26 18:07:30,534 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
 2026-01-26 18:07:31,124 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
 2026-01-26 18:07:31,124 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 11:48:59,772 - core.updater - INFO - Checking for updates...
+2026-01-27 11:48:59,923 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 11:49:00,510 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 11:49:00,510 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 12:21:37,479 - core.updater - INFO - Checking for updates...
+2026-01-27 12:21:37,609 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 12:21:38,195 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 12:21:38,196 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 12:23:40,924 - core.updater - INFO - Checking for updates...
+2026-01-27 12:23:41,050 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 12:23:41,706 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 12:23:41,706 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 12:24:16,129 - core.updater - INFO - Checking for updates...
+2026-01-27 12:24:16,272 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 12:24:16,849 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 12:24:16,849 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 12:31:17,904 - core.updater - INFO - Checking for updates...
+2026-01-27 12:31:18,092 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 12:31:18,701 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 12:31:18,701 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 13:44:34,493 - core.updater - INFO - Checking for updates...
+2026-01-27 13:44:34,661 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 13:44:35,293 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 13:44:35,294 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 13:46:08,598 - core.updater - INFO - Checking for updates...
+2026-01-27 13:46:08,736 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 13:46:09,337 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 13:46:09,337 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 13:53:10,514 - core.updater - INFO - Checking for updates...
+2026-01-27 13:53:10,660 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 13:53:11,275 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 13:53:11,275 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 14:20:07,032 - core.updater - INFO - Checking for updates...
+2026-01-27 14:20:07,213 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 14:20:07,825 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 14:20:07,825 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 14:45:04,239 - core.updater - INFO - Checking for updates...
+2026-01-27 14:45:04,384 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 14:45:04,964 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 14:45:04,964 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 15:18:01,109 - core.updater - INFO - Checking for updates...
+2026-01-27 15:18:01,267 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 15:18:01,842 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 15:18:01,842 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest
+2026-01-27 15:22:37,095 - core.updater - INFO - Checking for updates...
+2026-01-27 15:22:37,286 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.github.com:443
+2026-01-27 15:22:37,859 - urllib3.connectionpool - DEBUG - https://api.github.com:443 "GET /repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest HTTP/1.1" 404 125
+2026-01-27 15:22:37,860 - core.updater - ERROR - Error checking for updates: 404 Client Error: Not Found for url: https://api.github.com/repos/IPeralta-GLSL/Unreal-Git-Client/releases/latest

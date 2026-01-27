@@ -922,6 +922,8 @@ class RepositoryTab(QWidget):
         self.lfs_btn.clicked.connect(self.show_lfs_menu)
         layout.addWidget(self.lfs_btn)
 
+        layout.addSpacing(10)
+        
         self.open_folder_btn = QPushButton(tr('folder_button'))
         self.open_folder_btn.setIcon(self.icon_manager.get_icon("folder-open", size=18))
         self.open_folder_btn.setMinimumHeight(36)
@@ -1626,7 +1628,7 @@ class RepositoryTab(QWidget):
         filter_layout.addWidget(filter_icon)
         
         self.history_filter = QLineEdit()
-        self.history_filter.setPlaceholderText(tr('filter'))
+        self.history_filter.setPlaceholderText(tr('search_commits') + "...")
         self.history_filter.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {theme.colors['background']};
@@ -1640,6 +1642,7 @@ class RepositoryTab(QWidget):
                 border-color: {theme.colors['primary']};
             }}
         """)
+        self.history_filter.textChanged.connect(self.filter_commits)
         filter_layout.addWidget(self.history_filter, 1)
         
         layout.addWidget(filter_container)
@@ -2169,6 +2172,7 @@ class RepositoryTab(QWidget):
         self.current_branch_name = self.last_status_summary.get('branch', '')
         print("[DEBUG] _on_status_future: Applying summary")
         self.apply_status_summary()
+        self.check_detached_head()
         self._stop_busy()
         print("[DEBUG] _on_status_future: Done")
         if self.status_worker_pending:
@@ -3094,6 +3098,135 @@ class RepositoryTab(QWidget):
 <b>{tr('last_commit')}:</b> {info.get('last_commit', 'N/A')}<br>
         """
         self.repo_info.setText(info_text)
+
+    def filter_commits(self, text):
+        """Filter the commit graph based on search text."""
+        if not hasattr(self, 'commits') or not self.commits:
+            return
+            
+        text = text.lower()
+        print(f"[DEBUG] filter_commits: text='{text}', total_commits={len(self.commits)}")
+        
+        if not text:
+            self.commit_graph.set_commits(self.commits)
+            return
+            
+        filtered = []
+        for i, commit in enumerate(self.commits):
+            # Search in hash, author, and message
+            try:
+                msg_match = text in commit['message'].lower()
+                auth_match = text in commit['author'].lower()
+                hash_match = text in commit['hash'].lower()
+                
+                if msg_match or auth_match or hash_match:
+                    filtered.append(commit)
+                    if i < 3: # Debug first few matches
+                        print(f"[DEBUG] match: text='{text}' in msg={msg_match}, auth={auth_match}, hash={hash_match} for {commit['hash'][:7]}")
+            except Exception as e:
+                print(f"[DEBUG] filter error: {e}")
+                
+        self.commit_graph.set_commits(filtered)
+
+    def check_detached_head(self):
+        """Check if we are in detached HEAD state and update UI."""
+        try:
+            current = self.git_manager.get_current_branch()
+            head_hash = self.git_manager.get_head_hash()
+            
+            print(f"[DEBUG] check_detached_head: current='{current}', head='{head_hash}'")
+            
+            # Update graph highlight
+            if hasattr(self, 'commit_graph') and head_hash:
+                self.commit_graph.set_current_head(head_hash)
+            
+            # If current branch is a hash or contains "detached", we are detached
+            is_detached = False
+            
+            # Simple heuristic: if it looks like a hash (40 hex chars) or "HEAD"
+            # Also check if it's NOT in the list of local branches (might normally be redundant if get_current_branch returns hash)
+            if re.match(r'^[0-9a-f]{40}$', current) or "HEAD" in current or "detached" in current.lower():
+                is_detached = True
+            
+            # Also, if we are exactly on a tag, it might return the tag name, which is also detached state usually
+            # But let's stick to hash check for now.
+                
+            if is_detached:
+                self.show_detached_banner(current)
+            else:
+                if hasattr(self, 'detached_banner') and self.detached_banner:
+                    self.detached_banner.hide()
+                    
+        except Exception as e:
+            print(f"Error checking detached HEAD: {e}")
+
+    def show_detached_banner(self, current_ref):
+        """Show a banner warning about detached HEAD."""
+        if not hasattr(self, 'detached_banner'):
+            # Create banner if not exists
+            self.detached_banner = QFrame()
+            self.detached_banner.setStyleSheet("""
+                QFrame {
+                    background-color: #fff3cd;
+                    border-bottom: 1px solid #ffeeba;
+                }
+                QLabel {
+                    color: #856404;
+                    font-weight: bold;
+                }
+            """)
+            layout = QHBoxLayout(self.detached_banner)
+            layout.setContentsMargins(16, 8, 16, 8)
+            
+            icon = QLabel()
+            icon.setPixmap(self.icon_manager.get_icon("warning", color="#856404").pixmap(16, 16))
+            layout.addWidget(icon)
+            
+            msg = QLabel(f"You are in 'Detached HEAD' state ({current_ref[:7]}). Commits you make here may be lost.")
+            layout.addWidget(msg, 1)
+            
+            btn = QPushButton("Return to Main")
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #856404;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 4px 12px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #533f03;
+                }
+            """)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(self.return_to_latest)
+            layout.addWidget(btn)
+            
+            # Insert below top bar
+            # We need to find where to insert. 
+            # self.repo_view layout has: top_bar, splitter
+            # We want: top_bar, banner, splitter
+            # repo_layout is accessible via self.repo_view.layout()
+            # Check layout count to be safe
+            layout = self.repo_view.layout()
+            if layout.count() >= 1:
+                layout.insertWidget(1, self.detached_banner)
+            else:
+                layout.addWidget(self.detached_banner)
+            
+        self.detached_banner.show()
+
+    def return_to_latest(self):
+        """Return to the main branch."""
+        # TODO: Better logic to remember which branch we came from? 
+        # For now, try 'main' or 'master'
+        target = "main"
+        branches = self.git_manager.get_all_branches()
+        if "master" in branches and "main" not in branches:
+            target = "master"
+            
+        self.run_git_operation(lambda: self.git_manager.switch_branch(target), f"Switching to {target}...")
         
     def load_history(self):
         print(f"[DEBUG] load_history: Starting, repo_path={self.repo_path}")
@@ -3155,6 +3288,7 @@ class RepositoryTab(QWidget):
             if email and email not in self.avatar_cache:
                 self.download_gravatar(email, commit['author'])
 
+        self.commits = formatted_commits
         print(f"[DEBUG] _on_history_result: setting {len(formatted_commits)} commits on graph")
         self.commit_graph.set_commits(formatted_commits)
         self._stop_busy()
