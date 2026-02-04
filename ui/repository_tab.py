@@ -2621,11 +2621,13 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), message)
 
     def on_item_check_changed(self, item):
-        # Actualizar contador de archivos marcados
-        self.update_checked_counter()
+        if not hasattr(self, '_check_timer'):
+            self._check_timer = QTimer()
+            self._check_timer.setSingleShot(True)
+            self._check_timer.timeout.connect(self.update_checked_counter)
+        self._check_timer.start(50)
     
     def update_checked_counter(self):
-        """Update the counter showing how many files are checked for commit"""
         checked_count = 0
         total_count = 0
         for i in range(self.changes_list.count()):
@@ -2634,11 +2636,8 @@ class RepositoryTab(QWidget):
                 total_count += 1
                 if item.checkState() == Qt.CheckState.Checked:
                     checked_count += 1
-        
         if hasattr(self, 'checked_label'):
             self.checked_label.setText(tr('checked_for_commit', checked=checked_count, total=total_count))
-        
-        # Update toggle button state based on current state
         if hasattr(self, '_all_checked') and hasattr(self, 'toggle_select_btn'):
             if checked_count == total_count and total_count > 0:
                 self._all_checked = True
@@ -2820,18 +2819,14 @@ class RepositoryTab(QWidget):
             QMessageBox.warning(self, tr('error'), msg)
 
     def toggle_all_changes(self):
-        """Toggle entre seleccionar todos / deseleccionar todos"""
+        self.changes_list.blockSignals(True)
         self.changes_list.setUpdatesEnabled(False)
         try:
-            # Determine new state (toggle)
             new_state = Qt.CheckState.Unchecked if self._all_checked else Qt.CheckState.Checked
-            
             for i in range(self.changes_list.count()):
                 item = self.changes_list.item(i)
                 if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
                     item.setCheckState(new_state)
-            
-            # Update toggle state and button icon
             self._all_checked = not self._all_checked
             if self._all_checked:
                 self.toggle_select_btn.setIcon(self.icon_manager.get_icon("check-square", size=14, color="#ffffff"))
@@ -2841,6 +2836,7 @@ class RepositoryTab(QWidget):
                 self.toggle_select_btn.setToolTip(tr('select_all'))
         finally:
             self.changes_list.setUpdatesEnabled(True)
+            self.changes_list.blockSignals(False)
             self.update_checked_counter()
 
     def stage_file_single(self, file_path):
@@ -2973,21 +2969,17 @@ class RepositoryTab(QWidget):
         else:
             message = summary
 
-        # Show progress
+        if hasattr(self, 'auto_refresh_timer'):
+            self.auto_refresh_timer.stop()
+
         self.busy_message = "Committing changes..."
         self.busy_timer.start()
         
-        # Run commit in background thread
         def commit_operation():
-            # 1. Unstage all (to ensure clean state based on selection)
             self.git_manager.unstage_all()
-            
-            # 2. Stage selected files
             success, result = self.git_manager.stage_files(files_to_stage)
             if not success:
                 return False, result
-
-            # 3. Commit
             return self.git_manager.commit(message)
         
         self._commit_worker = GitWorker(commit_operation, parent=self)
@@ -2995,8 +2987,10 @@ class RepositoryTab(QWidget):
         self._commit_worker.start()
     
     def _on_commit_finished(self, success, result):
-        """Handle commit completion."""
         self._stop_busy()
+        
+        if hasattr(self, 'auto_refresh_timer'):
+            self.auto_refresh_timer.start()
         
         if success:
             self.commit_summary.clear()
